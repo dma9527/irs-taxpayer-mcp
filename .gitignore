@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 ROADMAP.md
+
+### IDE specific ignore packages
+.kiro
+.code
+.idea

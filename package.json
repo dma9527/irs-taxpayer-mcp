@@ -7,19 +7,36 @@
   "bin": {
     "irs-taxpayer-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dma9527/irs-taxpayer-mcp.git"
+  },
+  "homepage": "https://github.com/dma9527/irs-taxpayer-mcp",
+  "author": "Ding Ma",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
     "irs",
     "tax",
     "taxpayer",
-    "model-context-protocol"
+    "model-context-protocol",
+    "federal-tax",
+    "state-tax",
+    "tax-calculator",
+    "tax-credits",
+    "retirement"
   ],
   "license": "MIT",
   "dependencies": {

@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
-import { getTaxYearData, SUPPORTED_TAX_YEARS, LATEST_TAX_YEAR } from "../data/tax-brackets.js";
+import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
 
 const FilingStatusEnum = z.enum([
   "single",
@@ -19,7 +19,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
   server.tool(
     "calculate_federal_tax",
     "Calculate federal income tax for an individual taxpayer. Supports TY2024 and TY2025. " +
-    "Includes bracket breakdown, effective/marginal rates, SE tax, capital gains, and child tax credit. " +
+    "Includes bracket breakdown, effective/marginal rates, SE tax, NIIT, Additional Medicare Tax, " +
+    "QBI deduction, capital gains, and child tax credit. " +
     "All calculations run locally — no data is sent to any server.",
     {
       taxYear: z.number().describe("Tax year (2024 or 2025)"),
@@ -27,8 +28,10 @@ export function registerTaxCalculationTools(server: McpServer): void {
       grossIncome: z.number().min(0).describe("Total gross income in USD"),
       w2Income: z.number().min(0).optional().describe("W-2 wage income"),
       selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment income (Schedule C)"),
-      capitalGains: z.number().optional().describe("Capital gains (can be negative for losses)"),
+      capitalGains: z.number().optional().describe("Long-term capital gains (can be negative for losses)"),
       capitalGainsLongTerm: z.boolean().optional().describe("Whether capital gains are long-term (default: true)"),
+      shortTermCapitalGains: z.number().optional().describe("Short-term capital gains (taxed as ordinary income)"),
+      qualifiedBusinessIncome: z.number().min(0).optional().describe("Qualified Business Income for Section 199A deduction"),
       aboveTheLineDeductions: z.number().min(0).optional().describe("Above-the-line deductions (HSA, student loan interest, etc.)"),
       itemizedDeductions: z.number().min(0).optional().describe("Total itemized deductions (if greater than standard deduction)"),
       dependents: z.number().int().min(0).optional().describe("Number of qualifying child dependents for Child Tax Credit"),
@@ -47,6 +50,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `| Gross Income | $${fmt(result.grossIncome)} |`,
           `| Adjusted Gross Income | $${fmt(result.adjustedGrossIncome)} |`,
           `| Deduction (${result.deductionType}) | -$${fmt(result.deductionAmount)} |`,
+          result.qbiDeduction > 0 ? `| QBI Deduction (§199A) | -$${fmt(result.qbiDeduction)} |` : "",
           `| Taxable Income | $${fmt(result.taxableIncome)} |`,
           "",
           `### Tax Bracket Breakdown`,
@@ -61,6 +65,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `| Ordinary Income Tax | $${fmt(result.ordinaryIncomeTax)} |`,
           result.capitalGainsTax > 0 ? `| Capital Gains Tax | $${fmt(result.capitalGainsTax)} |` : "",
           result.selfEmploymentTax > 0 ? `| Self-Employment Tax | $${fmt(result.selfEmploymentTax)} |` : "",
+          result.niit > 0 ? `| Net Investment Income Tax (3.8%) | $${fmt(result.niit)} |` : "",
+          result.additionalMedicareTax > 0 ? `| Additional Medicare Tax (0.9%) | $${fmt(result.additionalMedicareTax)} |` : "",
           result.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(result.childTaxCredit)} |` : "",
           `| **Total Federal Tax** | **$${fmt(result.totalFederalTax)}** |`,
           "",

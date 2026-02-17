@@ -19,6 +19,7 @@ export interface TaxInput {
   selfEmploymentIncome?: number;
   capitalGains?: number;
   capitalGainsLongTerm?: boolean;
+  shortTermCapitalGains?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
   dependents?: number;
@@ -26,6 +27,7 @@ export interface TaxInput {
   blind?: boolean;
   spouseAge65OrOlder?: boolean;
   spouseBlind?: boolean;
+  qualifiedBusinessIncome?: number;
 }
 
 export interface TaxBreakdown {
@@ -40,6 +42,9 @@ export interface TaxBreakdown {
   ordinaryIncomeTax: number;
   capitalGainsTax: number;
   selfEmploymentTax: number;
+  niit: number;
+  additionalMedicareTax: number;
+  qbiDeduction: number;
   totalFederalTax: number;
   effectiveRate: number;
   marginalRate: number;
@@ -110,6 +115,58 @@ function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData): num
   return ssTax + medicareTax;
 }
 
+/**
+ * Net Investment Income Tax (NIIT) — 3.8% on investment income
+ * for taxpayers with MAGI above threshold.
+ */
+function calculateNIIT(
+  agi: number,
+  investmentIncome: number,
+  filingStatus: FilingStatus
+): number {
+  const thresholds: Record<FilingStatus, number> = {
+    single: 200000,
+    married_filing_jointly: 250000,
+    married_filing_separately: 125000,
+    head_of_household: 200000,
+  };
+  const threshold = thresholds[filingStatus];
+  if (agi <= threshold || investmentIncome <= 0) return 0;
+
+  const excess = agi - threshold;
+  const taxableNII = Math.min(investmentIncome, excess);
+  return taxableNII * 0.038;
+}
+
+/**
+ * Additional Medicare Tax — 0.9% on earned income above threshold.
+ * Applies to W-2 wages + SE income.
+ */
+function calculateAdditionalMedicareTax(
+  earnedIncome: number,
+  filingStatus: FilingStatus,
+  taxData: TaxYearData
+): number {
+  const threshold = taxData.medicare.additionalTaxThreshold[filingStatus];
+  if (earnedIncome <= threshold) return 0;
+  return (earnedIncome - threshold) * taxData.medicare.additionalTaxRate;
+}
+
+/**
+ * Qualified Business Income (QBI) deduction — Section 199A.
+ * Simplified: 20% of QBI, limited to 20% of taxable income.
+ */
+function calculateQBIDeduction(
+  qbi: number,
+  taxableIncomeBeforeQBI: number,
+  taxData: TaxYearData
+): number {
+  if (qbi <= 0) return 0;
+  const deduction = qbi * taxData.qualifiedBusinessIncomeDeductionRate;
+  const limit = taxableIncomeBeforeQBI * taxData.qualifiedBusinessIncomeDeductionRate;
+  return Math.min(deduction, limit);
+}
+
 export function calculateTax(input: TaxInput): TaxBreakdown {
   const taxData = getTaxYearData(input.taxYear);
   if (!taxData) {
@@ -138,28 +195,43 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const deductionAmount = useItemized ? itemized : standardDeduction;
 
   // Step 3: Calculate taxable income
-  const ordinaryIncome = input.grossIncome - (input.capitalGains ?? 0);
+  const longTermGains = (input.capitalGainsLongTerm !== false ? (input.capitalGains ?? 0) : 0);
+  const shortTermGains = input.shortTermCapitalGains ?? (input.capitalGainsLongTerm === false ? (input.capitalGains ?? 0) : 0);
+  const ordinaryIncome = input.grossIncome - longTermGains;
   const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - aboveTheLine - seDeduction - deductionAmount);
 
-  // Step 4: Calculate ordinary income tax
+  // Step 4: QBI deduction
+  const qbi = input.qualifiedBusinessIncome ?? 0;
+  const taxableBeforeQBI = taxableOrdinaryIncome + longTermGains;
+  const qbiDeduction = calculateQBIDeduction(qbi, taxableBeforeQBI, taxData);
+
+  const adjustedTaxableOrdinary = Math.max(0, taxableOrdinaryIncome - qbiDeduction);
+
+  // Step 5: Calculate ordinary income tax
   const { breakdown, total: ordinaryTax, marginalRate } = calculateBracketTax(
-    taxableOrdinaryIncome,
+    adjustedTaxableOrdinary,
     taxData.brackets[input.filingStatus]
   );
 
-  // Step 5: Capital gains tax
-  const capitalGains = input.capitalGains ?? 0;
-  const isLongTerm = input.capitalGainsLongTerm ?? true;
-  const cgTax = isLongTerm
-    ? calculateCapitalGainsTax(capitalGains, taxableOrdinaryIncome, input.filingStatus, taxData)
-    : 0; // short-term gains taxed as ordinary income (already included)
+  // Step 6: Capital gains tax (long-term only)
+  const cgTax = longTermGains > 0
+    ? calculateCapitalGainsTax(longTermGains, adjustedTaxableOrdinary, input.filingStatus, taxData)
+    : 0;
 
-  // Step 6: Self-employment tax
+  // Step 7: Self-employment tax
   const seTax = input.selfEmploymentIncome
     ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData)
     : 0;
 
-  // Step 7: Child Tax Credit
+  // Step 8: NIIT (3.8% on investment income above threshold)
+  const investmentIncome = longTermGains + shortTermGains;
+  const niit = calculateNIIT(agi, investmentIncome, input.filingStatus);
+
+  // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
+  const earnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
+  const additionalMedicareTax = calculateAdditionalMedicareTax(earnedIncome, input.filingStatus, taxData);
+
+  // Step 10: Child Tax Credit
   const dependents = input.dependents ?? 0;
   let childCredit = dependents * taxData.childTaxCredit.amount;
   const phaseoutStart = taxData.childTaxCredit.phaseoutStart[input.filingStatus];
@@ -168,8 +240,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     childCredit = Math.max(0, childCredit - excess);
   }
 
-  const totalTax = Math.max(0, ordinaryTax + cgTax + seTax - childCredit);
-  const taxableIncome = taxableOrdinaryIncome + (isLongTerm ? capitalGains : 0);
+  const totalTax = Math.max(0, ordinaryTax + cgTax + seTax + niit + additionalMedicareTax - childCredit);
+  const taxableIncome = adjustedTaxableOrdinary + longTermGains;
 
   return {
     taxYear: input.taxYear,
@@ -183,6 +255,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     ordinaryIncomeTax: ordinaryTax,
     capitalGainsTax: cgTax,
     selfEmploymentTax: seTax,
+    niit,
+    additionalMedicareTax,
+    qbiDeduction,
     totalFederalTax: totalTax,
     effectiveRate: input.grossIncome > 0 ? totalTax / input.grossIncome : 0,
     marginalRate,

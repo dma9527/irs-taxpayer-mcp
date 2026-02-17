@@ -70,17 +70,53 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
       { min: 1000000, max: null, rate: 0.133 },
     ], standardDeduction: { single: 5540, married: 11080 }, notes: "Highest state income tax rate in the US. Additional 1% mental health surcharge on income over $1M"
   },
-  CT: { code: "CT", name: "Connecticut", taxType: "graduated", topRate: 0.0699, saltDeductionOnFederal: true },
-  DE: { code: "DE", name: "Delaware", taxType: "graduated", topRate: 0.066, saltDeductionOnFederal: true },
-  HI: { code: "HI", name: "Hawaii", taxType: "graduated", topRate: 0.11, saltDeductionOnFederal: true },
+  CT: {
+    code: "CT", name: "Connecticut", taxType: "graduated", topRate: 0.0699, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 10000, rate: 0.03 }, { min: 10000, max: 50000, rate: 0.05 }, { min: 50000, max: 100000, rate: 0.055 },
+      { min: 100000, max: 200000, rate: 0.06 }, { min: 200000, max: 250000, rate: 0.065 }, { min: 250000, max: 500000, rate: 0.069 },
+      { min: 500000, max: null, rate: 0.0699 },
+    ]
+  },
+  DE: {
+    code: "DE", name: "Delaware", taxType: "graduated", topRate: 0.066, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 2000, rate: 0.0 }, { min: 2000, max: 5000, rate: 0.022 }, { min: 5000, max: 10000, rate: 0.039 },
+      { min: 10000, max: 20000, rate: 0.048 }, { min: 20000, max: 25000, rate: 0.052 }, { min: 25000, max: 60000, rate: 0.0555 },
+      { min: 60000, max: null, rate: 0.066 },
+    ], standardDeduction: { single: 3250, married: 6500 }
+  },
+  HI: {
+    code: "HI", name: "Hawaii", taxType: "graduated", topRate: 0.11, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 2400, rate: 0.014 }, { min: 2400, max: 4800, rate: 0.032 }, { min: 4800, max: 9600, rate: 0.055 },
+      { min: 9600, max: 14400, rate: 0.064 }, { min: 14400, max: 19200, rate: 0.068 }, { min: 19200, max: 24000, rate: 0.072 },
+      { min: 24000, max: 36000, rate: 0.076 }, { min: 36000, max: 48000, rate: 0.079 }, { min: 48000, max: 150000, rate: 0.0825 },
+      { min: 150000, max: 175000, rate: 0.09 }, { min: 175000, max: 200000, rate: 0.10 }, { min: 200000, max: null, rate: 0.11 },
+    ], standardDeduction: { single: 2200, married: 4400 }
+  },
   LA: { code: "LA", name: "Louisiana", taxType: "graduated", topRate: 0.045, saltDeductionOnFederal: true },
   ME: { code: "ME", name: "Maine", taxType: "graduated", topRate: 0.0715, saltDeductionOnFederal: true },
   MD: { code: "MD", name: "Maryland", taxType: "graduated", topRate: 0.0575, saltDeductionOnFederal: true, localTaxes: true, notes: "Counties impose additional 2.25%-3.2% income tax" },
-  MN: { code: "MN", name: "Minnesota", taxType: "graduated", topRate: 0.0985, saltDeductionOnFederal: true },
-  MO: { code: "MO", name: "Missouri", taxType: "graduated", topRate: 0.048, saltDeductionOnFederal: true },
+  MN: {
+    code: "MN", name: "Minnesota", taxType: "graduated", topRate: 0.0985, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 30070, rate: 0.0535 }, { min: 30070, max: 98760, rate: 0.068 },
+      { min: 98760, max: 183340, rate: 0.0785 }, { min: 183340, max: null, rate: 0.0985 },
+    ], standardDeduction: { single: 14575, married: 29150 }
+  },
+  MO: {
+    code: "MO", name: "Missouri", taxType: "graduated", topRate: 0.048, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 1207, rate: 0.02 }, { min: 1207, max: 2414, rate: 0.025 }, { min: 2414, max: 3621, rate: 0.03 },
+      { min: 3621, max: 4828, rate: 0.035 }, { min: 4828, max: 6035, rate: 0.04 }, { min: 6035, max: 7242, rate: 0.045 },
+      { min: 7242, max: null, rate: 0.048 },
+    ], standardDeduction: { single: 14600, married: 29200 }
+  },
   MT: { code: "MT", name: "Montana", taxType: "graduated", topRate: 0.059, saltDeductionOnFederal: true },
   NE: { code: "NE", name: "Nebraska", taxType: "graduated", topRate: 0.0564, saltDeductionOnFederal: true },
-  NJ: { code: "NJ", name: "New Jersey", taxType: "graduated", topRate: 0.1075, saltDeductionOnFederal: true, notes: "10.75% on income over $1M" },
+  NJ: {
+    code: "NJ", name: "New Jersey", taxType: "graduated", topRate: 0.1075, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 20000, rate: 0.014 }, { min: 20000, max: 35000, rate: 0.0175 }, { min: 35000, max: 40000, rate: 0.035 },
+      { min: 40000, max: 75000, rate: 0.05525 }, { min: 75000, max: 500000, rate: 0.0637 }, { min: 500000, max: 1000000, rate: 0.0897 },
+      { min: 1000000, max: null, rate: 0.1075 },
+    ], notes: "10.75% on income over $1M"
+  },
   NM: { code: "NM", name: "New Mexico", taxType: "graduated", topRate: 0.059, saltDeductionOnFederal: true },
   NY: {
     code: "NY", name: "New York", taxType: "graduated", topRate: 0.109, saltDeductionOnFederal: true, brackets: [
@@ -91,7 +127,12 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
   },
   OH: { code: "OH", name: "Ohio", taxType: "graduated", topRate: 0.035, saltDeductionOnFederal: true, localTaxes: true },
   OK: { code: "OK", name: "Oklahoma", taxType: "graduated", topRate: 0.0475, saltDeductionOnFederal: true },
-  OR: { code: "OR", name: "Oregon", taxType: "graduated", topRate: 0.099, saltDeductionOnFederal: true, notes: "No sales tax but high income tax" },
+  OR: {
+    code: "OR", name: "Oregon", taxType: "graduated", topRate: 0.099, saltDeductionOnFederal: true, brackets: [
+      { min: 0, max: 4050, rate: 0.0475 }, { min: 4050, max: 10200, rate: 0.0675 },
+      { min: 10200, max: 125000, rate: 0.0875 }, { min: 125000, max: null, rate: 0.099 },
+    ], standardDeduction: { single: 2745, married: 5495 }, notes: "No sales tax but high income tax"
+  },
   RI: { code: "RI", name: "Rhode Island", taxType: "graduated", topRate: 0.0599, saltDeductionOnFederal: true },
   SC: { code: "SC", name: "South Carolina", taxType: "graduated", topRate: 0.064, saltDeductionOnFederal: true },
   VT: { code: "VT", name: "Vermont", taxType: "graduated", topRate: 0.0875, saltDeductionOnFederal: true },

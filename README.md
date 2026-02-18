@@ -30,7 +30,7 @@
 | Remote data      | Only public IRS info (forms, deadlines)          |
 | Telemetry        | None — no analytics, no tracking                 |
 
-## 🛠️ Tools (17)
+## 🛠️ Tools (18)
 
 ### Tax Calculations
 
@@ -40,6 +40,7 @@
 | `get_tax_brackets`        | Brackets and standard deduction by filing status                                                    |
 | `compare_filing_statuses` | Compare tax across all filing statuses                                                              |
 | `estimate_quarterly_tax`  | Estimated quarterly payments (1040-ES)                                                              |
+| `calculate_total_tax`     | Combined federal + state tax with take-home pay                                                     |
 
 ### Deduction Analysis
 

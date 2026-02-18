@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
+import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
 
 const FilingStatusEnum = z.enum([
@@ -221,6 +222,88 @@ export function registerTaxCalculationTools(server: McpServer): void {
       ].filter(Boolean);
 
       return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
+
+  server.tool(
+    "calculate_total_tax",
+    "Calculate combined federal + state tax for a complete picture of total tax liability. " +
+    "Returns federal breakdown, state tax, and combined totals in one call.",
+    {
+      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      filingStatus: FilingStatusEnum.describe("Filing status"),
+      grossIncome: z.number().min(0).describe("Total gross income in USD"),
+      stateCode: z.string().length(2).describe("Two-letter state code (e.g., 'CA', 'TX', 'NY')"),
+      w2Income: z.number().min(0).optional().describe("W-2 wage income"),
+      selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment income"),
+      capitalGains: z.number().optional().describe("Long-term capital gains"),
+      capitalGainsLongTerm: z.boolean().optional().describe("Whether capital gains are long-term (default: true)"),
+      qualifiedBusinessIncome: z.number().min(0).optional().describe("QBI for Section 199A deduction"),
+      aboveTheLineDeductions: z.number().min(0).optional().describe("Above-the-line deductions"),
+      itemizedDeductions: z.number().min(0).optional().describe("Total itemized deductions"),
+      dependents: z.number().int().min(0).optional().describe("Number of qualifying child dependents"),
+    },
+    async (params) => {
+      try {
+        const federal = calculateTax(params);
+
+        const stateFilingStatus = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
+        const stateResult = calculateStateTax({
+          stateCode: params.stateCode,
+          taxableIncome: federal.adjustedGrossIncome,
+          filingStatus: stateFilingStatus,
+        });
+
+        if (!stateResult) {
+          return {
+            content: [{ type: "text", text: `State "${params.stateCode}" not found.` }],
+            isError: true,
+          };
+        }
+
+        const totalTax = federal.totalFederalTax + stateResult.tax;
+        const totalRate = params.grossIncome > 0 ? totalTax / params.grossIncome : 0;
+        const takeHome = params.grossIncome - totalTax;
+
+        const lines = [
+          `## Total Tax Summary — TY${params.taxYear}`,
+          `**${params.filingStatus.replace(/_/g, " ")}** | **${stateResult.stateName}**`,
+          "",
+          `| Component | Tax | Rate |`,
+          `|-----------|-----|------|`,
+          `| Federal Income Tax | $${fmt(federal.totalFederalTax)} | ${(federal.effectiveRate * 100).toFixed(2)}% |`,
+          `| ${stateResult.stateName} State Tax | $${fmt(stateResult.tax)} | ${(stateResult.effectiveRate * 100).toFixed(2)}% |`,
+          `| **Total Tax** | **$${fmt(totalTax)}** | **${(totalRate * 100).toFixed(2)}%** |`,
+          "",
+          `| Item | Amount |`,
+          `|------|--------|`,
+          `| Gross Income | $${fmt(params.grossIncome)} |`,
+          `| Total Tax | -$${fmt(totalTax)} |`,
+          `| **Estimated Take-Home** | **$${fmt(takeHome)}** |`,
+          `| Monthly Take-Home | $${fmt(Math.round(takeHome / 12))} |`,
+          "",
+          `### Federal Breakdown`,
+          `| Item | Amount |`,
+          `|------|--------|`,
+          `| Ordinary Income Tax | $${fmt(federal.ordinaryIncomeTax)} |`,
+          federal.capitalGainsTax > 0 ? `| Capital Gains Tax | $${fmt(federal.capitalGainsTax)} |` : "",
+          federal.selfEmploymentTax > 0 ? `| Self-Employment Tax | $${fmt(federal.selfEmploymentTax)} |` : "",
+          federal.niit > 0 ? `| NIIT (3.8%) | $${fmt(federal.niit)} |` : "",
+          federal.additionalMedicareTax > 0 ? `| Additional Medicare (0.9%) | $${fmt(federal.additionalMedicareTax)} |` : "",
+          federal.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(federal.childTaxCredit)} |` : "",
+          federal.qbiDeduction > 0 ? `| QBI Deduction | -$${fmt(federal.qbiDeduction)} |` : "",
+          `| Marginal Rate | ${(federal.marginalRate * 100).toFixed(0)}% |`,
+          "",
+          stateResult.hasLocalTaxes ? "⚠️ Does not include local/city income taxes" : "",
+          "",
+          `> ⚠️ Estimate only. Does not include FICA withholding from W-2 wages. Consult a tax professional.`,
+        ].filter(Boolean);
+
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+      }
     }
   );
 }

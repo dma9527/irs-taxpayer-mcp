@@ -18,6 +18,7 @@ import { registerDeductionTools } from "./tools/deduction-tools.js";
 import { registerIrsLookupTools } from "./tools/irs-lookup-tools.js";
 import { registerCreditTools } from "./tools/credit-tools.js";
 import { registerStateTaxTools } from "./tools/state-tax-tools.js";
+import { registerPlanningTools } from "./tools/planning-tools.js";
 
 const server = new McpServer({
   name: "irs-taxpayer-mcp",
@@ -33,12 +34,13 @@ registerDeductionTools(server);        // 2 tools: list deductions, standard vs 
 registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, form info
 registerCreditTools(server);           // 4 tools: list credits, eligibility check, retirement accounts, strategies
 registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
+registerPlanningTools(server);         // 5 tools: planning tips, year compare, SE tax, mortgage, education
 
 // Start the server
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 19 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 24 tools loaded");
 }
 
 main().catch((err) => {

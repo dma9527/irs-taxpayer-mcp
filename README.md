@@ -30,7 +30,7 @@
 | Remote data      | Only public IRS info (forms, deadlines)          |
 | Telemetry        | None — no analytics, no tracking                 |
 
-## 🛠️ Tools (19)
+## 🛠️ Tools (24)
 
 ### Tax Calculations
 
@@ -63,6 +63,16 @@
 | ------------------------- | ------------------------------------------------------------------- |
 | `get_retirement_accounts` | IRA, Roth, 401k, SEP, Solo 401k, HSA, 529 details                   |
 | `get_retirement_strategy` | Backdoor Roth, Mega Backdoor, Roth Ladder, Tax Loss/Gain Harvesting |
+
+### Tax Planning & Scenarios
+
+| Tool                             | Description                                                    |
+| -------------------------------- | -------------------------------------------------------------- |
+| `get_tax_planning_tips`          | Personalized year-end tax optimization strategies              |
+| `compare_tax_years`              | Compare tax across TY2024 vs TY2025                            |
+| `estimate_self_employment_tax`   | Full SE tax breakdown with Schedule C, QBI, quarterly payments |
+| `analyze_mortgage_tax_benefit`   | Mortgage interest deduction analysis, itemize vs standard      |
+| `analyze_education_tax_benefits` | AOTC vs LLC comparison, student loans, 529 plans               |
 
 ### State Taxes
 

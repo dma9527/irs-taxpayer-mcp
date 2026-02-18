@@ -30,17 +30,18 @@
 | Remote data      | Only public IRS info (forms, deadlines)          |
 | Telemetry        | None — no analytics, no tracking                 |
 
-## 🛠️ Tools (18)
+## 🛠️ Tools (19)
 
 ### Tax Calculations
 
-| Tool                      | Description                                                                                         |
-| ------------------------- | --------------------------------------------------------------------------------------------------- |
-| `calculate_federal_tax`   | Full federal tax with brackets, NIIT, Additional Medicare Tax, QBI deduction, SE tax, capital gains |
-| `get_tax_brackets`        | Brackets and standard deduction by filing status                                                    |
-| `compare_filing_statuses` | Compare tax across all filing statuses                                                              |
-| `estimate_quarterly_tax`  | Estimated quarterly payments (1040-ES)                                                              |
-| `calculate_total_tax`     | Combined federal + state tax with take-home pay                                                     |
+| Tool                       | Description                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------- |
+| `calculate_federal_tax`    | Full federal tax with brackets, NIIT, Additional Medicare Tax, QBI deduction, SE tax, capital gains |
+| `get_tax_brackets`         | Brackets and standard deduction by filing status                                                    |
+| `compare_filing_statuses`  | Compare tax across all filing statuses                                                              |
+| `estimate_quarterly_tax`   | Estimated quarterly payments (1040-ES)                                                              |
+| `calculate_total_tax`      | Combined federal + state tax with take-home pay                                                     |
+| `calculate_w4_withholding` | W-4 withholding calculator with form recommendations                                                |
 
 ### Deduction Analysis
 

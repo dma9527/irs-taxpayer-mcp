@@ -7,6 +7,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
+import { calculateW4 } from "../calculators/w4-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
 
 const FilingStatusEnum = z.enum([
@@ -298,6 +299,52 @@ export function registerTaxCalculationTools(server: McpServer): void {
           "",
           `> ⚠️ Estimate only. Does not include FICA withholding from W-2 wages. Consult a tax professional.`,
         ].filter(Boolean);
+
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
+    "calculate_w4_withholding",
+    "Calculate recommended W-4 withholding settings. Estimates per-paycheck federal tax " +
+    "and provides step-by-step W-4 form recommendations.",
+    {
+      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      filingStatus: FilingStatusEnum.describe("Filing status"),
+      annualSalary: z.number().min(0).describe("Annual salary from this job"),
+      payFrequency: z.enum(["weekly", "biweekly", "semimonthly", "monthly"]).describe("How often you get paid"),
+      otherIncome: z.number().min(0).optional().describe("Other annual income (interest, dividends, side gigs)"),
+      deductions: z.number().min(0).optional().describe("Expected itemized deductions (if more than standard)"),
+      dependents: z.number().int().min(0).optional().describe("Number of qualifying child dependents"),
+      spouseWorks: z.boolean().optional().describe("Does your spouse also work?"),
+      multipleJobs: z.boolean().optional().describe("Do you hold multiple jobs simultaneously?"),
+    },
+    async (params) => {
+      try {
+        const result = calculateW4(params);
+
+        const lines = [
+          `## W-4 Withholding Estimate — TY${result.taxYear}`,
+          `**${result.filingStatus.replace(/_/g, " ")}** | **${result.payFrequency}** (${result.periodsPerYear} paychecks/year)`,
+          "",
+          `| Item | Amount |`,
+          `|------|--------|`,
+          `| Annual Salary | $${fmt(result.annualSalary)} |`,
+          `| Estimated Annual Federal Tax | $${fmt(result.estimatedAnnualTax)} |`,
+          `| **Per-Paycheck Withholding** | **$${fmt(result.perPaycheckWithholding)}** |`,
+          "",
+          `### W-4 Form Recommendations`,
+          "",
+          ...result.w4Recommendations.map((r) =>
+            `**${r.field}**: ${r.value}\n> ${r.explanation}\n`
+          ),
+          "",
+          `> ⚠️ This is an estimate. Actual withholding depends on your employer's payroll system. Review your first paycheck after submitting a new W-4.`,
+        ];
 
         return { content: [{ type: "text", text: lines.join("\n") }] };
       } catch (err) {

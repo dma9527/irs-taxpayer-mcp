@@ -28,7 +28,7 @@ const server = new McpServer({
 });
 
 // Register all tool groups
-registerTaxCalculationTools(server);   // 5 tools: calculate, brackets, compare statuses, quarterly, total
+registerTaxCalculationTools(server);   // 6 tools: calculate, brackets, compare, quarterly, total, w4
 registerDeductionTools(server);        // 2 tools: list deductions, standard vs itemized
 registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, form info
 registerCreditTools(server);           // 4 tools: list credits, eligibility check, retirement accounts, strategies
@@ -38,7 +38,7 @@ registerStateTaxTools(server);         // 4 tools: state info, estimate, compare
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 18 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 19 tools loaded");
 }
 
 main().catch((err) => {

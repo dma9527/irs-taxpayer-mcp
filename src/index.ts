@@ -32,7 +32,7 @@ const server = new McpServer({
 registerTaxCalculationTools(server);   // 6 tools: calculate, brackets, compare, quarterly, total, w4
 registerDeductionTools(server);        // 2 tools: list deductions, standard vs itemized
 registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, form info
-registerCreditTools(server);           // 4 tools: list credits, eligibility check, retirement accounts, strategies
+registerCreditTools(server);           // 5 tools: list credits, eligibility, retirement accounts, strategies, EITC
 registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
 registerPlanningTools(server);         // 5 tools: planning tips, year compare, SE tax, mortgage, education
 
@@ -40,7 +40,7 @@ registerPlanningTools(server);         // 5 tools: planning tips, year compare, 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 24 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 25 tools loaded");
 }
 
 main().catch((err) => {

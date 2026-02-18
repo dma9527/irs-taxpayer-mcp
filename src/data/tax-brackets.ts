@@ -39,6 +39,11 @@ export interface TaxYearData {
     phaseoutStart: Record<FilingStatus, number>;
     phaseoutRate: number; // reduction per $1000 over threshold
   };
+  amt: {
+    exemption: Record<FilingStatus, number>;
+    phaseoutStart: Record<FilingStatus, number>;
+    rate28Threshold: number; // income above this taxed at 28%, below at 26%
+  };
 }
 
 export const TAX_DATA: Record<number, TaxYearData> = {
@@ -144,6 +149,21 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
       phaseoutRate: 50,
     },
+    amt: {
+      exemption: {
+        single: 85700,
+        married_filing_jointly: 133300,
+        married_filing_separately: 66650,
+        head_of_household: 85700,
+      },
+      phaseoutStart: {
+        single: 609350,
+        married_filing_jointly: 1218700,
+        married_filing_separately: 609350,
+        head_of_household: 609350,
+      },
+      rate28Threshold: 232600,
+    },
   },
   2025: {
     year: 2025,
@@ -246,6 +266,21 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         head_of_household: 200000,
       },
       phaseoutRate: 50,
+    },
+    amt: {
+      exemption: {
+        single: 88100,
+        married_filing_jointly: 137000,
+        married_filing_separately: 68500,
+        head_of_household: 88100,
+      },
+      phaseoutStart: {
+        single: 626350,
+        married_filing_jointly: 1252700,
+        married_filing_separately: 626350,
+        head_of_household: 626350,
+      },
+      rate28Threshold: 239100,
     },
   },
 };

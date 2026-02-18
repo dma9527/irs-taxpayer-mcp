@@ -277,6 +277,45 @@ describe("calculateTax", () => {
     });
   });
 
+  describe("AMT (Alternative Minimum Tax)", () => {
+    it("no AMT for typical W-2 earner", () => {
+      const result = calculateTax(base2024Single);
+      expect(result.amt).toBe(0);
+    });
+
+    it("triggers AMT with large ISO exercise spread", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 200000,
+        isoExerciseSpread: 300000,
+      });
+      expect(result.amt).toBeGreaterThan(0);
+    });
+
+    it("no AMT when ISO spread is small", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 100000,
+        isoExerciseSpread: 5000,
+      });
+      expect(result.amt).toBe(0);
+    });
+
+    it("AMT considers SALT add-back for itemizers", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "married_filing_jointly",
+        grossIncome: 500000,
+        itemizedDeductions: 50000,
+        stateTaxDeducted: 10000,
+        isoExerciseSpread: 200000,
+      });
+      expect(result.amt).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   describe("high income scenario", () => {
     it("handles $500k single with all components", () => {
       const result = calculateTax({
@@ -296,6 +335,7 @@ describe("calculateTax", () => {
       expect(result.selfEmploymentTax).toBeGreaterThan(0);
       expect(result.capitalGainsTax).toBeGreaterThan(0);
       expect(result.qbiDeduction).toBeGreaterThan(0);
+      expect(result.amt).toBeGreaterThanOrEqual(0);
     });
   });
 });

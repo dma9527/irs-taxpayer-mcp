@@ -30,7 +30,7 @@
 | Remote data      | Only public IRS info (forms, deadlines)          |
 | Telemetry        | None — no analytics, no tracking                 |
 
-## 🛠️ Tools (24)
+## 🛠️ Tools (25)
 
 ### Tax Calculations
 
@@ -56,6 +56,7 @@
 | -------------------------- | --------------------------------------------------------------- |
 | `list_tax_credits`         | 20+ federal credits: CTC, EITC, AOTC, EV, solar, saver's credit |
 | `check_credit_eligibility` | Screening tool based on your situation                          |
+| `calculate_eitc`           | Precise EITC calculation with phase-in/phase-out                |
 
 ### Retirement & Strategy
 
@@ -136,20 +137,20 @@ Once connected, try asking your AI assistant:
 
 ## 🧮 Calculation Coverage
 
-| Feature                                      | Status     |
-| -------------------------------------------- | ---------- |
-| Federal income tax (7 brackets × 4 statuses) | ✅         |
-| Long-term capital gains (0%/15%/20%)         | ✅         |
-| Self-employment tax (SS + Medicare)          | ✅         |
-| Net Investment Income Tax (3.8% NIIT)        | ✅         |
-| Additional Medicare Tax (0.9%)               | ✅         |
-| QBI Deduction (Section 199A)                 | ✅         |
-| Child Tax Credit with phase-out              | ✅         |
-| Standard vs itemized deduction               | ✅         |
-| State taxes (50 states + DC)                 | ✅         |
-| 20+ federal tax credits                      | ✅         |
-| Retirement accounts & strategies             | ✅         |
-| AMT (Alternative Minimum Tax)                | 🔲 Planned |
+| Feature                                      | Status |
+| -------------------------------------------- | ------ |
+| Federal income tax (7 brackets × 4 statuses) | ✅     |
+| Long-term capital gains (0%/15%/20%)         | ✅     |
+| Self-employment tax (SS + Medicare)          | ✅     |
+| Net Investment Income Tax (3.8% NIIT)        | ✅     |
+| Additional Medicare Tax (0.9%)               | ✅     |
+| QBI Deduction (Section 199A)                 | ✅     |
+| Child Tax Credit with phase-out              | ✅     |
+| Standard vs itemized deduction               | ✅     |
+| State taxes (50 states + DC)                 | ✅     |
+| 20+ federal tax credits                      | ✅     |
+| Retirement accounts & strategies             | ✅     |
+| AMT (Alternative Minimum Tax)                | ✅     |
 
 ## 🧪 Testing
 

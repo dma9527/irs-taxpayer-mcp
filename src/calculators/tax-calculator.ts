@@ -28,6 +28,8 @@ export interface TaxInput {
   spouseAge65OrOlder?: boolean;
   spouseBlind?: boolean;
   qualifiedBusinessIncome?: number;
+  isoExerciseSpread?: number;
+  stateTaxDeducted?: number;
 }
 
 export interface TaxBreakdown {
@@ -45,6 +47,7 @@ export interface TaxBreakdown {
   niit: number;
   additionalMedicareTax: number;
   qbiDeduction: number;
+  amt: number;
   totalFederalTax: number;
   effectiveRate: number;
   marginalRate: number;
@@ -167,6 +170,46 @@ function calculateQBIDeduction(
   return Math.min(deduction, limit);
 }
 
+/**
+ * Alternative Minimum Tax (AMT).
+ * Simplified: adds back common AMT preference items (SALT, ISO spread),
+ * applies AMT exemption with phase-out, then 26%/28% rates.
+ * AMT = max(0, tentative AMT - regular tax).
+ */
+function calculateAMT(
+  regularTax: number,
+  taxableIncome: number,
+  filingStatus: FilingStatus,
+  taxData: TaxYearData,
+  isoSpread: number,
+  saltDeducted: number
+): number {
+  // AMT income = regular taxable income + preference items
+  const amtIncome = taxableIncome + isoSpread + saltDeducted;
+
+  // Exemption with phase-out (25 cents per dollar over threshold)
+  let exemption = taxData.amt.exemption[filingStatus];
+  const phaseoutStart = taxData.amt.phaseoutStart[filingStatus];
+  if (amtIncome > phaseoutStart) {
+    const reduction = (amtIncome - phaseoutStart) * 0.25;
+    exemption = Math.max(0, exemption - reduction);
+  }
+
+  const amtBase = Math.max(0, amtIncome - exemption);
+
+  // 26% on first portion, 28% on remainder
+  const threshold = taxData.amt.rate28Threshold;
+  let tentativeAMT: number;
+  if (amtBase <= threshold) {
+    tentativeAMT = amtBase * 0.26;
+  } else {
+    tentativeAMT = threshold * 0.26 + (amtBase - threshold) * 0.28;
+  }
+
+  // AMT is the excess over regular tax
+  return Math.max(0, tentativeAMT - regularTax);
+}
+
 export function calculateTax(input: TaxInput): TaxBreakdown {
   const taxData = getTaxYearData(input.taxYear);
   if (!taxData) {
@@ -240,7 +283,15 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     childCredit = Math.max(0, childCredit - excess);
   }
 
-  const totalTax = Math.max(0, ordinaryTax + cgTax + seTax + niit + additionalMedicareTax - childCredit);
+  const totalTaxBeforeAMT = Math.max(0, ordinaryTax + cgTax + seTax + niit + additionalMedicareTax - childCredit);
+
+  // Step 11: AMT
+  const isoSpread = input.isoExerciseSpread ?? 0;
+  const saltDeducted = useItemized ? (input.stateTaxDeducted ?? 0) : 0;
+  const regularIncomeTax = ordinaryTax + cgTax;
+  const amt = calculateAMT(regularIncomeTax, taxableOrdinaryIncome + longTermGains, input.filingStatus, taxData, isoSpread, saltDeducted);
+
+  const totalTax = totalTaxBeforeAMT + amt;
   const taxableIncome = adjustedTaxableOrdinary + longTermGains;
 
   return {
@@ -258,6 +309,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     niit,
     additionalMedicareTax,
     qbiDeduction,
+    amt,
     totalFederalTax: totalTax,
     effectiveRate: input.grossIncome > 0 ? totalTax / input.grossIncome : 0,
     marginalRate,

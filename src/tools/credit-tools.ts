@@ -6,6 +6,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TAX_CREDITS } from "../data/credits.js";
 import { RETIREMENT_ACCOUNTS, RETIREMENT_STRATEGIES } from "../data/retirement-strategies.js";
+import { calculateEITC } from "../calculators/eitc-calculator.js";
 
 export function registerCreditTools(server: McpServer): void {
   server.tool(
@@ -248,6 +249,58 @@ export function registerCreditTools(server: McpServer): void {
       ].join("\n"));
 
       return { content: [{ type: "text", text: `## Tax-Advantaged Strategies\n\n${sections.join("\n")}` }] };
+    }
+  );
+
+  server.tool(
+    "calculate_eitc",
+    "Calculate the exact Earned Income Tax Credit (EITC) amount. " +
+    "The EITC is one of the largest refundable credits for low-to-moderate income workers.",
+    {
+      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      filingStatus: z.enum(["single", "married_filing_jointly", "married_filing_separately", "head_of_household"]),
+      earnedIncome: z.number().min(0).describe("Earned income (wages, salary, self-employment)"),
+      agi: z.number().min(0).describe("Adjusted Gross Income"),
+      qualifyingChildren: z.number().int().min(0).max(3).describe("Number of qualifying children (0-3)"),
+      investmentIncome: z.number().min(0).optional().describe("Investment income (interest, dividends, capital gains)"),
+    },
+    async (params) => {
+      const result = calculateEITC(params);
+
+      if (!result.eligible) {
+        const lines = [
+          `## EITC Calculation — TY${params.taxYear}`,
+          "",
+          `❌ **Not eligible for EITC**`,
+          result.reason ? `Reason: ${result.reason}` : `Income exceeds the limit for ${result.qualifyingChildren} qualifying children.`,
+          "",
+          `> The EITC is available for earned income up to ~$${result.incomeLimit > 0 ? result.incomeLimit.toLocaleString() : "varies"} (depending on filing status and children).`,
+        ];
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      }
+
+      const lines = [
+        `## EITC Calculation — TY${params.taxYear}`,
+        "",
+        `| Item | Value |`,
+        `|------|-------|`,
+        `| Filing Status | ${params.filingStatus.replace(/_/g, " ")} |`,
+        `| Earned Income | $${params.earnedIncome.toLocaleString()} |`,
+        `| AGI | $${params.agi.toLocaleString()} |`,
+        `| Qualifying Children | ${result.qualifyingChildren} |`,
+        `| Phase | ${result.phase} |`,
+        `| Max Possible Credit | $${result.maxPossibleCredit.toLocaleString()} |`,
+        `| **Your EITC** | **$${result.credit.toLocaleString()}** |`,
+        "",
+        `✅ **Fully refundable** — you get this even if you owe no tax.`,
+        "",
+        result.phase === "phase-in" ? `📈 Your credit increases as your income rises (up to $${result.maxPossibleCredit.toLocaleString()}).` : "",
+        result.phase === "phase-out" ? `📉 Your credit is being reduced as income exceeds the phase-out threshold.` : "",
+        "",
+        `> ⚠️ EITC refunds are typically delayed until mid-February. File early to get your refund sooner.`,
+      ].filter(Boolean);
+
+      return { content: [{ type: "text", text: lines.join("\n") }] };
     }
   );
 }

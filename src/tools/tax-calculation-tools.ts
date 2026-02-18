@@ -39,6 +39,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
       dependents: z.number().int().min(0).optional().describe("Number of qualifying child dependents for Child Tax Credit"),
       age65OrOlder: z.boolean().optional().describe("Taxpayer is 65 or older"),
       blind: z.boolean().optional().describe("Taxpayer is blind"),
+      isoExerciseSpread: z.number().min(0).optional().describe("ISO stock option exercise spread (for AMT calculation)"),
+      stateTaxDeducted: z.number().min(0).optional().describe("State/local taxes included in itemized deductions (for AMT)"),
     },
     async (params) => {
       try {
@@ -69,6 +71,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           result.selfEmploymentTax > 0 ? `| Self-Employment Tax | $${fmt(result.selfEmploymentTax)} |` : "",
           result.niit > 0 ? `| Net Investment Income Tax (3.8%) | $${fmt(result.niit)} |` : "",
           result.additionalMedicareTax > 0 ? `| Additional Medicare Tax (0.9%) | $${fmt(result.additionalMedicareTax)} |` : "",
+          result.amt > 0 ? `| Alternative Minimum Tax (AMT) | $${fmt(result.amt)} |` : "",
           result.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(result.childTaxCredit)} |` : "",
           `| **Total Federal Tax** | **$${fmt(result.totalFederalTax)}** |`,
           "",

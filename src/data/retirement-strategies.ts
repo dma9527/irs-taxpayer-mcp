@@ -56,7 +56,7 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "employer",
     contributionLimit2024: "$23,000 employee elective deferral",
     contributionLimit2025: "$23,500 employee elective deferral",
-    catchUp: "$7,500 if age 50+ ($30,500 total TY2024). New: $11,250 for ages 60-63 starting TY2025",
+    catchUp: "TY2024: $7,500 if age 50+ ($30,500 total). TY2025: $7,500 if 50+, $11,250 if ages 60-63 (SECURE 2.0)",
     taxTreatment: "Traditional: pre-tax contributions, taxed on withdrawal. Roth 401k: after-tax, tax-free withdrawal",
     rmdRequired: true,
     description: "Employer-sponsored retirement plan. Often includes employer match",

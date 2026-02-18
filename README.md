@@ -18,6 +18,8 @@
 
 > ⚠️ **Disclaimer**: This tool provides estimates for educational and informational purposes only. It does not constitute tax, legal, or financial advice. Always consult a qualified tax professional.
 
+> **Legal Notice**: This software is provided "as is" without warranty of any kind. The authors and contributors are not tax professionals, CPAs, enrolled agents, or attorneys. No attorney-client, CPA-client, or fiduciary relationship is created by using this software. Tax laws change frequently and vary by jurisdiction. The calculations may contain errors, omissions, or may not reflect the most recent legislative changes. You are solely responsible for your tax filing decisions. The authors disclaim all liability for any damages arising from the use of this software. See [DISCLAIMER.md](DISCLAIMER.md) for full legal notice.
+
 ## Why This MCP?
 
 Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.

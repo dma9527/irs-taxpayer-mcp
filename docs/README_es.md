@@ -16,6 +16,8 @@
 
 > ⚠️ **Aviso**: Esta herramienta proporciona estimaciones solo con fines educativos e informativos. No constituye asesoramiento fiscal, legal o financiero. Consulte siempre a un profesional fiscal calificado.
 
+> **Aviso Legal**: Este software se proporciona "tal cual" sin garantía de ningún tipo. Los autores y colaboradores no son profesionales fiscales, contadores públicos ni abogados. El uso de este software no crea ninguna relación profesional. Las leyes fiscales cambian frecuentemente y varían según la jurisdicción. Los cálculos pueden contener errores, omisiones o no reflejar los cambios legislativos más recientes. Usted es el único responsable de sus decisiones fiscales. Los autores declinan toda responsabilidad por cualquier daño derivado del uso de este software, incluyendo multas fiscales, intereses, declaraciones incorrectas o pérdidas financieras. Consulte [DISCLAIMER.md](../DISCLAIMER.md) para el aviso legal completo.
+
 ## 🔒 Privacidad Primero
 
 **Sus datos financieros nunca salen de su computadora.**

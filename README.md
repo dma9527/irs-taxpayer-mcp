@@ -206,19 +206,6 @@ Reflects OBBB signed July 4, 2025:
 
 All data points cite IRS Revenue Procedures, IRC sections, and relevant legislation (TCJA, SECURE 2.0, OBBB).
 
-## 🧪 Testing
-
-```bash
-npm test
-```
-
-123 tests across 5 test suites:
-
-- Unit tests: core calculation engine, AMT, NIIT, QBI, CTC phase-out, edge cases
-- Data validation: cross-checks against IRS-published values for TY2024 and TY2025
-- Integration tests: end-to-end testing of all 25 MCP tools
-- State tax data integrity: 50 states + DC completeness
-
 ## 🏗️ Build from Source
 
 ```bash

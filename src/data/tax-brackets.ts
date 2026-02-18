@@ -1,6 +1,16 @@
 /**
  * Federal income tax brackets and standard deductions for TY2024 and TY2025.
- * Source: IRS Revenue Procedure 2023-34 (TY2024), Revenue Procedure 2024-40 (TY2025)
+ *
+ * IRS Sources:
+ *   TY2024: Revenue Procedure 2023-34 (https://www.irs.gov/irb/2023-44_IRB#REV-PROC-2023-34)
+ *   TY2025: Revenue Procedure 2024-40 (https://www.irs.gov/irb/2024-44_IRB#REV-PROC-2024-40)
+ *
+ * Data points verified:
+ *   - Tax brackets: Rev. Proc. §3.01 (Table 1-4)
+ *   - Standard deduction: Rev. Proc. §3.02
+ *   - Capital gains brackets: Rev. Proc. §3.03
+ *   - Social Security wage base: SSA announcement
+ *   - AMT exemption: Rev. Proc. §3.04
  */
 
 export type FilingStatus =

@@ -1,5 +1,12 @@
 /**
  * Common itemized deductions and their rules/limits.
+ *
+ * IRS Sources:
+ *   Medical: IRC §213 (7.5% AGI floor)
+ *   SALT: IRC §164, TCJA §11042 ($10K cap)
+ *   Mortgage Interest: IRC §163(h), TCJA §11043 ($750K limit)
+ *   Charitable: IRC §170
+ *   Casualty: IRC §165(h) (federally declared disasters only post-TCJA)
  */
 
 export interface DeductionRule {

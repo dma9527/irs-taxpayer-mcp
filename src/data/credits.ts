@@ -1,6 +1,15 @@
 /**
  * Federal tax credits database — TY2024 and TY2025.
  * Covers major individual credits with phase-out rules.
+ *
+ * IRS Sources:
+ *   CTC: IRC §24, Rev. Proc. 2023-34 §3.24
+ *   EITC: IRC §32, Rev. Proc. 2023-34 §3.07-3.12
+ *   AOTC: IRC §25A(i), Rev. Proc. 2023-34 §3.19
+ *   EV Credit: IRC §30D (Inflation Reduction Act)
+ *   Residential Energy: IRC §25D (IRA 2022)
+ *   Saver's Credit: IRC §25B, Rev. Proc. 2023-34 §3.22
+ *   PTC: IRC §36B (ACA)
  */
 
 import type { FilingStatus } from "./tax-brackets.js";

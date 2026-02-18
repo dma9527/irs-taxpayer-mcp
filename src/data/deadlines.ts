@@ -1,5 +1,8 @@
 /**
  * IRS key dates and deadlines by tax year.
+ *
+ * Source: IRS Publication 509 "Tax Calendars"
+ *   https://www.irs.gov/publications/p509
  */
 
 export interface TaxDeadline {

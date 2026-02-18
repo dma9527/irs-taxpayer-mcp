@@ -1,5 +1,12 @@
 /**
  * Retirement account rules and strategies — IRA, 401k, Roth, Backdoor Roth, etc.
+ *
+ * IRS Sources:
+ *   IRA limits: IRC §219, Notice 2023-75 (TY2024), Notice 2024-80 (TY2025)
+ *   401k limits: IRC §402(g), Notice 2023-75, Notice 2024-80
+ *   HSA limits: Rev. Proc. 2023-23 (TY2024), Rev. Proc. 2024-25 (TY2025)
+ *   SEP IRA: IRC §408(k), 25% of compensation
+ *   529 plans: IRC §529, SECURE 2.0 Act §126 (Roth rollover)
  */
 
 export interface RetirementAccountRule {

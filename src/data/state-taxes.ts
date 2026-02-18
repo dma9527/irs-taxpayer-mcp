@@ -2,6 +2,11 @@
  * State income tax data for all 50 states + DC.
  * Simplified: uses top marginal rate and basic structure.
  * For states with graduated brackets, includes full bracket data.
+ *
+ * Sources:
+ *   Tax Foundation: "State Individual Income Tax Rates and Brackets" (2024)
+ *   Federation of Tax Administrators: state tax rate tables
+ *   Individual state department of revenue websites
  */
 
 export type StateTaxType = "none" | "flat" | "graduated";

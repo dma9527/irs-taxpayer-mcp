@@ -2,7 +2,7 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**MCP server for individual US taxpayers — federal/state tax calculations, credits, deductions, retirement strategies, and IRS information.**
+**The most thorough open-source tax assistant for US individual taxpayers — powered by Model Context Protocol.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -18,85 +18,32 @@
 
 > ⚠️ **Disclaimer**: This tool provides estimates for educational and informational purposes only. It does not constitute tax, legal, or financial advice. Always consult a qualified tax professional.
 
-## 🔒 Privacy First
+## Why This MCP?
 
-**Your financial data never leaves your machine.**
+Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.
 
-| Layer            | Design                                           |
-| ---------------- | ------------------------------------------------ |
-| Tax calculations | 100% local — no network calls                    |
-| Data storage     | Stateless — nothing saved between calls          |
-| Authentication   | Zero credentials required — no SSN, no IRS login |
-| Remote data      | Only public IRS info (forms, deadlines)          |
-| Telemetry        | None — no analytics, no tracking                 |
+This MCP server puts a tax-aware assistant right inside your AI chat. Ask it anything about your tax situation in plain language, and get precise, up-to-date answers — with all calculations running locally on your machine. No data leaves your computer. No IRS login needed. No SSN required.
 
-## 🛠️ Tools (25)
+It knows about the One Big Beautiful Bill Act (2025), the latest bracket adjustments, SALT cap changes, and every major credit and deduction. It's like having a knowledgeable friend who happens to be a tax nerd.
 
-### Tax Calculations
+## 🔒 Privacy Architecture
 
-| Tool                       | Description                                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------------------------- |
-| `calculate_federal_tax`    | Full federal tax with brackets, NIIT, Additional Medicare Tax, QBI deduction, SE tax, capital gains |
-| `get_tax_brackets`         | Brackets and standard deduction by filing status                                                    |
-| `compare_filing_statuses`  | Compare tax across all filing statuses                                                              |
-| `estimate_quarterly_tax`   | Estimated quarterly payments (1040-ES)                                                              |
-| `calculate_total_tax`      | Combined federal + state tax with take-home pay                                                     |
-| `calculate_w4_withholding` | W-4 withholding calculator with form recommendations                                                |
+| Layer                | Design                                              |
+| -------------------- | --------------------------------------------------- |
+| All tax calculations | 100% local execution — zero network calls           |
+| User data storage    | Stateless — nothing saved between calls             |
+| Authentication       | Zero credentials — no SSN, no IRS login             |
+| Remote data          | Only public IRS info (form descriptions, deadlines) |
+| Telemetry            | None — no analytics, no tracking, no logging        |
+| Source code          | Fully open-source (MIT) — audit every calculation   |
 
-### Deduction Analysis
+## ⚡ Getting Started
 
-| Tool                   | Description                                     |
-| ---------------------- | ----------------------------------------------- |
-| `list_deductions`      | Browse deductions with eligibility and limits   |
-| `standard_vs_itemized` | Compare standard vs itemized for your situation |
+### Step 1: Add to your AI assistant
 
-### Tax Credits
+Add this to your MCP client configuration:
 
-| Tool                       | Description                                                     |
-| -------------------------- | --------------------------------------------------------------- |
-| `list_tax_credits`         | 20+ federal credits: CTC, EITC, AOTC, EV, solar, saver's credit |
-| `check_credit_eligibility` | Screening tool based on your situation                          |
-| `calculate_eitc`           | Precise EITC calculation with phase-in/phase-out                |
-
-### Retirement & Strategy
-
-| Tool                      | Description                                                         |
-| ------------------------- | ------------------------------------------------------------------- |
-| `get_retirement_accounts` | IRA, Roth, 401k, SEP, Solo 401k, HSA, 529 details                   |
-| `get_retirement_strategy` | Backdoor Roth, Mega Backdoor, Roth Ladder, Tax Loss/Gain Harvesting |
-
-### Tax Planning & Scenarios
-
-| Tool                             | Description                                                    |
-| -------------------------------- | -------------------------------------------------------------- |
-| `get_tax_planning_tips`          | Personalized year-end tax optimization strategies              |
-| `compare_tax_years`              | Compare tax across TY2024 vs TY2025                            |
-| `estimate_self_employment_tax`   | Full SE tax breakdown with Schedule C, QBI, quarterly payments |
-| `analyze_mortgage_tax_benefit`   | Mortgage interest deduction analysis, itemize vs standard      |
-| `analyze_education_tax_benefits` | AOTC vs LLC comparison, student loans, 529 plans               |
-
-### State Taxes
-
-| Tool                        | Description                               |
-| --------------------------- | ----------------------------------------- |
-| `get_state_tax_info`        | Rates and brackets for all 50 states + DC |
-| `estimate_state_tax`        | Estimate state tax liability              |
-| `compare_state_taxes`       | Compare states side-by-side               |
-| `list_no_income_tax_states` | States with no income tax                 |
-
-### IRS Information
-
-| Tool                  | Description                                |
-| --------------------- | ------------------------------------------ |
-| `get_tax_deadlines`   | Key IRS dates and deadlines                |
-| `check_refund_status` | How to check refund status (guidance only) |
-| `get_irs_form_info`   | Info about common IRS forms                |
-
-## ⚡ Quick Start
-
-### Use with MCP Client
-
-Add to your MCP client configuration (Claude Desktop, Kiro, Cursor, etc.):
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -109,33 +56,135 @@ Add to your MCP client configuration (Claude Desktop, Kiro, Cursor, etc.):
 }
 ```
 
-### Build from Source
+**Kiro** (`.kiro/settings/mcp.json`):
 
-```bash
-git clone https://github.com/dma9527/irs-taxpayer-mcp.git
-cd irs-taxpayer-mcp
-npm install
-npm run build
-npm start
+```json
+{
+  "mcpServers": {
+    "irs-taxpayer": {
+      "command": "npx",
+      "args": ["-y", "irs-taxpayer-mcp"]
+    }
+  }
+}
 ```
 
-## 💬 Example Prompts
+**Cursor** — same format in Cursor's MCP settings.
 
-Once connected, try asking your AI assistant:
+### Step 2: Restart your AI assistant
+
+After saving the config, restart the app. The MCP server will auto-download and connect.
+
+### Step 3: Start asking tax questions
+
+That's it. Just chat naturally:
 
 - _"Calculate my federal tax: $150k income, married filing jointly, 2 kids"_
 - _"Compare California vs Texas vs Washington for $200k income"_
 - _"I'm a freelancer making $80k — what are my quarterly estimated taxes?"_
 - _"What tax credits am I eligible for? AGI $60k, single, one child"_
+- _"Should I itemize or take the standard deduction? I pay $15k in mortgage interest and $12k in state taxes"_
 - _"Explain the Backdoor Roth IRA strategy"_
-- _"When is the tax filing deadline for 2024?"_
+- _"How much is the EITC for a family of 4 earning $35k?"_
+- _"I exercised ISOs this year — will I owe AMT?"_
+- _"Help me plan my year-end tax moves. I have a 401k and HSA."_
 
-## 📊 Supported Tax Years
+### Alternative: Docker
 
-- **TY2024** — Current filing year
-- **TY2025** — Forward-looking estimates
+```bash
+docker build -t irs-taxpayer-mcp .
+docker run -i irs-taxpayer-mcp
+```
 
-## 🧮 Calculation Coverage
+### Alternative: SSE Transport
+
+```bash
+npx irs-taxpayer-mcp --sse --port 3000
+# Health check: http://localhost:3000/health
+# SSE endpoint: http://localhost:3000/sse
+```
+
+</div>
+
+## 🛠️ Tools (25)
+
+### Federal Tax Calculations
+
+| Tool                       | What it does                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `calculate_federal_tax`    | Full federal tax with bracket breakdown, AMT, NIIT (3.8%), Additional Medicare Tax (0.9%), QBI deduction, SE tax, capital gains, CTC |
+| `get_tax_brackets`         | Tax brackets and standard deduction by filing status and year                                                                        |
+| `compare_filing_statuses`  | Side-by-side comparison of all 4 filing statuses for the same income                                                                 |
+| `estimate_quarterly_tax`   | Estimated quarterly payments (1040-ES) with safe harbor guidance                                                                     |
+| `calculate_total_tax`      | Combined federal + state tax in one call, with take-home pay and monthly income                                                      |
+| `calculate_w4_withholding` | Per-paycheck withholding estimate with step-by-step W-4 form recommendations                                                         |
+
+### Deduction Analysis
+
+| Tool                   | What it does                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `list_deductions`      | Browse all deductions with eligibility rules, limits, and forms                             |
+| `standard_vs_itemized` | Compare standard vs itemized with year-specific SALT cap ($10K for TY2024, $40K for TY2025) |
+
+### Tax Credits
+
+| Tool                       | What it does                                                              |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `list_tax_credits`         | 20+ federal credits: CTC, EITC, AOTC, EV, solar, saver's credit, and more |
+| `check_credit_eligibility` | Quick screening based on your income, family, and situation               |
+| `calculate_eitc`           | Precise EITC calculation with phase-in/plateau/phase-out for 0-3 children |
+
+### Retirement & Strategy
+
+| Tool                      | What it does                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `get_retirement_accounts` | IRA, Roth, 401k, SEP, Solo 401k, HSA, 529 — limits, tax treatment, tips        |
+| `get_retirement_strategy` | Backdoor Roth, Mega Backdoor, Roth Conversion Ladder, Tax Loss/Gain Harvesting |
+
+### Tax Planning & Scenarios
+
+| Tool                             | What it does                                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `get_tax_planning_tips`          | Personalized year-end optimization: 401k maxing, HSA, Roth conversion, tax-loss harvesting, charitable bunching |
+| `compare_tax_years`              | Compare TY2024 vs TY2025 to see how bracket changes and OBBB affect your tax                                    |
+| `estimate_self_employment_tax`   | Full SE tax breakdown: Schedule C profit, SE tax, QBI deduction, quarterly payments, SEP/Solo 401k limits       |
+| `analyze_mortgage_tax_benefit`   | Mortgage interest + property tax deduction analysis with year-specific SALT cap                                 |
+| `analyze_education_tax_benefits` | AOTC vs Lifetime Learning Credit comparison, student loan deduction, 529 plan guidance                          |
+
+### State Taxes
+
+| Tool                        | What it does                                                          |
+| --------------------------- | --------------------------------------------------------------------- |
+| `get_state_tax_info`        | Rates, brackets, and details for all 50 states + DC                   |
+| `estimate_state_tax`        | Estimate state tax liability with state-specific deductions           |
+| `compare_state_taxes`       | Compare multiple states side-by-side (great for relocation decisions) |
+| `list_no_income_tax_states` | All 9 states with no income tax                                       |
+
+### IRS Information
+
+| Tool                  | What it does                                                       |
+| --------------------- | ------------------------------------------------------------------ |
+| `get_tax_deadlines`   | Key IRS dates and deadlines by tax year                            |
+| `check_refund_status` | How to check your refund (guidance only — no IRS account access)   |
+| `get_irs_form_info`   | Info about 14 common IRS forms (1040, W-2, 1099s, Schedules, etc.) |
+
+## 📊 Tax Year Coverage
+
+### TY2024 (filing now)
+
+All data from IRS Revenue Procedure 2023-34. Standard deduction $14,600 (single) / $29,200 (MFJ). CTC $2,000. SALT cap $10,000.
+
+### TY2025 (updated for One Big Beautiful Bill Act)
+
+Reflects OBBB signed July 4, 2025:
+
+- Standard deduction: $15,750 (single) / $31,500 (MFJ) / $23,625 (HoH)
+- Child Tax Credit: $2,200 per child (up from $2,000)
+- SALT cap: $40,000 for AGI ≤ $500K (was $10,000)
+- New deductions: tips ($25K), overtime ($12.5K), senior bonus ($6K age 65+), auto loan interest ($10K)
+- 401k catch-up: $11,250 for ages 60-63 (SECURE 2.0)
+
+## 🧮 Calculation Engine
 
 | Feature                                      | Status |
 | -------------------------------------------- | ------ |
@@ -144,22 +193,42 @@ Once connected, try asking your AI assistant:
 | Self-employment tax (SS + Medicare)          | ✅     |
 | Net Investment Income Tax (3.8% NIIT)        | ✅     |
 | Additional Medicare Tax (0.9%)               | ✅     |
+| Alternative Minimum Tax (AMT)                | ✅     |
 | QBI Deduction (Section 199A)                 | ✅     |
 | Child Tax Credit with phase-out              | ✅     |
+| EITC precise calculation                     | ✅     |
 | Standard vs itemized deduction               | ✅     |
+| Year-specific SALT cap (OBBB)                | ✅     |
 | State taxes (50 states + DC)                 | ✅     |
 | 20+ federal tax credits                      | ✅     |
 | Retirement accounts & strategies             | ✅     |
-| AMT (Alternative Minimum Tax)                | ✅     |
+| W-4 withholding calculator                   | ✅     |
+
+All data points cite IRS Revenue Procedures, IRC sections, and relevant legislation (TCJA, SECURE 2.0, OBBB).
 
 ## 🧪 Testing
 
 ```bash
-npm test          # run all tests
-npm run test:watch  # watch mode
+npm test
 ```
 
-55 tests covering core calculation engine, data integrity, and edge cases.
+123 tests across 5 test suites:
+
+- Unit tests: core calculation engine, AMT, NIIT, QBI, CTC phase-out, edge cases
+- Data validation: cross-checks against IRS-published values for TY2024 and TY2025
+- Integration tests: end-to-end testing of all 25 MCP tools
+- State tax data integrity: 50 states + DC completeness
+
+## 🏗️ Build from Source
+
+```bash
+git clone https://github.com/dma9527/irs-taxpayer-mcp.git
+cd irs-taxpayer-mcp
+npm install
+npm run build
+npm start          # stdio mode
+npm run dev        # development mode (tsx)
+```
 
 ## 🤝 Contributing
 
@@ -168,6 +237,7 @@ Contributions welcome. Please ensure:
 - All tests pass (`npm test`)
 - Build succeeds (`npm run build`)
 - No `any` types in TypeScript
+- Data changes include IRS source citations
 
 ## 📄 License
 

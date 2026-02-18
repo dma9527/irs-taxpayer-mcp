@@ -52,7 +52,20 @@ export interface TaxYearData {
   amt: {
     exemption: Record<FilingStatus, number>;
     phaseoutStart: Record<FilingStatus, number>;
-    rate28Threshold: number; // income above this taxed at 28%, below at 26%
+    rate28Threshold: number;
+  };
+  saltCap: {
+    base: number;
+    mfs: number;
+    enhancedCap?: number;
+    enhancedAgiThreshold?: number;
+  };
+  /** OBBB new deductions (TY2025+) */
+  obbbDeductions?: {
+    seniorBonus: { amount: number; phaseoutSingle: number; phaseoutMFJ: number };
+    tipsDeduction: { max: number; agiLimitSingle: number; agiLimitMFJ: number };
+    overtimeDeduction: { maxSingle: number; maxMFJ: number; agiLimitSingle: number; agiLimitMFJ: number };
+    autoLoanInterest: { max: number; agiLimitSingle: number; agiLimitMFJ: number };
   };
 }
 
@@ -174,7 +187,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
       rate28Threshold: 232600,
     },
+    saltCap: {
+      base: 10000,
+      mfs: 5000,
+    },
   },
+  // Source: IRS Revenue Procedure 2024-40, One Big Beautiful Bill Act (2025)
   2025: {
     year: 2025,
     brackets: {
@@ -216,10 +234,10 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       ],
     },
     standardDeduction: {
-      single: 15000,
-      married_filing_jointly: 30000,
-      married_filing_separately: 15000,
-      head_of_household: 22500,
+      single: 15750,
+      married_filing_jointly: 31500,
+      married_filing_separately: 15750,
+      head_of_household: 23625,
     },
     additionalDeduction: {
       age65OrBlind: {
@@ -268,7 +286,7 @@ export const TAX_DATA: Record<number, TaxYearData> = {
     },
     estimatedTaxSafeHarborPercent: 90,
     childTaxCredit: {
-      amount: 2000,
+      amount: 2200, // OBBB: increased from $2,000 to $2,200 for TY2025+
       phaseoutStart: {
         single: 200000,
         married_filing_jointly: 400000,
@@ -292,6 +310,18 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
       rate28Threshold: 239100,
     },
+    saltCap: {
+      base: 10000,
+      mfs: 20000, // OBBB: MFS cap raised to $20K (was $5K)
+      enhancedCap: 40000,
+      enhancedAgiThreshold: 500000, // phases down above $500K MFJ / $250K MFS
+    },
+    obbbDeductions: {
+      seniorBonus: { amount: 6000, phaseoutSingle: 75000, phaseoutMFJ: 150000 },
+      tipsDeduction: { max: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      overtimeDeduction: { maxSingle: 12500, maxMFJ: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      autoLoanInterest: { max: 10000, agiLimitSingle: 100000, agiLimitMFJ: 200000 },
+    },
   },
 };
 
@@ -300,4 +330,31 @@ export const LATEST_TAX_YEAR = Math.max(...SUPPORTED_TAX_YEARS);
 
 export function getTaxYearData(year: number): TaxYearData | undefined {
   return TAX_DATA[year];
+}
+
+/**
+ * Get the effective SALT deduction cap for a given tax year, filing status, and AGI.
+ * TY2024: $10K ($5K MFS)
+ * TY2025+: $40K for AGI ≤ $500K (MFJ), phases down to $10K for higher AGI
+ */
+export function getSaltCap(
+  taxYear: number,
+  filingStatus: FilingStatus,
+  agi: number
+): number {
+  const data = TAX_DATA[taxYear];
+  if (!data) return 10000;
+
+  const cap = data.saltCap;
+  if (filingStatus === "married_filing_separately") return cap.mfs;
+
+  if (cap.enhancedCap && cap.enhancedAgiThreshold) {
+    if (agi <= cap.enhancedAgiThreshold) return cap.enhancedCap;
+    // Phase down: for every $1K over threshold, reduce by $1K (simplified)
+    const excess = agi - cap.enhancedAgiThreshold;
+    const reduction = Math.min(excess, cap.enhancedCap - cap.base);
+    return Math.max(cap.base, cap.enhancedCap - reduction);
+  }
+
+  return cap.base;
 }

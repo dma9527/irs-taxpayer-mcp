@@ -7,7 +7,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
-import type { FilingStatus } from "../data/tax-brackets.js";
+import { getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
 
 const FilingStatusEnum = z.enum([
   "single",
@@ -349,7 +349,8 @@ export function registerPlanningTools(server: McpServer): void {
     async (params) => {
       const stateIncome = params.stateIncomeTaxes ?? 0;
       const saltTotal = stateIncome + params.propertyTaxes;
-      const saltCapped = Math.min(saltTotal, params.filingStatus === "married_filing_separately" ? 5000 : 10000);
+      const saltCapAmount = getSaltCap(params.taxYear, params.filingStatus, params.grossIncome);
+      const saltCapped = Math.min(saltTotal, saltCapAmount);
       const otherItemized = params.otherItemized ?? 0;
       const totalItemized = params.mortgageInterest + saltCapped + otherItemized;
 
@@ -380,7 +381,7 @@ export function registerPlanningTools(server: McpServer): void {
         `| Mortgage Interest | $${fmt(params.mortgageInterest)} | On up to $750K debt |`,
         `| Property Taxes | $${fmt(params.propertyTaxes)} | Part of SALT |`,
         stateIncome > 0 ? `| State Income Taxes | $${fmt(stateIncome)} | Part of SALT |` : "",
-        `| SALT (capped) | $${fmt(saltCapped)} | $10K cap ($5K MFS) |`,
+        `| SALT (capped) | $${fmt(saltCapped)} | cap: $${fmt(saltCapAmount)} |`,
         saltTotal > saltCapped ? `| SALT lost to cap | $${fmt(saltTotal - saltCapped)} | Not deductible |` : "",
         otherItemized > 0 ? `| Other Itemized | $${fmt(otherItemized)} | |` : "",
         `| **Total Itemized** | **$${fmt(totalItemized)}** | |`,

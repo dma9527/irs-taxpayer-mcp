@@ -65,12 +65,12 @@ describe("IRS data cross-validation — TY2025", () => {
     expect(d.brackets.single[0].max).toBe(11925);
   });
 
-  it("single standard deduction is $15,000", () => {
-    expect(d.standardDeduction.single).toBe(15000);
+  it("single standard deduction is $15,750 (OBBB)", () => {
+    expect(d.standardDeduction.single).toBe(15750);
   });
 
-  it("MFJ standard deduction is $30,000", () => {
-    expect(d.standardDeduction.married_filing_jointly).toBe(30000);
+  it("MFJ standard deduction is $31,500 (OBBB)", () => {
+    expect(d.standardDeduction.married_filing_jointly).toBe(31500);
   });
 
   it("SS wage base is $176,100", () => {
@@ -83,6 +83,23 @@ describe("IRS data cross-validation — TY2025", () => {
 
   it("AMT exemption MFJ is $137,000", () => {
     expect(d.amt.exemption.married_filing_jointly).toBe(137000);
+  });
+
+  it("CTC is $2,200 per child (OBBB)", () => {
+    expect(d.childTaxCredit.amount).toBe(2200);
+  });
+
+  it("SALT enhanced cap is $40,000 (OBBB)", () => {
+    expect(d.saltCap.enhancedCap).toBe(40000);
+    expect(d.saltCap.enhancedAgiThreshold).toBe(500000);
+  });
+
+  it("has OBBB deductions (senior, tips, overtime, auto)", () => {
+    expect(d.obbbDeductions).toBeDefined();
+    expect(d.obbbDeductions!.seniorBonus.amount).toBe(6000);
+    expect(d.obbbDeductions!.tipsDeduction.max).toBe(25000);
+    expect(d.obbbDeductions!.overtimeDeduction.maxSingle).toBe(12500);
+    expect(d.obbbDeductions!.autoLoanInterest.max).toBe(10000);
   });
 });
 

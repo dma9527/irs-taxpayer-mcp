@@ -74,8 +74,9 @@ describe("tax brackets data integrity", () => {
         expect(data.medicare.additionalTaxRate).toBe(0.009);
       });
 
-      it("CTC is $2000 per child", () => {
-        expect(data.childTaxCredit.amount).toBe(2000);
+      it("CTC amount matches tax year", () => {
+        const expected = year === 2024 ? 2000 : 2200; // OBBB: $2,200 for TY2025+
+        expect(data.childTaxCredit.amount).toBe(expected);
       });
     });
   }

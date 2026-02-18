@@ -5,7 +5,7 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ITEMIZED_DEDUCTIONS, ABOVE_THE_LINE_DEDUCTIONS } from "../data/deductions.js";
-import { getTaxYearData } from "../data/tax-brackets.js";
+import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 
 export function registerDeductionTools(server: McpServer): void {
   server.tool(
@@ -80,10 +80,8 @@ export function registerDeductionTools(server: McpServer): void {
 
       // Itemized calculation
       const medical = Math.max(0, (params.medicalExpenses ?? 0) - params.agi * 0.075);
-      const salt = Math.min(
-        params.stateLocalTaxes ?? 0,
-        params.filingStatus === "married_filing_separately" ? 5000 : 10000
-      );
+      const saltCapAmount = getSaltCap(params.taxYear, params.filingStatus, params.agi);
+      const salt = Math.min(params.stateLocalTaxes ?? 0, saltCapAmount);
       const mortgage = params.mortgageInterest ?? 0;
       const charity = params.charitableDonations ?? 0;
       const other = params.otherItemized ?? 0;

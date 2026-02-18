@@ -67,8 +67,8 @@ describe("calculateTax", () => {
         filingStatus: "single",
         grossIncome: 100000,
       });
-      expect(result.deductionAmount).toBe(15000);
-      expect(result.taxableIncome).toBe(85000);
+      expect(result.deductionAmount).toBe(15750);
+      expect(result.taxableIncome).toBe(84250);
     });
   });
 

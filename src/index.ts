@@ -24,6 +24,7 @@ import { registerIrsLookupTools } from "./tools/irs-lookup-tools.js";
 import { registerCreditTools } from "./tools/credit-tools.js";
 import { registerStateTaxTools } from "./tools/state-tax-tools.js";
 import { registerPlanningTools } from "./tools/planning-tools.js";
+import { registerObbbTools } from "./tools/obbb-tools.js";
 import http from "node:http";
 
 const server = new McpServer({
@@ -41,6 +42,7 @@ registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, for
 registerCreditTools(server);           // 5 tools: list credits, eligibility, retirement accounts, strategies, EITC
 registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
 registerPlanningTools(server);         // 5 tools: planning tips, year compare, SE tax, mortgage, education
+registerObbbTools(server);             // 2 tools: OBBB deductions calculator, what changed between years
 
 const args = process.argv.slice(2);
 const useSSE = args.includes("--sse");
@@ -58,7 +60,7 @@ async function main(): Promise<void> {
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 25 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 27 tools loaded");
 }
 
 async function startSSE(ssePort: number): Promise<void> {

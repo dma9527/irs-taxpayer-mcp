@@ -54,6 +54,18 @@ export function registerStateTaxTools(server: McpServer): void {
 
       if (state.localTaxes) {
         lines.push("", "⚠️ **Local taxes**: This state has additional city/county income taxes");
+        if (state.localTaxData && state.localTaxData.length > 0) {
+          lines.push(
+            "",
+            "| Locality | Resident Rate | Non-Resident Rate | Notes |",
+            "|----------|-------------|-------------------|-------|",
+            ...state.localTaxData.map((lt) => {
+              const resRate = `${(lt.rate * 100).toFixed(2)}%`;
+              const nonResRate = lt.nonResidentRate ? `${(lt.nonResidentRate * 100).toFixed(2)}%` : "—";
+              return `| ${lt.name} | ${resRate} | ${nonResRate} | ${lt.notes ?? ""} |`;
+            })
+          );
+        }
       }
 
       if (state.notes) {
@@ -61,7 +73,7 @@ export function registerStateTaxTools(server: McpServer): void {
       }
 
       if (state.saltDeductionOnFederal) {
-        lines.push("", "💡 State income taxes paid are deductible on federal return (subject to $10,000 SALT cap)");
+        lines.push("", "💡 State income taxes paid are deductible on federal return (subject to SALT cap — $10K for TY2024, $40K for TY2025)");
       }
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };

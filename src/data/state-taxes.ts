@@ -17,6 +17,13 @@ export interface StateBracket {
   rate: number;
 }
 
+export interface LocalTaxInfo {
+  name: string;
+  rate: number;
+  nonResidentRate?: number;
+  notes?: string;
+}
+
 export interface StateInfo {
   code: string;
   name: string;
@@ -28,6 +35,7 @@ export interface StateInfo {
   notes?: string;
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
+  localTaxData?: LocalTaxInfo[];
 }
 
 export const STATE_TAX_DATA: Record<string, StateInfo> = {
@@ -48,16 +56,33 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
   GA: { code: "GA", name: "Georgia", taxType: "flat", topRate: 0.0539, saltDeductionOnFederal: true, standardDeduction: { single: 12000, married: 24000 }, notes: "Transitioning to flat tax, rate decreasing annually" },
   ID: { code: "ID", name: "Idaho", taxType: "flat", topRate: 0.058, saltDeductionOnFederal: true },
   IL: { code: "IL", name: "Illinois", taxType: "flat", topRate: 0.0495, saltDeductionOnFederal: true, personalExemption: { single: 2625, married: 5250 } },
-  IN: { code: "IN", name: "Indiana", taxType: "flat", topRate: 0.0305, saltDeductionOnFederal: true, localTaxes: true, notes: "Counties impose additional income tax (0.5%-2.9%)" },
+  IN: {
+    code: "IN", name: "Indiana", taxType: "flat", topRate: 0.03, saltDeductionOnFederal: true, localTaxes: true, notes: "Counties impose additional income tax (0.25%-3.38%). State rate 3.0% for TY2025", localTaxData: [
+      { name: "Marion County (Indianapolis)", rate: 0.0202 },
+      { name: "Allen County (Fort Wayne)", rate: 0.0159 },
+      { name: "Lake County", rate: 0.015 },
+    ]
+  },
   IA: { code: "IA", name: "Iowa", taxType: "flat", topRate: 0.038, saltDeductionOnFederal: true, notes: "Transitioned to flat tax in 2025" },
   KS: { code: "KS", name: "Kansas", taxType: "flat", topRate: 0.057, saltDeductionOnFederal: true, standardDeduction: { single: 3500, married: 8000 } },
   KY: { code: "KY", name: "Kentucky", taxType: "flat", topRate: 0.04, saltDeductionOnFederal: true, standardDeduction: { single: 3160, married: 6320 } },
   MA: { code: "MA", name: "Massachusetts", taxType: "flat", topRate: 0.05, saltDeductionOnFederal: true, notes: "Additional 4% surtax on income over $1M (total 9%)" },
-  MI: { code: "MI", name: "Michigan", taxType: "flat", topRate: 0.0425, saltDeductionOnFederal: true, personalExemption: { single: 5600, married: 11200 }, localTaxes: true },
+  MI: {
+    code: "MI", name: "Michigan", taxType: "flat", topRate: 0.0425, saltDeductionOnFederal: true, personalExemption: { single: 5600, married: 11200 }, localTaxes: true, localTaxData: [
+      { name: "Detroit", rate: 0.024, nonResidentRate: 0.012 },
+      { name: "Grand Rapids", rate: 0.015, nonResidentRate: 0.0075 },
+      { name: "Other MI cities (24 total)", rate: 0.01, nonResidentRate: 0.005, notes: "Standard rate for most MI cities" },
+    ]
+  },
   MS: { code: "MS", name: "Mississippi", taxType: "flat", topRate: 0.047, saltDeductionOnFederal: true, notes: "Flat tax as of 2026, currently graduated" },
   NC: { code: "NC", name: "North Carolina", taxType: "flat", topRate: 0.045, saltDeductionOnFederal: true, standardDeduction: { single: 12750, married: 25500 } },
   ND: { code: "ND", name: "North Dakota", taxType: "flat", topRate: 0.0195, saltDeductionOnFederal: true },
-  PA: { code: "PA", name: "Pennsylvania", taxType: "flat", topRate: 0.0307, saltDeductionOnFederal: true, localTaxes: true, notes: "Philadelphia and other cities impose local income tax" },
+  PA: {
+    code: "PA", name: "Pennsylvania", taxType: "flat", topRate: 0.0307, saltDeductionOnFederal: true, localTaxes: true, notes: "Philadelphia and other cities impose local income tax", localTaxData: [
+      { name: "Philadelphia", rate: 0.0374, nonResidentRate: 0.0343, notes: "Rates effective Jul 1, 2025. Wage tax on all earned income" },
+      { name: "Pittsburgh", rate: 0.03, notes: "Residents: 3.0%" },
+    ]
+  },
   UT: { code: "UT", name: "Utah", taxType: "flat", topRate: 0.0465, saltDeductionOnFederal: true },
 
   // === GRADUATED TAX STATES (selected major ones with brackets) ===
@@ -99,7 +124,16 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
   },
   LA: { code: "LA", name: "Louisiana", taxType: "graduated", topRate: 0.045, saltDeductionOnFederal: true },
   ME: { code: "ME", name: "Maine", taxType: "graduated", topRate: 0.0715, saltDeductionOnFederal: true },
-  MD: { code: "MD", name: "Maryland", taxType: "graduated", topRate: 0.0575, saltDeductionOnFederal: true, localTaxes: true, notes: "Counties impose additional 2.25%-3.2% income tax" },
+  MD: {
+    code: "MD", name: "Maryland", taxType: "graduated", topRate: 0.0575, saltDeductionOnFederal: true, localTaxes: true, notes: "All counties impose additional 2.25%-3.2% income tax", localTaxData: [
+      { name: "Montgomery County", rate: 0.032 },
+      { name: "Howard County", rate: 0.032 },
+      { name: "Baltimore City", rate: 0.032 },
+      { name: "Prince George's County", rate: 0.032 },
+      { name: "Anne Arundel County", rate: 0.0281 },
+      { name: "Other MD counties", rate: 0.0275, notes: "Range: 2.25%-3.2%" },
+    ]
+  },
   MN: {
     code: "MN", name: "Minnesota", taxType: "graduated", topRate: 0.0985, saltDeductionOnFederal: true, brackets: [
       { min: 0, max: 30070, rate: 0.0535 }, { min: 30070, max: 98760, rate: 0.068 },
@@ -128,9 +162,19 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
       { min: 0, max: 8500, rate: 0.04 }, { min: 8500, max: 11700, rate: 0.045 }, { min: 11700, max: 13900, rate: 0.0525 },
       { min: 13900, max: 80650, rate: 0.055 }, { min: 80650, max: 215400, rate: 0.06 }, { min: 215400, max: 1077550, rate: 0.0685 },
       { min: 1077550, max: 5000000, rate: 0.0965 }, { min: 5000000, max: 25000000, rate: 0.103 }, { min: 25000000, max: null, rate: 0.109 },
-    ], standardDeduction: { single: 8000, married: 16050 }, localTaxes: true, notes: "NYC imposes additional 3.078%-3.876% income tax"
+    ], standardDeduction: { single: 8000, married: 16050 }, localTaxes: true, notes: "NYC imposes additional 3.078%-3.876% income tax", localTaxData: [
+      { name: "New York City", rate: 0.03876, notes: "Progressive: 3.078% (<$12K), 3.762% ($12K-$25K), 3.819% ($25K-$50K), 3.876% (>$50K). Residents only" },
+      { name: "Yonkers", rate: 0.01959, notes: "16.75% surcharge on NY state tax. Non-residents: 0.5% of wages" },
+    ]
   },
-  OH: { code: "OH", name: "Ohio", taxType: "graduated", topRate: 0.035, saltDeductionOnFederal: true, localTaxes: true },
+  OH: {
+    code: "OH", name: "Ohio", taxType: "graduated", topRate: 0.035, saltDeductionOnFederal: true, localTaxes: true, localTaxData: [
+      { name: "Columbus", rate: 0.025 },
+      { name: "Cleveland", rate: 0.025 },
+      { name: "Cincinnati", rate: 0.018 },
+      { name: "Other OH cities (600+)", rate: 0.02, notes: "Range: 0.5%-3.0%. Most cities 1.5%-2.5%" },
+    ]
+  },
   OK: { code: "OK", name: "Oklahoma", taxType: "graduated", topRate: 0.0475, saltDeductionOnFederal: true },
   OR: {
     code: "OR", name: "Oregon", taxType: "graduated", topRate: 0.099, saltDeductionOnFederal: true, brackets: [

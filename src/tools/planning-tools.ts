@@ -552,4 +552,114 @@ export function registerPlanningTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
     }
   );
+
+  // --- Tool 6: MFJ vs MFS comparison ---
+  server.tool(
+    "compare_mfj_vs_mfs",
+    "Compare Married Filing Jointly (MFJ) vs Married Filing Separately (MFS). " +
+    "Shows tax difference and lists all MFS restrictions that may affect your situation.",
+    {
+      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      spouse1Income: z.number().min(0).describe("Spouse 1 gross income"),
+      spouse2Income: z.number().min(0).describe("Spouse 2 gross income"),
+      dependents: z.number().int().min(0).optional().describe("Number of qualifying children"),
+      itemizedDeductions: z.number().min(0).optional().describe("Total itemized deductions (combined for MFJ, split for MFS)"),
+      studentLoanInterest: z.boolean().optional().describe("Either spouse paying student loan interest"),
+      hasEducationCredits: z.boolean().optional().describe("Either spouse claiming AOTC or LLC"),
+      hasEITC: z.boolean().optional().describe("Either spouse would qualify for EITC"),
+      hasIRAContributions: z.boolean().optional().describe("Either spouse contributing to IRA"),
+    },
+    async (params) => {
+      const totalIncome = params.spouse1Income + params.spouse2Income;
+
+      // MFJ calculation
+      const mfj = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: "married_filing_jointly",
+        grossIncome: totalIncome,
+        dependents: params.dependents,
+        itemizedDeductions: params.itemizedDeductions,
+      });
+
+      // MFS calculation — each spouse files separately
+      const mfs1 = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: "married_filing_separately",
+        grossIncome: params.spouse1Income,
+        itemizedDeductions: params.itemizedDeductions ? Math.round(params.itemizedDeductions / 2) : undefined,
+      });
+      const mfs2 = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: "married_filing_separately",
+        grossIncome: params.spouse2Income,
+      });
+      const mfsTotalTax = mfs1.totalFederalTax + mfs2.totalFederalTax;
+
+      const difference = mfsTotalTax - mfj.totalFederalTax;
+      const recommendation = difference > 0 ? "MFJ" : difference < 0 ? "MFS" : "Either";
+
+      const lines = [
+        `## MFJ vs MFS Comparison — TY${params.taxYear}`,
+        "",
+        `| | MFJ (Joint) | MFS (Separate) |`,
+        `|---|---|---|`,
+        `| Combined Income | $${fmt(totalIncome)} | $${fmt(params.spouse1Income)} + $${fmt(params.spouse2Income)} |`,
+        `| Standard Deduction | $${fmt(mfj.deductionAmount)} | $${fmt(mfs1.deductionAmount)} each |`,
+        `| Combined Tax | **$${fmt(mfj.totalFederalTax)}** | **$${fmt(mfsTotalTax)}** |`,
+        `| Effective Rate | ${(mfj.effectiveRate * 100).toFixed(2)}% | ${(mfsTotalTax / totalIncome * 100).toFixed(2)}% |`,
+        "",
+      ];
+
+      if (difference > 0) {
+        lines.push(`💡 **MFJ saves $${fmt(difference)}** over MFS.`);
+      } else if (difference < 0) {
+        lines.push(`💡 **MFS saves $${fmt(Math.abs(difference))}** over MFJ. This is unusual — review the restrictions below carefully.`);
+      } else {
+        lines.push(`💡 **No difference** between MFJ and MFS for this income.`);
+      }
+
+      // MFS restrictions
+      const restrictions: string[] = [];
+
+      if (params.hasEITC) {
+        restrictions.push("❌ **EITC**: Cannot claim Earned Income Tax Credit with MFS");
+      }
+      if (params.hasEducationCredits) {
+        restrictions.push("❌ **Education Credits**: Cannot claim AOTC or Lifetime Learning Credit with MFS");
+      }
+      if (params.studentLoanInterest) {
+        restrictions.push("❌ **Student Loan Interest**: Cannot deduct student loan interest with MFS");
+      }
+      if (params.dependents && params.dependents > 0) {
+        restrictions.push("⚠️ **CTC Phase-out**: Starts at $200K (vs $400K for MFJ) — reduced by half");
+      }
+      if (params.hasIRAContributions) {
+        restrictions.push("⚠️ **IRA Deduction**: Phase-out range is $0-$10K if covered by employer plan (vs $123K-$143K for MFJ TY2024)");
+      }
+
+      restrictions.push(
+        "⚠️ **SALT Cap**: Reduced to $5K TY2024 / $20K TY2025 (vs $10K/$40K for MFJ)",
+        "⚠️ **Capital Gains 0% Bracket**: Halved ($47,025 single vs $94,050 MFJ for TY2024)",
+        "⚠️ **Social Security**: Up to 85% of benefits may be taxable (lower threshold than MFJ)",
+        "⚠️ **Itemizing**: If one spouse itemizes, the other MUST also itemize (cannot mix)",
+      );
+
+      lines.push(
+        "",
+        `### MFS Restrictions`,
+        "",
+        ...restrictions,
+        "",
+        `### When MFS Might Be Better`,
+        "- One spouse has large medical expenses (7.5% AGI floor is lower with lower individual AGI)",
+        "- One spouse has significant student loan debt on income-driven repayment (lower AGI = lower payments)",
+        "- Liability protection (each spouse responsible only for their own return)",
+        "- One spouse has unpaid taxes or other collection issues",
+        "",
+        `> ⚠️ This is a simplified comparison. Consult a tax professional for complex situations.`,
+      );
+
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
 }

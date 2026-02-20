@@ -41,7 +41,7 @@ registerDeductionTools(server);        // 2 tools: list deductions, standard vs 
 registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, form info
 registerCreditTools(server);           // 5 tools: list credits, eligibility, retirement accounts, strategies, EITC
 registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
-registerPlanningTools(server);         // 5 tools: planning tips, year compare, SE tax, mortgage, education
+registerPlanningTools(server);         // 6 tools: planning tips, year compare, SE tax, mortgage, education, MFJ vs MFS
 registerObbbTools(server);             // 2 tools: OBBB deductions calculator, what changed between years
 
 const args = process.argv.slice(2);
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 27 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 28 tools loaded");
 }
 
 async function startSSE(ssePort: number): Promise<void> {

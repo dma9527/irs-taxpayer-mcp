@@ -108,7 +108,7 @@ npx irs-taxpayer-mcp --sse --port 3000
 
 </div>
 
-## 🛠️ Tools (25)
+## 🛠️ Tools (32)
 
 ### Federal Tax Calculations
 
@@ -169,6 +169,23 @@ npx irs-taxpayer-mcp --sse --port 3000
 | `get_tax_deadlines`   | Key IRS dates and deadlines by tax year                            |
 | `check_refund_status` | How to check your refund (guidance only — no IRS account access)   |
 | `get_irs_form_info`   | Info about 14 common IRS forms (1040, W-2, 1099s, Schedules, etc.) |
+
+### OBBB Act (2025) Tools
+
+| Tool                             | What it does                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `calculate_obbb_deductions`      | Calculate all 4 new OBBB deductions: tips, overtime, senior bonus, auto loan interest      |
+| `what_changed_between_tax_years` | Full diff between TY2024 and TY2025 — brackets, deductions, credits, SALT, OBBB provisions |
+
+### Full Reports & Analysis
+
+| Tool                            | What it does                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------- |
+| `generate_full_tax_report`      | TurboTax-style full report: income → deductions → federal → FICA → state → take-home → refund |
+| `process_1099_income`           | Process multiple 1099 forms (NEC, INT, DIV, B, MISC) with tax impact by category              |
+| `get_personalized_tax_calendar` | Personalized deadlines based on your situation (self-employed, extension, investments)        |
+| `analyze_paycheck`              | Verify paycheck withholding accuracy, project annual tax, suggest W-4 adjustments             |
+| `compare_mfj_vs_mfs`            | MFJ vs MFS comparison with tax diff and all MFS restriction warnings                          |
 
 ## 📊 Tax Year Coverage
 

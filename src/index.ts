@@ -44,7 +44,7 @@ registerCreditTools(server);           // 5 tools: list credits, eligibility, re
 registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
 registerPlanningTools(server);         // 6 tools: planning tips, year compare, SE tax, mortgage, education, MFJ vs MFS
 registerObbbTools(server);             // 2 tools: OBBB deductions calculator, what changed between years
-registerComprehensiveTools(server);    // 4 tools: full report, 1099 processor, tax calendar, paycheck analyzer
+registerComprehensiveTools(server);    // 5 tools: full report, 1099 processor, tax calendar, paycheck analyzer, scenario simulator
 
 const args = process.argv.slice(2);
 const useSSE = args.includes("--sse");
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 32 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 33 tools loaded");
 }
 
 async function startSSE(ssePort: number): Promise<void> {

@@ -538,4 +538,162 @@ export function registerComprehensiveTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
     }
   );
+
+  // --- Tool 5: Tax Scenario Simulator ---
+  server.tool(
+    "simulate_tax_scenario",
+    "What-if tax scenario simulator. Compare your current situation against a hypothetical change: " +
+    "income change, relocation, Roth conversion, filing status change, etc. " +
+    "Shows the exact tax impact of the change.",
+    {
+      taxYear: z.number().describe("Tax year"),
+      filingStatus: FilingStatusEnum,
+      // Current scenario
+      currentIncome: z.number().min(0).describe("Current gross income"),
+      currentState: z.string().length(2).optional().describe("Current state code"),
+      currentSelfEmployment: z.number().min(0).optional(),
+      currentCapitalGains: z.number().optional(),
+      currentItemizedDeductions: z.number().min(0).optional(),
+      currentDependents: z.number().int().min(0).optional(),
+      // What-if changes (any combination)
+      whatIfIncomeChange: z.number().optional().describe("Income change amount (positive = more income, negative = less)"),
+      whatIfNewState: z.string().length(2).optional().describe("New state if relocating"),
+      whatIfFilingStatus: FilingStatusEnum.optional().describe("New filing status"),
+      whatIfRothConversion: z.number().min(0).optional().describe("Amount to convert from Traditional to Roth IRA"),
+      whatIfAdditional401k: z.number().min(0).optional().describe("Additional 401k contribution"),
+      whatIfNewDependents: z.number().int().min(0).optional().describe("New number of dependents"),
+      whatIfItemizedChange: z.number().optional().describe("Change in itemized deductions"),
+    },
+    async (params) => {
+      // --- Current scenario ---
+      const currentFederal = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: params.filingStatus,
+        grossIncome: params.currentIncome,
+        selfEmploymentIncome: params.currentSelfEmployment,
+        capitalGains: params.currentCapitalGains,
+        capitalGainsLongTerm: true,
+        itemizedDeductions: params.currentItemizedDeductions,
+        dependents: params.currentDependents,
+      });
+
+      let currentStateTax = 0;
+      let currentStateName = "N/A";
+      if (params.currentState) {
+        const sr = calculateStateTax({
+          stateCode: params.currentState,
+          taxableIncome: currentFederal.adjustedGrossIncome,
+          filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
+        });
+        if (sr) { currentStateTax = sr.tax; currentStateName = sr.stateName; }
+      }
+      const currentTotal = currentFederal.totalFederalTax + currentStateTax;
+
+      // --- What-if scenario ---
+      const newFilingStatus = params.whatIfFilingStatus ?? params.filingStatus;
+      const newIncome = params.currentIncome
+        + (params.whatIfIncomeChange ?? 0)
+        + (params.whatIfRothConversion ?? 0);
+      const newAboveTheLine = params.whatIfAdditional401k ?? 0;
+      const newItemized = params.currentItemizedDeductions
+        ? params.currentItemizedDeductions + (params.whatIfItemizedChange ?? 0)
+        : params.whatIfItemizedChange && params.whatIfItemizedChange > 0
+          ? params.whatIfItemizedChange
+          : undefined;
+
+      const whatIfFederal = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: newFilingStatus,
+        grossIncome: newIncome,
+        selfEmploymentIncome: params.currentSelfEmployment,
+        capitalGains: params.currentCapitalGains,
+        capitalGainsLongTerm: true,
+        aboveTheLineDeductions: newAboveTheLine > 0 ? newAboveTheLine : undefined,
+        itemizedDeductions: newItemized && newItemized > 0 ? newItemized : undefined,
+        dependents: params.whatIfNewDependents ?? params.currentDependents,
+      });
+
+      const whatIfStateCode = params.whatIfNewState ?? params.currentState;
+      let whatIfStateTax = 0;
+      let whatIfStateName = "N/A";
+      if (whatIfStateCode) {
+        const sr = calculateStateTax({
+          stateCode: whatIfStateCode,
+          taxableIncome: whatIfFederal.adjustedGrossIncome,
+          filingStatus: newFilingStatus === "married_filing_jointly" ? "married" : "single",
+        });
+        if (sr) { whatIfStateTax = sr.tax; whatIfStateName = sr.stateName; }
+      }
+      const whatIfTotal = whatIfFederal.totalFederalTax + whatIfStateTax;
+
+      const totalDiff = whatIfTotal - currentTotal;
+      const federalDiff = whatIfFederal.totalFederalTax - currentFederal.totalFederalTax;
+      const stateDiff = whatIfStateTax - currentStateTax;
+
+      // Describe the changes
+      const changes: string[] = [];
+      if (params.whatIfIncomeChange) changes.push(`Income ${params.whatIfIncomeChange > 0 ? "+" : ""}$${fmt(params.whatIfIncomeChange)}`);
+      if (params.whatIfNewState) changes.push(`Relocate ${currentStateName} → ${whatIfStateName}`);
+      if (params.whatIfFilingStatus) changes.push(`Filing: ${params.filingStatus.replace(/_/g, " ")} → ${newFilingStatus.replace(/_/g, " ")}`);
+      if (params.whatIfRothConversion) changes.push(`Roth conversion: $${fmt(params.whatIfRothConversion)}`);
+      if (params.whatIfAdditional401k) changes.push(`Additional 401k: $${fmt(params.whatIfAdditional401k)}`);
+      if (params.whatIfNewDependents !== undefined) changes.push(`Dependents: ${params.currentDependents ?? 0} → ${params.whatIfNewDependents}`);
+      if (params.whatIfItemizedChange) changes.push(`Itemized deductions ${params.whatIfItemizedChange > 0 ? "+" : ""}$${fmt(params.whatIfItemizedChange)}`);
+
+      const lines = [
+        `## 🔮 Tax Scenario Simulator — TY${params.taxYear}`,
+        "",
+        `### Changes Modeled`,
+        ...changes.map((c) => `- ${c}`),
+        "",
+        `### Comparison`,
+        `| | Current | What-If | Difference |`,
+        `|---|---|---|---|`,
+        `| Gross Income | $${fmt(params.currentIncome)} | $${fmt(newIncome)} | ${newIncome - params.currentIncome >= 0 ? "+" : ""}$${fmt(newIncome - params.currentIncome)} |`,
+        `| Filing Status | ${params.filingStatus.replace(/_/g, " ")} | ${newFilingStatus.replace(/_/g, " ")} | ${params.whatIfFilingStatus ? "changed" : "—"} |`,
+        `| Federal Tax | $${fmt(currentFederal.totalFederalTax)} | $${fmt(whatIfFederal.totalFederalTax)} | ${federalDiff >= 0 ? "+" : ""}$${fmt(federalDiff)} |`,
+        `| Effective Federal Rate | ${(currentFederal.effectiveRate * 100).toFixed(2)}% | ${(whatIfFederal.effectiveRate * 100).toFixed(2)}% | ${((whatIfFederal.effectiveRate - currentFederal.effectiveRate) * 100).toFixed(2)}pp |`,
+        `| Marginal Rate | ${(currentFederal.marginalRate * 100).toFixed(0)}% | ${(whatIfFederal.marginalRate * 100).toFixed(0)}% | — |`,
+        params.currentState || params.whatIfNewState ? `| State Tax | $${fmt(currentStateTax)} (${currentStateName}) | $${fmt(whatIfStateTax)} (${whatIfStateName}) | ${stateDiff >= 0 ? "+" : ""}$${fmt(stateDiff)} |` : "",
+        `| **Total Tax** | **$${fmt(currentTotal)}** | **$${fmt(whatIfTotal)}** | **${totalDiff >= 0 ? "+" : ""}$${fmt(totalDiff)}** |`,
+        "",
+      ];
+
+      if (totalDiff > 0) {
+        lines.push(`📈 This change **increases** your total tax by **$${fmt(totalDiff)}**.`);
+      } else if (totalDiff < 0) {
+        lines.push(`📉 This change **saves** you **$${fmt(Math.abs(totalDiff))}** in total tax.`);
+      } else {
+        lines.push(`➡️ This change has **no impact** on your total tax.`);
+      }
+
+      // Roth conversion specific insight
+      if (params.whatIfRothConversion) {
+        const conversionTaxCost = federalDiff;
+        lines.push(
+          "",
+          `### Roth Conversion Analysis`,
+          `- Conversion amount: $${fmt(params.whatIfRothConversion)}`,
+          `- Tax cost of conversion: $${fmt(conversionTaxCost)}`,
+          `- Effective conversion tax rate: ${(conversionTaxCost / params.whatIfRothConversion * 100).toFixed(2)}%`,
+          `- Break-even: If your future tax rate exceeds ${(conversionTaxCost / params.whatIfRothConversion * 100).toFixed(0)}%, the conversion pays off`,
+        );
+      }
+
+      // Relocation specific insight
+      if (params.whatIfNewState && params.currentState) {
+        lines.push(
+          "",
+          `### Relocation Analysis`,
+          `- State tax savings: $${fmt(Math.abs(stateDiff))}/year`,
+          `- Monthly savings: $${fmt(Math.round(Math.abs(stateDiff) / 12))}/month`,
+          stateDiff < 0 ? `- Over 5 years: ~$${fmt(Math.abs(stateDiff) * 5)} saved` : "",
+        );
+      }
+
+      lines.push("", `> ⚠️ Simplified estimate. Does not account for all deductions, credits, or state-specific rules.`);
+
+      return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
+    }
+  );
 }

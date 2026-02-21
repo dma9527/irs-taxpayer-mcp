@@ -696,4 +696,172 @@ export function registerComprehensiveTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
     }
   );
+
+  // --- Tool 6: Audit Risk Assessment ---
+  server.tool(
+    "assess_audit_risk",
+    "Evaluate your IRS audit risk based on your tax return profile. " +
+    "Identifies red flags, scores your risk level, and provides tips to reduce audit exposure.",
+    {
+      filingStatus: FilingStatusEnum,
+      grossIncome: z.number().min(0).describe("Total gross income"),
+      selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment income"),
+      cashBusiness: z.boolean().optional().describe("Is your business cash-intensive (restaurant, salon, etc.)?"),
+      homeOfficeDeduction: z.boolean().optional().describe("Claiming home office deduction?"),
+      charitableDonations: z.number().min(0).optional().describe("Total charitable donations"),
+      charitableNonCash: z.number().min(0).optional().describe("Non-cash charitable donations (clothing, property)"),
+      businessMeals: z.number().min(0).optional().describe("Business meal deductions"),
+      vehicleDeduction: z.number().min(0).optional().describe("Vehicle/mileage deduction"),
+      rentalLosses: z.number().min(0).optional().describe("Rental property losses claimed"),
+      cryptoTransactions: z.boolean().optional().describe("Had cryptocurrency transactions?"),
+      foreignAccounts: z.boolean().optional().describe("Have foreign bank accounts or assets?"),
+      largeRefund: z.boolean().optional().describe("Expecting a very large refund?"),
+      eitcClaimed: z.boolean().optional().describe("Claiming EITC?"),
+      roundNumbers: z.boolean().optional().describe("Are most deductions round numbers ($5,000, $10,000)?"),
+    },
+    async (params) => {
+      const flags: Array<{ item: string; severity: "🔴 High" | "🟡 Medium" | "🟢 Low"; detail: string }> = [];
+      let riskScore = 0;
+
+      // High income
+      if (params.grossIncome > 500000) {
+        flags.push({ item: "High Income", severity: "🟡 Medium", detail: "IRS audits ~1.1% of returns with income $500K-$1M, vs 0.4% overall" });
+        riskScore += 15;
+      }
+      if (params.grossIncome > 1000000) {
+        flags.push({ item: "Very High Income ($1M+)", severity: "🔴 High", detail: "IRS audits ~2-4% of returns with income over $1M" });
+        riskScore += 25;
+      }
+
+      // Self-employment
+      if (params.selfEmploymentIncome && params.selfEmploymentIncome > 0) {
+        riskScore += 10;
+        flags.push({ item: "Self-Employment Income", severity: "🟡 Medium", detail: "Schedule C filers are audited at higher rates. Keep detailed records" });
+
+        if (params.cashBusiness) {
+          riskScore += 20;
+          flags.push({ item: "Cash-Intensive Business", severity: "🔴 High", detail: "Cash businesses are top audit targets. IRS uses statistical models to detect underreporting" });
+        }
+
+        // SE losses
+        if (params.selfEmploymentIncome < 0) {
+          riskScore += 15;
+          flags.push({ item: "Business Losses", severity: "🟡 Medium", detail: "Repeated business losses may trigger hobby loss rules (IRC §183)" });
+        }
+      }
+
+      // Home office
+      if (params.homeOfficeDeduction) {
+        riskScore += 8;
+        flags.push({ item: "Home Office Deduction", severity: "🟢 Low", detail: "Less risky than reputation suggests, but must meet exclusive-use test. Consider simplified method ($5/sq ft)" });
+      }
+
+      // Charitable donations
+      const charityRatio = params.grossIncome > 0 ? (params.charitableDonations ?? 0) / params.grossIncome : 0;
+      if (charityRatio > 0.10) {
+        riskScore += 10;
+        flags.push({ item: "High Charitable Donations", severity: "🟡 Medium", detail: `Donations are ${(charityRatio * 100).toFixed(1)}% of income (IRS average is ~3-5%). Keep receipts for all donations over $250` });
+      }
+      if ((params.charitableNonCash ?? 0) > 5000) {
+        riskScore += 12;
+        flags.push({ item: "Large Non-Cash Donations", severity: "🟡 Medium", detail: "Non-cash donations over $5,000 require qualified appraisal (Form 8283). Over $500 requires Form 8283 Section A" });
+      }
+
+      // Vehicle
+      if ((params.vehicleDeduction ?? 0) > 10000) {
+        riskScore += 8;
+        flags.push({ item: "Large Vehicle Deduction", severity: "🟢 Low", detail: "Keep a mileage log. IRS may question 100% business use. Mixed-use vehicles should prorate" });
+      }
+
+      // Rental losses
+      if ((params.rentalLosses ?? 0) > 25000) {
+        riskScore += 10;
+        flags.push({ item: "Large Rental Losses", severity: "🟡 Medium", detail: "Passive loss rules limit deduction to $25K if AGI < $100K. Real estate professional exception requires 750+ hours" });
+      }
+
+      // Crypto
+      if (params.cryptoTransactions) {
+        riskScore += 8;
+        flags.push({ item: "Cryptocurrency", severity: "🟡 Medium", detail: "IRS requires reporting all crypto transactions. Form 1040 asks directly about virtual currency. Exchanges report via 1099-DA" });
+      }
+
+      // Foreign accounts
+      if (params.foreignAccounts) {
+        riskScore += 15;
+        flags.push({ item: "Foreign Accounts/Assets", severity: "🔴 High", detail: "Must file FBAR (FinCEN 114) if aggregate balance exceeds $10K. FATCA Form 8938 if assets exceed $50K. Penalties for non-filing are severe" });
+      }
+
+      // EITC
+      if (params.eitcClaimed) {
+        riskScore += 10;
+        flags.push({ item: "EITC Claimed", severity: "🟡 Medium", detail: "EITC returns are audited at higher rates (~1.1%). IRS focuses on qualifying child and income verification" });
+      }
+
+      // Round numbers
+      if (params.roundNumbers) {
+        riskScore += 5;
+        flags.push({ item: "Round Number Deductions", severity: "🟢 Low", detail: "Exact round numbers ($5,000, $10,000) look estimated rather than actual. Use precise amounts from receipts" });
+      }
+
+      // Large refund
+      if (params.largeRefund) {
+        riskScore += 5;
+        flags.push({ item: "Large Refund", severity: "🟢 Low", detail: "Very large refunds may trigger additional review. Consider adjusting W-4 withholding" });
+      }
+
+      // Risk level
+      let riskLevel: string;
+      let riskEmoji: string;
+      if (riskScore >= 50) { riskLevel = "HIGH"; riskEmoji = "🔴"; }
+      else if (riskScore >= 25) { riskLevel = "MODERATE"; riskEmoji = "🟡"; }
+      else { riskLevel = "LOW"; riskEmoji = "🟢"; }
+
+      const lines = [
+        `## 🔍 Audit Risk Assessment`,
+        "",
+        `**Risk Level**: ${riskEmoji} **${riskLevel}** (score: ${riskScore}/100)`,
+        `**Income**: $${fmt(params.grossIncome)} | **Filing**: ${params.filingStatus.replace(/_/g, " ")}`,
+        "",
+      ];
+
+      if (flags.length > 0) {
+        lines.push(
+          `### Red Flags Identified`,
+          "",
+          `| Severity | Item | Detail |`,
+          `|----------|------|--------|`,
+          ...flags.map((f) => `| ${f.severity} | ${f.item} | ${f.detail} |`),
+          "",
+        );
+      } else {
+        lines.push("✅ No significant audit red flags identified.", "");
+      }
+
+      lines.push(
+        `### Tips to Reduce Audit Risk`,
+        "",
+        "- Keep receipts and documentation for ALL deductions",
+        "- Use precise amounts, not round numbers",
+        "- File electronically (paper returns have higher error rates)",
+        "- Report ALL income (IRS receives copies of your W-2s and 1099s)",
+        "- If self-employed, keep separate business bank account",
+        "- Respond promptly to any IRS correspondence",
+        "",
+        `### IRS Audit Rates (2024 data)`,
+        `| Income Range | Audit Rate |`,
+        `|---|---|`,
+        `| Under $25K (no EITC) | ~0.2% |`,
+        `| $25K-$100K | ~0.3% |`,
+        `| $100K-$500K | ~0.4% |`,
+        `| $500K-$1M | ~1.1% |`,
+        `| $1M-$5M | ~2.0% |`,
+        `| $5M+ | ~4.0% |`,
+        "",
+        `> 📝 Overall audit rate is ~0.4%. Most audits are correspondence audits (by mail), not in-person.`,
+        `> ⚠️ This is an informal risk assessment, not a guarantee of audit or non-audit.`,
+      );
+
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
 }

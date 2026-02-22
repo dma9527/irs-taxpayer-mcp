@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dma9527/irs-taxpayer-mcp.git"
+    "url": "git+https://github.com/dma9527/irs-taxpayer-mcp.git"
   },
   "homepage": "https://github.com/dma9527/irs-taxpayer-mcp",
   "author": "Ding Ma",

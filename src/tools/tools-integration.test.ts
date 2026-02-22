@@ -11,6 +11,8 @@ import { registerIrsLookupTools } from "./irs-lookup-tools.js";
 import { registerCreditTools } from "./credit-tools.js";
 import { registerStateTaxTools } from "./state-tax-tools.js";
 import { registerPlanningTools } from "./planning-tools.js";
+import { registerObbbTools } from "./obbb-tools.js";
+import { registerComprehensiveTools } from "./comprehensive-tools.js";
 
 // Helper to call a tool on the server
 async function callTool(
@@ -39,6 +41,8 @@ describe("MCP Tools Integration", () => {
     registerCreditTools(server);
     registerStateTaxTools(server);
     registerPlanningTools(server);
+    registerObbbTools(server);
+    registerComprehensiveTools(server);
   });
 
   // --- Tax Calculation Tools ---
@@ -347,6 +351,150 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Education Tax Benefits");
       expect(text).toContain("AOTC");
       expect(text).toContain("Lifetime Learning");
+    });
+  });
+
+  // --- OBBB Tools ---
+  describe("calculate_obbb_deductions", () => {
+    it("calculates OBBB deductions for TY2025", async () => {
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025, filingStatus: "single", agi: 60000, age: 67, tipIncome: 15000,
+      });
+      expect(text).toContain("OBBB");
+      expect(text).toContain("Senior Bonus");
+      expect(text).toContain("Tips");
+    });
+
+    it("shows not available for TY2024", async () => {
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2024, filingStatus: "single", agi: 50000,
+      });
+      expect(text).toContain("Not Available");
+    });
+  });
+
+  describe("what_changed_between_tax_years", () => {
+    it("shows differences between TY2024 and TY2025", async () => {
+      const { text } = await callTool(server, "what_changed_between_tax_years", {
+        fromYear: 2024, toYear: 2025,
+      });
+      expect(text).toContain("What Changed");
+      expect(text).toContain("Standard Deduction");
+      expect(text).toContain("SALT");
+      expect(text).toContain("One Big Beautiful Bill");
+    });
+  });
+
+  // --- Comprehensive Tools ---
+  describe("generate_full_tax_report", () => {
+    it("generates full report", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2024, filingStatus: "single", w2Income: 85000, stateCode: "CA",
+      });
+      expect(text).toContain("Full Tax Report");
+      expect(text).toContain("Income Summary");
+      expect(text).toContain("Federal Tax");
+      expect(text).toContain("FICA");
+      expect(text).toContain("California");
+      expect(text).toContain("Take-Home");
+    });
+  });
+
+  describe("process_1099_income", () => {
+    it("processes multiple 1099 forms", async () => {
+      const { text } = await callTool(server, "process_1099_income", {
+        taxYear: 2024, filingStatus: "single",
+        forms: [
+          { type: "1099-NEC", payer: "Client A", amount: 50000 },
+          { type: "1099-INT", payer: "Bank", amount: 500 },
+          { type: "1099-DIV", payer: "Vanguard", amount: 2000, qualifiedDividends: 1500 },
+        ],
+      });
+      expect(text).toContain("1099 Income Summary");
+      expect(text).toContain("Client A");
+      expect(text).toContain("Self-Employment");
+    });
+  });
+
+  describe("get_personalized_tax_calendar", () => {
+    it("returns personalized calendar", async () => {
+      const { text } = await callTool(server, "get_personalized_tax_calendar", {
+        taxYear: 2024, isSelfEmployed: true, hasInvestments: true,
+      });
+      expect(text).toContain("Tax Calendar");
+      expect(text).toContain("estimated tax");
+      expect(text).toContain("1099");
+    });
+  });
+
+  describe("analyze_paycheck", () => {
+    it("analyzes paycheck withholding", async () => {
+      const { text } = await callTool(server, "analyze_paycheck", {
+        taxYear: 2024, filingStatus: "single", payFrequency: "biweekly",
+        grossPay: 3500, federalWithheld: 450, socialSecurityWithheld: 217, medicareWithheld: 51,
+      });
+      expect(text).toContain("Paycheck Analysis");
+      expect(text).toContain("Annual Projection");
+    });
+  });
+
+  describe("compare_mfj_vs_mfs", () => {
+    it("compares MFJ vs MFS", async () => {
+      const { text } = await callTool(server, "compare_mfj_vs_mfs", {
+        taxYear: 2024, spouse1Income: 80000, spouse2Income: 60000,
+      });
+      expect(text).toContain("MFJ vs MFS");
+      expect(text).toContain("MFS Restrictions");
+    });
+  });
+
+  describe("simulate_tax_scenario", () => {
+    it("simulates income change", async () => {
+      const { text } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2024, filingStatus: "single", currentIncome: 100000,
+        whatIfIncomeChange: 20000,
+      });
+      expect(text).toContain("Scenario Simulator");
+      expect(text).toContain("Current");
+      expect(text).toContain("What-If");
+    });
+
+    it("simulates relocation", async () => {
+      const { text } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2024, filingStatus: "single", currentIncome: 150000,
+        currentState: "CA", whatIfNewState: "TX",
+      });
+      expect(text).toContain("Relocation Analysis");
+      expect(text).toContain("saves");
+    });
+
+    it("simulates Roth conversion", async () => {
+      const { text } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2024, filingStatus: "single", currentIncome: 80000,
+        whatIfRothConversion: 30000,
+      });
+      expect(text).toContain("Roth Conversion Analysis");
+      expect(text).toContain("Break-even");
+    });
+  });
+
+  describe("assess_audit_risk", () => {
+    it("assesses low risk profile", async () => {
+      const { text } = await callTool(server, "assess_audit_risk", {
+        filingStatus: "single", grossIncome: 75000,
+      });
+      expect(text).toContain("Audit Risk");
+      expect(text).toContain("LOW");
+    });
+
+    it("identifies high risk factors", async () => {
+      const { text } = await callTool(server, "assess_audit_risk", {
+        filingStatus: "single", grossIncome: 1500000,
+        selfEmploymentIncome: 500000, cashBusiness: true, foreignAccounts: true,
+      });
+      expect(text).toContain("HIGH");
+      expect(text).toContain("Cash-Intensive");
+      expect(text).toContain("Foreign");
     });
   });
 });

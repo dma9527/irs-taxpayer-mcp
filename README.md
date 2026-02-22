@@ -108,7 +108,7 @@ npx irs-taxpayer-mcp --sse --port 3000
 
 </div>
 
-## 🛠️ Tools (32)
+## 🛠️ Tools (39)
 
 ### Federal Tax Calculations
 
@@ -186,6 +186,13 @@ npx irs-taxpayer-mcp --sse --port 3000
 | `get_personalized_tax_calendar` | Personalized deadlines based on your situation (self-employed, extension, investments)        |
 | `analyze_paycheck`              | Verify paycheck withholding accuracy, project annual tax, suggest W-4 adjustments             |
 | `compare_mfj_vs_mfs`            | MFJ vs MFS comparison with tax diff and all MFS restriction warnings                          |
+| `simulate_tax_scenario`         | What-if modeling: income changes, relocation, Roth conversion, 401k, filing status            |
+| `assess_audit_risk`             | IRS audit risk scoring with red flag identification and mitigation tips                       |
+| `get_tax_document_checklist`    | Personalized filing document checklist based on your income and life events                   |
+| `optimize_capital_gains`        | Investment lot analysis: 0% bracket harvesting, tax-loss harvesting, wash sale warnings       |
+| `plan_retirement_withdrawals`   | Optimal withdrawal order (Traditional/Roth/Taxable), RMD calculation, Roth conversion         |
+| `plan_multi_year_taxes`         | 3-5 year tax projection with bracket management and age milestones                            |
+| `analyze_relocation_taxes`      | In-depth state relocation analysis with multi-year savings and SALT impact                    |
 
 ## 📊 Tax Year Coverage
 

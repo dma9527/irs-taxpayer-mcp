@@ -74,6 +74,10 @@ export function registerComprehensiveTools(server: McpServer): void {
       const other = params.otherIncome ?? 0;
       const grossIncome = w2 + se + interest + dividends + ltcg + stcg + other;
 
+      if (grossIncome <= 0) {
+        return { content: [{ type: "text", text: "Gross income must be greater than zero to generate a tax report." }], isError: true };
+      }
+
       // Itemized deductions
       const mortgage = params.mortgageInterest ?? 0;
       const saltPaid = params.stateLocalTaxesPaid ?? 0;

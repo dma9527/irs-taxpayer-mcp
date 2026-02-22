@@ -572,6 +572,10 @@ export function registerPlanningTools(server: McpServer): void {
     async (params) => {
       const totalIncome = params.spouse1Income + params.spouse2Income;
 
+      if (totalIncome <= 0) {
+        return { content: [{ type: "text", text: "Combined income must be greater than zero." }], isError: true };
+      }
+
       // MFJ calculation
       const mfj = calculateTax({
         taxYear: params.taxYear,

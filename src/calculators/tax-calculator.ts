@@ -8,7 +8,6 @@ import {
   type TaxBracket,
   type TaxYearData,
   getTaxYearData,
-  LATEST_TAX_YEAR,
 } from "../data/tax-brackets.js";
 import { validate, validateIncome, validateTaxYear, formatValidationErrors } from "./validation.js";
 

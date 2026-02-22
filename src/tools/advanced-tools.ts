@@ -582,7 +582,7 @@ export function registerAdvancedTools(server: McpServer): void {
       // Retirement contribution impact
       const totalRetirement = results.reduce((s, r) => s + r.retirement, 0);
       if (totalRetirement > 0) {
-        const avgRate = totalTaxAllYears / totalIncomeAllYears;
+        const avgRate = totalIncomeAllYears > 0 ? totalTaxAllYears / totalIncomeAllYears : 0;
         const estimatedSavings = Math.round(totalRetirement * avgRate);
         lines.push(
           `💰 **Retirement Contributions**: $${fmt(totalRetirement)} total.`,

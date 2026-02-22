@@ -1318,4 +1318,276 @@ export function registerComprehensiveTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
     }
   );
+
+  // --- Tool 10: Multi-Year Tax Planner ---
+  server.tool(
+    "plan_multi_year_taxes",
+    "Create a 3-5 year tax projection and strategy. Models income changes, Roth conversions, " +
+    "retirement contributions, and bracket management across multiple years.",
+    {
+      filingStatus: FilingStatusEnum,
+      currentAge: z.number().int().min(0),
+      years: z.array(z.object({
+        year: z.number().describe("Tax year (2024 or 2025)"),
+        expectedIncome: z.number().min(0).describe("Expected gross income"),
+        selfEmploymentIncome: z.number().min(0).optional(),
+        plannedRothConversion: z.number().min(0).optional().describe("Planned Roth conversion amount"),
+        planned401k: z.number().min(0).optional().describe("Planned 401k contribution"),
+        plannedIRA: z.number().min(0).optional().describe("Planned IRA contribution"),
+        dependents: z.number().int().min(0).optional(),
+        stateCode: z.string().length(2).optional(),
+      })).min(1).max(5).describe("Year-by-year projections"),
+    },
+    async (params) => {
+      const results = params.years.map((yr) => {
+        const retirement = (yr.planned401k ?? 0) + (yr.plannedIRA ?? 0);
+        const totalIncome = yr.expectedIncome + (yr.plannedRothConversion ?? 0);
+
+        const federal = calculateTax({
+          taxYear: Math.min(yr.year, 2025), // use 2025 data for future years
+          filingStatus: params.filingStatus,
+          grossIncome: totalIncome,
+          selfEmploymentIncome: yr.selfEmploymentIncome,
+          aboveTheLineDeductions: retirement > 0 ? retirement : undefined,
+          dependents: yr.dependents,
+        });
+
+        let stateTax = 0;
+        let stateName = "";
+        if (yr.stateCode) {
+          const sr = calculateStateTax({
+            stateCode: yr.stateCode,
+            taxableIncome: federal.adjustedGrossIncome,
+            filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
+          });
+          if (sr) { stateTax = sr.tax; stateName = sr.stateName; }
+        }
+
+        return {
+          year: yr.year,
+          income: yr.expectedIncome,
+          rothConversion: yr.plannedRothConversion ?? 0,
+          retirement,
+          federalTax: federal.totalFederalTax,
+          stateTax,
+          stateName,
+          totalTax: federal.totalFederalTax + stateTax,
+          effectiveRate: federal.effectiveRate,
+          marginalRate: federal.marginalRate,
+          takeHome: totalIncome - federal.totalFederalTax - stateTax,
+        };
+      });
+
+      const totalTaxAllYears = results.reduce((s, r) => s + r.totalTax, 0);
+      const totalIncomeAllYears = results.reduce((s, r) => s + r.income + r.rothConversion, 0);
+
+      const lines = [
+        `## 📈 Multi-Year Tax Plan`,
+        `**${params.filingStatus.replace(/_/g, " ")}** | Age ${params.currentAge}`,
+        "",
+        `### Year-by-Year Projection`,
+        `| Year | Income | Roth Conv. | Retirement | Federal Tax | State Tax | Total Tax | Eff. Rate | Marginal |`,
+        `|------|--------|-----------|------------|-------------|-----------|-----------|-----------|----------|`,
+        ...results.map((r) =>
+          `| ${r.year} | $${fmt(r.income)} | $${fmt(r.rothConversion)} | $${fmt(r.retirement)} | $${fmt(r.federalTax)} | $${fmt(r.stateTax)} | $${fmt(r.totalTax)} | ${(r.effectiveRate * 100).toFixed(1)}% | ${(r.marginalRate * 100).toFixed(0)}% |`
+        ),
+        "",
+        `| **Totals** | $${fmt(totalIncomeAllYears)} | | | | | **$${fmt(totalTaxAllYears)}** | **${(totalTaxAllYears / totalIncomeAllYears * 100).toFixed(1)}%** | |`,
+        "",
+      ];
+
+      // Strategy insights
+      lines.push(`### Strategy Insights`, "");
+
+      // Bracket management
+      const rates = results.map((r) => r.marginalRate);
+      const minRate = Math.min(...rates);
+      const maxRate = Math.max(...rates);
+      if (maxRate > minRate) {
+        const lowYears = results.filter((r) => r.marginalRate === minRate).map((r) => r.year);
+        lines.push(
+          `📊 **Bracket Variation**: Your marginal rate ranges from ${(minRate * 100).toFixed(0)}% to ${(maxRate * 100).toFixed(0)}%.`,
+          `Low-rate years (${lowYears.join(", ")}): Consider accelerating income or Roth conversions in these years.`,
+          "",
+        );
+      }
+
+      // Roth conversion analysis
+      const conversionYears = results.filter((r) => r.rothConversion > 0);
+      if (conversionYears.length > 0) {
+        const totalConverted = conversionYears.reduce((s, r) => s + r.rothConversion, 0);
+        lines.push(
+          `🔄 **Roth Conversion Plan**: $${fmt(totalConverted)} total over ${conversionYears.length} year(s).`,
+          `Spreading conversions across years keeps you in lower brackets.`,
+          "",
+        );
+      }
+
+      // Retirement contribution impact
+      const totalRetirement = results.reduce((s, r) => s + r.retirement, 0);
+      if (totalRetirement > 0) {
+        const avgRate = totalTaxAllYears / totalIncomeAllYears;
+        const estimatedSavings = Math.round(totalRetirement * avgRate);
+        lines.push(
+          `💰 **Retirement Contributions**: $${fmt(totalRetirement)} total.`,
+          `Estimated tax savings: ~$${fmt(estimatedSavings)} (at avg ${(avgRate * 100).toFixed(1)}% rate).`,
+          "",
+        );
+      }
+
+      // Age-based milestones
+      const milestones: string[] = [];
+      for (const r of results) {
+        const ageInYear = params.currentAge + (r.year - results[0].year);
+        if (ageInYear === 59) milestones.push(`${r.year}: Age 59½ — penalty-free retirement withdrawals`);
+        if (ageInYear === 62) milestones.push(`${r.year}: Age 62 — earliest Social Security eligibility`);
+        if (ageInYear === 65) milestones.push(`${r.year}: Age 65 — Medicare eligible, senior bonus deduction ($6K)`);
+        if (ageInYear === 67) milestones.push(`${r.year}: Age 67 — full Social Security retirement age`);
+        if (ageInYear === 73) milestones.push(`${r.year}: Age 73 — RMDs begin (SECURE 2.0)`);
+      }
+      if (milestones.length > 0) {
+        lines.push(`### 🎯 Age Milestones`, "", ...milestones.map((m) => `- ${m}`), "");
+      }
+
+      lines.push(`> ⚠️ Uses TY2024/2025 tax law for all years. Future tax law changes may affect projections.`);
+
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
+
+  // --- Tool 11: Relocation Deep Analysis ---
+  server.tool(
+    "analyze_relocation_taxes",
+    "In-depth relocation tax analysis comparing two states. Includes state income tax, " +
+    "effective combined rate, local taxes, and multi-year savings projection.",
+    {
+      taxYear: z.number().describe("Tax year"),
+      filingStatus: FilingStatusEnum,
+      grossIncome: z.number().min(0).describe("Annual gross income"),
+      fromState: z.string().length(2).describe("Current state code"),
+      toState: z.string().length(2).describe("Target state code"),
+      selfEmploymentIncome: z.number().min(0).optional(),
+      capitalGains: z.number().optional(),
+      dependents: z.number().int().min(0).optional(),
+      yearsToProject: z.number().int().min(1).max(10).optional().describe("Years to project savings (default: 5)"),
+      incomeGrowthRate: z.number().min(0).max(0.5).optional().describe("Annual income growth rate (e.g., 0.03 for 3%)"),
+    },
+    async (params) => {
+      const projYears = params.yearsToProject ?? 5;
+      const growth = params.incomeGrowthRate ?? 0;
+
+      // Federal tax (same regardless of state)
+      const federal = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: params.filingStatus,
+        grossIncome: params.grossIncome,
+        selfEmploymentIncome: params.selfEmploymentIncome,
+        capitalGains: params.capitalGains,
+        capitalGainsLongTerm: true,
+        dependents: params.dependents,
+      });
+
+      const stateFS = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
+
+      const fromResult = calculateStateTax({ stateCode: params.fromState, taxableIncome: federal.adjustedGrossIncome, filingStatus: stateFS });
+      const toResult = calculateStateTax({ stateCode: params.toState, taxableIncome: federal.adjustedGrossIncome, filingStatus: stateFS });
+
+      if (!fromResult || !toResult) {
+        return { content: [{ type: "text", text: "Invalid state code." }], isError: true };
+      }
+
+      const annualSavings = fromResult.tax - toResult.tax;
+
+      // Multi-year projection
+      let cumulativeSavings = 0;
+      const projections: Array<{ year: number; income: number; fromTax: number; toTax: number; savings: number; cumulative: number }> = [];
+
+      for (let i = 0; i < projYears; i++) {
+        const yearIncome = Math.round(params.grossIncome * Math.pow(1 + growth, i));
+        const yearFederal = calculateTax({
+          taxYear: Math.min(params.taxYear + i, 2025),
+          filingStatus: params.filingStatus,
+          grossIncome: yearIncome,
+        });
+        const yearFrom = calculateStateTax({ stateCode: params.fromState, taxableIncome: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
+        const yearTo = calculateStateTax({ stateCode: params.toState, taxableIncome: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
+        const yearSavings = (yearFrom?.tax ?? 0) - (yearTo?.tax ?? 0);
+        cumulativeSavings += yearSavings;
+        projections.push({
+          year: params.taxYear + i,
+          income: yearIncome,
+          fromTax: yearFrom?.tax ?? 0,
+          toTax: yearTo?.tax ?? 0,
+          savings: yearSavings,
+          cumulative: cumulativeSavings,
+        });
+      }
+
+      const lines = [
+        `## 🏠 Relocation Tax Analysis`,
+        `**${fromResult.stateName}** → **${toResult.stateName}** | $${fmt(params.grossIncome)} income`,
+        "",
+        `### Current Year Comparison`,
+        `| | ${fromResult.stateName} | ${toResult.stateName} | Difference |`,
+        `|---|---|---|---|`,
+        `| Tax Type | ${fromResult.taxType} | ${toResult.taxType} | — |`,
+        `| State Tax | $${fmt(fromResult.tax)} | $${fmt(toResult.tax)} | ${annualSavings >= 0 ? "-" : "+"}$${fmt(Math.abs(annualSavings))} |`,
+        `| Effective Rate | ${(fromResult.effectiveRate * 100).toFixed(2)}% | ${(toResult.effectiveRate * 100).toFixed(2)}% | ${((toResult.effectiveRate - fromResult.effectiveRate) * 100).toFixed(2)}pp |`,
+        `| Federal Tax | $${fmt(federal.totalFederalTax)} | $${fmt(federal.totalFederalTax)} | $0 |`,
+        `| **Combined Tax** | **$${fmt(federal.totalFederalTax + fromResult.tax)}** | **$${fmt(federal.totalFederalTax + toResult.tax)}** | **${annualSavings >= 0 ? "-" : "+"}$${fmt(Math.abs(annualSavings))}** |`,
+        "",
+      ];
+
+      if (annualSavings > 0) {
+        lines.push(`💰 Moving to ${toResult.stateName} saves **$${fmt(annualSavings)}/year** ($${fmt(Math.round(annualSavings / 12))}/month) in state taxes.`);
+      } else if (annualSavings < 0) {
+        lines.push(`📈 Moving to ${toResult.stateName} costs **$${fmt(Math.abs(annualSavings))}/year** more in state taxes.`);
+      } else {
+        lines.push(`➡️ No state tax difference between ${fromResult.stateName} and ${toResult.stateName}.`);
+      }
+
+      // Local taxes warning
+      if (fromResult.hasLocalTaxes || toResult.hasLocalTaxes) {
+        lines.push(
+          "",
+          `### ⚠️ Local Tax Considerations`,
+          fromResult.hasLocalTaxes ? `- ${fromResult.stateName} has local/city income taxes (not included above)` : "",
+          toResult.hasLocalTaxes ? `- ${toResult.stateName} has local/city income taxes (not included above)` : "",
+          `Use \`get_state_tax_info\` for specific local tax rates.`,
+        );
+      }
+
+      // Multi-year projection
+      lines.push(
+        "",
+        `### ${projYears}-Year Projection${growth > 0 ? ` (${(growth * 100).toFixed(0)}% annual income growth)` : ""}`,
+        `| Year | Income | ${fromResult.stateName} Tax | ${toResult.stateName} Tax | Annual Savings | Cumulative |`,
+        `|------|--------|---|---|---|---|`,
+        ...projections.map((p) =>
+          `| ${p.year} | $${fmt(p.income)} | $${fmt(p.fromTax)} | $${fmt(p.toTax)} | $${fmt(p.savings)} | $${fmt(p.cumulative)} |`
+        ),
+        "",
+        `**${projYears}-year total savings: $${fmt(cumulativeSavings)}**`,
+      );
+
+      // SALT deduction impact
+      const saltCap = getSaltCap(params.taxYear, params.filingStatus, params.grossIncome);
+      if (fromResult.tax > saltCap) {
+        lines.push(
+          "",
+          `### SALT Deduction Impact`,
+          `Your ${fromResult.stateName} tax ($${fmt(fromResult.tax)}) exceeds the SALT cap ($${fmt(saltCap)}).`,
+          `You lose $${fmt(fromResult.tax - saltCap)} in deductions due to the cap.`,
+          toResult.tax <= saltCap ? `In ${toResult.stateName}, your full state tax would be deductible.` : "",
+        );
+      }
+
+      lines.push(
+        "",
+        `> ⚠️ Does not include property tax, sales tax, or cost of living differences. These can significantly affect the total financial impact of relocation.`,
+      );
+
+      return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
+    }
+  );
 }

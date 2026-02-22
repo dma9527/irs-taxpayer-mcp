@@ -13,6 +13,7 @@ import { registerStateTaxTools } from "./state-tax-tools.js";
 import { registerPlanningTools } from "./planning-tools.js";
 import { registerObbbTools } from "./obbb-tools.js";
 import { registerComprehensiveTools } from "./comprehensive-tools.js";
+import { registerAdvancedTools } from "./advanced-tools.js";
 
 // Helper to call a tool on the server
 async function callTool(
@@ -43,6 +44,7 @@ describe("MCP Tools Integration", () => {
     registerPlanningTools(server);
     registerObbbTools(server);
     registerComprehensiveTools(server);
+    registerAdvancedTools(server);
   });
 
   // --- Tax Calculation Tools ---

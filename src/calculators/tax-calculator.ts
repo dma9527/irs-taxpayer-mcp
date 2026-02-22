@@ -10,6 +10,7 @@ import {
   getTaxYearData,
   LATEST_TAX_YEAR,
 } from "../data/tax-brackets.js";
+import { validate, validateIncome, validateTaxYear, formatValidationErrors } from "./validation.js";
 
 export interface TaxInput {
   taxYear: number;
@@ -211,6 +212,15 @@ function calculateAMT(
 }
 
 export function calculateTax(input: TaxInput): TaxBreakdown {
+  // Input validation
+  const errors = validate(
+    validateTaxYear(input.taxYear),
+    validateIncome(input.grossIncome, "grossIncome"),
+  );
+  if (errors.length > 0) {
+    throw new Error(formatValidationErrors(errors));
+  }
+
   const taxData = getTaxYearData(input.taxYear);
   if (!taxData) {
     throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025`);

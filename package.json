@@ -1,6 +1,6 @@
 {
   "name": "irs-taxpayer-mcp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "MCP server for individual US taxpayers - tax calculations, deduction analysis, IRS data lookup",
   "type": "module",
   "main": "dist/index.js",

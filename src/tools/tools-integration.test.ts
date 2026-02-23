@@ -14,6 +14,7 @@ import { registerPlanningTools } from "./planning-tools.js";
 import { registerObbbTools } from "./obbb-tools.js";
 import { registerComprehensiveTools } from "./comprehensive-tools.js";
 import { registerAdvancedTools } from "./advanced-tools.js";
+import { registerSmartTools } from "./smart-tools.js";
 
 // Helper to call a tool on the server
 async function callTool(
@@ -45,6 +46,7 @@ describe("MCP Tools Integration", () => {
     registerObbbTools(server);
     registerComprehensiveTools(server);
     registerAdvancedTools(server);
+    registerSmartTools(server);
   });
 
   // --- Tax Calculation Tools ---
@@ -497,6 +499,126 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("HIGH");
       expect(text).toContain("Cash-Intensive");
       expect(text).toContain("Foreign");
+    });
+  });
+
+  // --- Advanced Tools ---
+  describe("get_tax_document_checklist", () => {
+    it("generates checklist for W-2 employee", async () => {
+      const { text } = await callTool(server, "get_tax_document_checklist", {
+        hasW2: true, hasMortgage: true, hasChildren: true,
+      });
+      expect(text).toContain("Tax Document Checklist");
+      expect(text).toContain("W-2");
+      expect(text).toContain("1098");
+    });
+  });
+
+  describe("optimize_capital_gains", () => {
+    it("analyzes investment lots", async () => {
+      const { text } = await callTool(server, "optimize_capital_gains", {
+        taxYear: 2024, filingStatus: "single", ordinaryIncome: 50000,
+        lots: [
+          { name: "AAPL", shares: 100, costBasis: 10000, currentValue: 18000, holdingMonths: 14 },
+          { name: "TSLA", shares: 50, costBasis: 15000, currentValue: 12000, holdingMonths: 8 },
+        ],
+      });
+      expect(text).toContain("Capital Gains Optimizer");
+      expect(text).toContain("AAPL");
+      expect(text).toContain("TSLA");
+    });
+  });
+
+  describe("plan_retirement_withdrawals", () => {
+    it("plans withdrawal strategy", async () => {
+      const { text } = await callTool(server, "plan_retirement_withdrawals", {
+        taxYear: 2024, filingStatus: "single", age: 65,
+        traditionalBalance: 500000, rothBalance: 200000, taxableBalance: 100000,
+        annualSpending: 60000, socialSecurityIncome: 24000,
+      });
+      expect(text).toContain("Retirement Withdrawal");
+      expect(text).toContain("Traditional");
+      expect(text).toContain("Roth");
+    });
+  });
+
+  describe("plan_multi_year_taxes", () => {
+    it("projects multi-year taxes", async () => {
+      const { text } = await callTool(server, "plan_multi_year_taxes", {
+        filingStatus: "single", currentAge: 55,
+        years: [
+          { year: 2024, expectedIncome: 120000 },
+          { year: 2025, expectedIncome: 125000, plannedRothConversion: 20000 },
+        ],
+      });
+      expect(text).toContain("Multi-Year Tax Plan");
+      expect(text).toContain("2024");
+      expect(text).toContain("2025");
+    });
+  });
+
+  describe("analyze_relocation_taxes", () => {
+    it("analyzes relocation from CA to TX", async () => {
+      const { text } = await callTool(server, "analyze_relocation_taxes", {
+        taxYear: 2024, filingStatus: "single", grossIncome: 200000,
+        fromState: "CA", toState: "TX",
+      });
+      expect(text).toContain("Relocation Tax Analysis");
+      expect(text).toContain("California");
+      expect(text).toContain("Texas");
+      expect(text).toContain("saves");
+    });
+  });
+
+  // --- Smart Tools ---
+  describe("run_tax_health_check", () => {
+    it("runs health check with findings", async () => {
+      const { text } = await callTool(server, "run_tax_health_check", {
+        taxYear: 2024, filingStatus: "single", grossIncome: 80000,
+        w2Income: 80000, retirement401k: 10000, federalWithheld: 15000,
+      });
+      expect(text).toContain("Tax Health Check");
+      expect(text).toContain("401(k)");
+    });
+  });
+
+  describe("lookup_tax_rule", () => {
+    it("finds wash sale rule", async () => {
+      const { text } = await callTool(server, "lookup_tax_rule", { topic: "wash sale" });
+      expect(text).toContain("Wash Sale");
+      expect(text).toContain("30 days");
+    });
+
+    it("finds ISO vs NSO", async () => {
+      const { text } = await callTool(server, "lookup_tax_rule", { topic: "ISO vs NSO" });
+      expect(text).toContain("Incentive Stock Options");
+      expect(text).toContain("Non-Qualified");
+    });
+
+    it("handles unknown topic", async () => {
+      const { text } = await callTool(server, "lookup_tax_rule", { topic: "xyzzy" });
+      expect(text).toContain("Not Found");
+      expect(text).toContain("Available topics");
+    });
+  });
+
+  describe("get_form_filing_guide", () => {
+    it("returns 1040 guide", async () => {
+      const { text } = await callTool(server, "get_form_filing_guide", { formNumber: "1040" });
+      expect(text).toContain("Form 1040");
+      expect(text).toContain("Filing Status");
+      expect(text).toContain("Common Mistakes");
+    });
+
+    it("returns Schedule C guide", async () => {
+      const { text } = await callTool(server, "get_form_filing_guide", { formNumber: "Schedule C" });
+      expect(text).toContain("Schedule C");
+      expect(text).toContain("Business");
+    });
+
+    it("handles unknown form", async () => {
+      const { text } = await callTool(server, "get_form_filing_guide", { formNumber: "Form 99999" });
+      expect(text).toContain("Not Available");
     });
   });
 });

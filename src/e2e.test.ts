@@ -91,7 +91,7 @@ describe("E2E Smoke Test", () => {
       expect(toolNames).toContain("generate_full_tax_report");
       expect(toolNames).toContain("simulate_tax_scenario");
       expect(toolNames).toContain("assess_audit_risk");
-      expect(toolNames.length).toBe(39);
+      expect(toolNames.length).toBe(42);
 
       // Step 4: Call a tool
       const callResponse = await sendMcpMessage(proc, {

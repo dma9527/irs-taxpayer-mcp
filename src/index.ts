@@ -27,6 +27,7 @@ import { registerPlanningTools } from "./tools/planning-tools.js";
 import { registerObbbTools } from "./tools/obbb-tools.js";
 import { registerComprehensiveTools } from "./tools/comprehensive-tools.js";
 import { registerAdvancedTools } from "./tools/advanced-tools.js";
+import { registerSmartTools } from "./tools/smart-tools.js";
 import http from "node:http";
 
 const server = new McpServer({
@@ -47,6 +48,7 @@ registerPlanningTools(server);         // 6 tools: planning tips, year compare, 
 registerObbbTools(server);             // 2 tools: OBBB deductions calculator, what changed between years
 registerComprehensiveTools(server);    // 6 tools: report, 1099, calendar, paycheck, scenario, audit
 registerAdvancedTools(server);         // 5 tools: docs, capgains, retirement, multi-year, relocation
+registerSmartTools(server);            // 3 tools: health check, knowledge base, form guide
 
 const args = process.argv.slice(2);
 
@@ -70,7 +72,7 @@ async function main(): Promise<void> {
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 39 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 42 tools loaded");
 }
 
 async function startSSE(ssePort: number): Promise<void> {

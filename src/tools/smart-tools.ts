@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { fmt, FilingStatusEnum } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ERRORS } from "./error-handler.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
@@ -45,8 +46,8 @@ export function registerSmartTools(server: McpServer): void {
     },
     async (params) => {
       const taxData = getTaxYearData(params.taxYear);
-      if (!taxData) return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
-      if (params.grossIncome <= 0) return { content: [{ type: "text", text: "Income must be greater than zero." }], isError: true };
+      if (!taxData) return ERRORS.unsupportedYear(params.taxYear);
+      if (params.grossIncome <= 0) return ERRORS.zeroIncome();
 
       const findings: Array<{ emoji: string; title: string; detail: string; savings?: number }> = [];
 

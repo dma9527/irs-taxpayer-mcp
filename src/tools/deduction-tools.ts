@@ -6,6 +6,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ITEMIZED_DEDUCTIONS, ABOVE_THE_LINE_DEDUCTIONS } from "../data/deductions.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
+import { ERRORS } from "./error-handler.js";
 import { fmt } from "./shared.js";
 
 export function registerDeductionTools(server: McpServer): void {
@@ -70,7 +71,7 @@ export function registerDeductionTools(server: McpServer): void {
     async (params) => {
       const data = getTaxYearData(params.taxYear);
       if (!data) {
-        return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
+        return ERRORS.unsupportedYear(params.taxYear);
       }
 
       // Standard deduction

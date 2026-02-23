@@ -7,6 +7,7 @@ import { z } from "zod";
 import { fmt, FilingStatusEnum } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
+import { ERRORS } from "./error-handler.js";
 
 
 
@@ -31,7 +32,7 @@ export function registerObbbTools(server: McpServer): void {
     async (params) => {
       const data = getTaxYearData(params.taxYear);
       if (!data) {
-        return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
+        return ERRORS.unsupportedYear(params.taxYear);
       }
 
       const obbb = data.obbbDeductions;

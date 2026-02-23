@@ -10,6 +10,7 @@ import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateW4 } from "../calculators/w4-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
 import { fmt, FilingStatusEnum } from "./shared.js";
+import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 export function registerTaxCalculationTools(server: McpServer): void {
   server.tool(
@@ -94,10 +95,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     async ({ taxYear, filingStatus }) => {
       const data = getTaxYearData(taxYear);
       if (!data) {
-        return {
-          content: [{ type: "text", text: `Tax year ${taxYear} not supported. Available: ${SUPPORTED_TAX_YEARS.join(", ")}` }],
-          isError: true,
-        };
+        return ERRORS.unsupportedYear(taxYear);
       }
 
       const brackets = data.brackets[filingStatus];
@@ -253,10 +251,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
         });
 
         if (!stateResult) {
-          return {
-            content: [{ type: "text", text: `State "${params.stateCode}" not found.` }],
-            isError: true,
-          };
+          return ERRORS.invalidState(params.stateCode);
         }
 
         const totalTax = federal.totalFederalTax + stateResult.tax;

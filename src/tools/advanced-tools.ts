@@ -9,6 +9,7 @@ import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { getTaxYearData, getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
+import { ERRORS } from "./error-handler.js";
 
 
 
@@ -194,7 +195,7 @@ export function registerAdvancedTools(server: McpServer): void {
     async (params) => {
       const taxData = getTaxYearData(params.taxYear);
       if (!taxData) {
-        return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
+        return ERRORS.unsupportedYear(params.taxYear);
       }
 
       // Analyze each lot
@@ -326,7 +327,7 @@ export function registerAdvancedTools(server: McpServer): void {
     async (params) => {
       const taxData = getTaxYearData(params.taxYear);
       if (!taxData) {
-        return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
+        return ERRORS.unsupportedYear(params.taxYear);
       }
 
       const ss = params.socialSecurityIncome ?? 0;
@@ -641,7 +642,7 @@ export function registerAdvancedTools(server: McpServer): void {
       const toResult = calculateStateTax({ stateCode: params.toState, taxableIncome: federal.adjustedGrossIncome, filingStatus: stateFS });
 
       if (!fromResult || !toResult) {
-        return { content: [{ type: "text", text: "Invalid state code." }], isError: true };
+        return ERRORS.invalidState(params.fromState);
       }
 
       const annualSavings = fromResult.tax - toResult.tax;

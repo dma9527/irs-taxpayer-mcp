@@ -10,6 +10,7 @@ import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
+import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 
 
@@ -52,7 +53,7 @@ export function registerComprehensiveTools(server: McpServer): void {
     async (params) => {
       const taxData = getTaxYearData(params.taxYear);
       if (!taxData) {
-        return { content: [{ type: "text", text: `Tax year ${params.taxYear} not supported.` }], isError: true };
+        return ERRORS.unsupportedYear(params.taxYear);
       }
 
       // Aggregate income
@@ -67,7 +68,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       const grossIncome = w2 + se + interest + dividends + ltcg + stcg + other;
 
       if (grossIncome <= 0) {
-        return { content: [{ type: "text", text: "Gross income must be greater than zero to generate a tax report." }], isError: true };
+        return ERRORS.zeroIncome();
       }
 
       // Itemized deductions

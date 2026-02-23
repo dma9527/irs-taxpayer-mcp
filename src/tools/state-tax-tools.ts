@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { STATE_TAX_DATA, getStateInfo, getNoIncomeTaxStates, type StateBracket } from "../data/state-taxes.js";
+import { ERRORS } from "./error-handler.js";
 
 export function registerStateTaxTools(server: McpServer): void {
   server.tool(
@@ -17,7 +18,7 @@ export function registerStateTaxTools(server: McpServer): void {
       const state = getStateInfo(stateCode);
       if (!state) {
         const codes = Object.keys(STATE_TAX_DATA).sort().join(", ");
-        return { content: [{ type: "text", text: `State "${stateCode}" not found. Available: ${codes}` }], isError: true };
+        return ERRORS.invalidState(stateCode, codes);
       }
 
       const lines = [
@@ -91,7 +92,7 @@ export function registerStateTaxTools(server: McpServer): void {
     async ({ stateCode, taxableIncome, filingStatus }) => {
       const state = getStateInfo(stateCode);
       if (!state) {
-        return { content: [{ type: "text", text: `State "${stateCode}" not found.` }], isError: true };
+        return ERRORS.invalidState(stateCode);
       }
 
       if (state.taxType === "none") {

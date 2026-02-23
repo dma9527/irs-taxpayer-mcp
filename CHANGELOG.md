@@ -2,6 +2,20 @@
 
 All notable changes to irs-taxpayer-mcp.
 
+## [0.5.2] - 2026-02-23
+
+### Fixed
+
+- SE tax now correctly coordinates with W-2 income for SS wage base (was overcharging filers with both W-2 and SE income)
+- Tool count inconsistencies in stdio/SSE logs and usage guide
+
+### Added
+
+- IRS Tax Table verification tests (exact dollar amounts for TY2024/TY2025)
+- QBI and AMT simplification warnings in tool output
+- CONTRIBUTING.md with development setup and PR guidelines
+- "Found a Bug?" section in README with issue/discussion links
+
 ## [0.5.0] - 2026-02-21
 
 ### Added

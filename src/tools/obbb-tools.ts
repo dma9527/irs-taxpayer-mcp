@@ -4,19 +4,11 @@
  */
 
 import { z } from "zod";
+import { fmt, FilingStatusEnum } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
 
-const FilingStatusEnum = z.enum([
-  "single",
-  "married_filing_jointly",
-  "married_filing_separately",
-  "head_of_household",
-]);
 
-function fmt(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
 
 export function registerObbbTools(server: McpServer): void {
 

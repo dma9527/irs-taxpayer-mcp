@@ -9,13 +9,7 @@ import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateW4 } from "../calculators/w4-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
-
-const FilingStatusEnum = z.enum([
-  "single",
-  "married_filing_jointly",
-  "married_filing_separately",
-  "head_of_household",
-]);
+import { fmt, FilingStatusEnum } from "./shared.js";
 
 export function registerTaxCalculationTools(server: McpServer): void {
   server.tool(
@@ -358,6 +352,3 @@ export function registerTaxCalculationTools(server: McpServer): void {
   );
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}

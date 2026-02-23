@@ -6,6 +6,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ITEMIZED_DEDUCTIONS, ABOVE_THE_LINE_DEDUCTIONS } from "../data/deductions.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
+import { fmt } from "./shared.js";
 
 export function registerDeductionTools(server: McpServer): void {
   server.tool(
@@ -112,6 +113,3 @@ export function registerDeductionTools(server: McpServer): void {
   );
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}

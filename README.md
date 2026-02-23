@@ -243,6 +243,12 @@ npm start          # stdio mode
 npm run dev        # development mode (tsx)
 ```
 
+## 🐛 Found a Bug?
+
+- **Calculation error or incorrect data?** [Open an issue](https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose) — include the tool name, your inputs, and the expected result.
+- **Questions or discussion?** [GitHub Discussions](https://github.com/dma9527/irs-taxpayer-mcp/discussions)
+- **Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## 🤝 Contributing
 
 Contributions welcome. Please ensure:
@@ -251,6 +257,8 @@ Contributions welcome. Please ensure:
 - Build succeeds (`npm run build`)
 - No `any` types in TypeScript
 - Data changes include IRS source citations
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
 
 ## 📄 License
 

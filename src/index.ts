@@ -72,7 +72,7 @@ async function main(): Promise<void> {
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 42 tools loaded");
+  console.error("IRS Taxpayer MCP server running on stdio — 39 tools loaded");
 }
 
 async function startSSE(ssePort: number): Promise<void> {
@@ -118,7 +118,7 @@ async function startSSE(ssePort: number): Promise<void> {
   });
 
   httpServer.listen(ssePort, () => {
-    console.error(`IRS Taxpayer MCP server running on SSE — http://localhost:${ssePort}/sse — 25 tools loaded`);
+    console.error(`IRS Taxpayer MCP server running on SSE — http://localhost:${ssePort}/sse — 39 tools loaded`);
   });
 }
 

@@ -107,11 +107,13 @@ function calculateCapitalGainsTax(
   return tax;
 }
 
-function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData): number {
+function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData, w2Income: number = 0): number {
   if (seIncome <= 0) return 0;
 
   const netEarnings = seIncome * 0.9235; // 92.35% of SE income
-  const ssWages = Math.min(netEarnings, taxData.socialSecurity.wageBase);
+  // W-2 wages already used part of the SS wage base
+  const remainingWageBase = Math.max(0, taxData.socialSecurity.wageBase - w2Income);
+  const ssWages = Math.min(netEarnings, remainingWageBase);
   const ssTax = ssWages * taxData.socialSecurity.taxRate * 2; // both employer + employee share
   const medicareTax = netEarnings * taxData.medicare.taxRate * 2;
 
@@ -227,8 +229,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Step 1: Calculate AGI
   const aboveTheLine = input.aboveTheLineDeductions ?? 0;
+  const w2 = input.w2Income ?? 0;
   const seDeduction = input.selfEmploymentIncome
-    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData) * 0.5
+    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2) * 0.5
     : 0;
   const agi = input.grossIncome - aboveTheLine - seDeduction;
 
@@ -272,7 +275,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Step 7: Self-employment tax
   const seTax = input.selfEmploymentIncome
-    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData)
+    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2)
     : 0;
 
   // Step 8: NIIT (3.8% on investment income above threshold)

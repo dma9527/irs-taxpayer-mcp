@@ -74,6 +74,9 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `**Marginal Tax Rate**: ${(result.marginalRate * 100).toFixed(0)}%`,
           `**Estimated Quarterly Payment**: $${fmt(result.estimatedQuarterlyPayment)}`,
           "",
+          result.qbiDeduction > 0 ? `> ℹ️ QBI deduction uses simplified 20% calculation. For AGI above $191,950 (single) / $383,900 (MFJ), W-2 wage limits and SSTB rules may reduce the deduction.` : "",
+          result.amt > 0 ? `> ℹ️ AMT uses simplified calculation (ISO spread + SALT add-back). Does not apply preferential capital gains rates under AMT.` : "",
+          "",
           `> ⚠️ This is an estimate for educational purposes only. It does not constitute tax advice. Consult a qualified tax professional for your specific situation.`,
         ].filter(Boolean);
 

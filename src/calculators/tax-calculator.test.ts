@@ -157,6 +157,34 @@ describe("calculateTax", () => {
       const expectedSE = netEarnings * 0.124 + netEarnings * 0.029;
       expect(result.selfEmploymentTax).toBeCloseTo(expectedSE, 0);
     });
+
+    it("reduces SS wage base by W-2 income", () => {
+      // $150k W-2 + $50k SE: remaining SS base = $168,600 - $150,000 = $18,600
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 200000,
+        w2Income: 150000,
+        selfEmploymentIncome: 50000,
+      });
+      const netEarnings = 50000 * 0.9235; // $46,175
+      const ssTax = 18600 * 0.124; // only remaining wage base
+      const medicareTax = netEarnings * 0.029;
+      expect(result.selfEmploymentTax).toBeCloseTo(ssTax + medicareTax, 0);
+    });
+
+    it("no SS tax when W-2 exceeds wage base", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 250000,
+        w2Income: 200000,
+        selfEmploymentIncome: 50000,
+      });
+      // W-2 $200k > $168,600 wage base → SE SS tax = $0, only Medicare
+      const netEarnings = 50000 * 0.9235;
+      expect(result.selfEmploymentTax).toBeCloseTo(netEarnings * 0.029, 0);
+    });
   });
 
   describe("NIIT (Net Investment Income Tax)", () => {
@@ -337,5 +365,42 @@ describe("calculateTax", () => {
       expect(result.qbiDeduction).toBeGreaterThan(0);
       expect(result.amt).toBeGreaterThanOrEqual(0);
     });
+  });
+});
+
+/**
+ * IRS Tax Table verification — hand-calculated from published bracket data.
+ * These tests verify exact dollar amounts, not just "greater than zero".
+ */
+describe("IRS Tax Table verification", () => {
+  it("TY2024 single $50k → tax $4,016", () => {
+    // Taxable: $50,000 - $14,600 = $35,400
+    // 10% × $11,600 = $1,160 + 12% × $23,800 = $2,856
+    const r = calculateTax({ taxYear: 2024, filingStatus: "single", grossIncome: 50000 });
+    expect(r.taxableIncome).toBe(35400);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(4016, 0);
+  });
+
+  it("TY2024 MFJ $150k → tax $16,682", () => {
+    // Taxable: $150,000 - $29,200 = $120,800
+    // 10% × $23,200 + 12% × $71,100 + 22% × $26,500
+    const r = calculateTax({ taxYear: 2024, filingStatus: "married_filing_jointly", grossIncome: 150000 });
+    expect(r.taxableIncome).toBe(120800);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(16682, 0);
+  });
+
+  it("TY2024 single $500k → tax $140,264.75", () => {
+    // Taxable: $485,400 — hits 35% bracket
+    const r = calculateTax({ taxYear: 2024, filingStatus: "single", grossIncome: 500000 });
+    expect(r.taxableIncome).toBe(485400);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(140264.75, 0);
+  });
+
+  it("TY2025 single $100k → tax $13,449", () => {
+    // Taxable: $100,000 - $15,750 = $84,250
+    // 10% × $11,925 + 12% × $36,550 + 22% × $35,775
+    const r = calculateTax({ taxYear: 2025, filingStatus: "single", grossIncome: 100000 });
+    expect(r.taxableIncome).toBe(84250);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(13449, 0);
   });
 });

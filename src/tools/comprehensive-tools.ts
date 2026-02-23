@@ -246,6 +246,8 @@ export function registerComprehensiveTools(server: McpServer): void {
 
       lines.push(
         "",
+        federalResult.qbiDeduction > 0 ? `> ℹ️ QBI deduction uses simplified 20% calculation. For AGI above $191,950 (single) / $383,900 (MFJ), W-2 wage limits and SSTB rules may reduce the deduction.` : "",
+        federalResult.amt > 0 ? `> ℹ️ AMT uses simplified calculation (ISO spread + SALT add-back). Does not apply preferential capital gains rates under AMT.` : "",
         `> ⚠️ This is an estimate for educational purposes only. Actual tax liability may differ. Consult a qualified tax professional.`,
       );
 

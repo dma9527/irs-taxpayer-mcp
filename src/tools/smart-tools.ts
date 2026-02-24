@@ -504,4 +504,47 @@ export function registerSmartTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.join("\n") }] };
     }
   );
+
+  // --- Tool 4: Submit Feedback ---
+  server.tool(
+    "submit_feedback",
+    "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. " +
+    "No data is sent — the user clicks the link to submit. Use this after verifying the user's inputs.",
+    {
+      toolName: z.string().describe("Which tool produced the issue (e.g., calculate_federal_tax)"),
+      taxYear: z.number().optional().describe("Tax year"),
+      description: z.string().describe("Brief description of the issue"),
+      expected: z.string().optional().describe("What the user expected"),
+      actual: z.string().optional().describe("What the tool returned"),
+    },
+    async (params) => {
+      const body = [
+        `**Tool name**: \`${params.toolName}\``,
+        params.taxYear ? `**Tax year**: ${params.taxYear}` : "",
+        "",
+        `**Description**: ${params.description}`,
+        params.expected ? `\n**Expected result**: ${params.expected}` : "",
+        params.actual ? `\n**Actual result**: ${params.actual}` : "",
+        "",
+        `**Version**: 0.5.3`,
+      ].filter(Boolean).join("\n");
+
+      const url = `https://github.com/dma9527/irs-taxpayer-mcp/issues/new?template=bug_report.md&title=${encodeURIComponent(`[BUG] ${params.toolName}: ${params.description.slice(0, 60)}`)}&body=${encodeURIComponent(body)}`;
+
+      return {
+        content: [{
+          type: "text",
+          text: [
+            `## 📝 Feedback Ready`,
+            "",
+            `Click the link below to submit this issue on GitHub:`,
+            "",
+            `**[Open Issue →](${url})**`,
+            "",
+            `> No data is sent automatically. You control what gets submitted.`,
+          ].join("\n"),
+        }],
+      };
+    }
+  );
 }

@@ -40,6 +40,22 @@ export function registerTaxCalculationTools(server: McpServer): void {
     async (params) => {
       try {
         const result = calculateTax(params);
+
+        // Input sanity checks
+        const hints: string[] = [];
+        if (params.selfEmploymentIncome && !params.w2Income && params.grossIncome > params.selfEmploymentIncome) {
+          hints.push("⚠️ Gross income exceeds SE income but no W-2 specified — if you have W-2 wages, include them for accurate SE tax and Medicare surtax.");
+        }
+        if ((params.dependents ?? 0) > 0 && params.filingStatus === "single") {
+          hints.push("⚠️ You have dependents but filed as single — head_of_household may give a lower tax if you qualify.");
+        }
+        if (params.grossIncome > 200000 && !params.w2Income && !params.selfEmploymentIncome) {
+          hints.push("ℹ️ High income without W-2/SE breakdown — specify income sources for accurate Additional Medicare Tax (0.9%) calculation.");
+        }
+        if ((params.itemizedDeductions ?? 0) > 0 && result.deductionType === "standard") {
+          hints.push(`ℹ️ Your itemized deductions ($${fmt(params.itemizedDeductions!)}) are below the standard deduction ($${fmt(result.deductionAmount)}) — standard deduction was used.`);
+        }
+
         const lines = [
           `## Federal Tax Calculation — TY${result.taxYear}`,
           `**Filing Status**: ${result.filingStatus.replace(/_/g, " ")}`,
@@ -78,6 +94,10 @@ export function registerTaxCalculationTools(server: McpServer): void {
           result.amt > 0 ? `> ℹ️ AMT uses simplified calculation (ISO spread + SALT add-back). Does not apply preferential capital gains rates under AMT.` : "",
           "",
           `> ⚠️ This is an estimate for educational purposes only. It does not constitute tax advice. Consult a qualified tax professional for your specific situation.`,
+          "",
+          ...hints,
+          "",
+          `> 💡 **If this result seems wrong**, verify: (1) all income sources included? (W-2, 1099, SE, investments) (2) correct filing status? (3) deduction amounts accurate? If the issue persists, use the \`submit_feedback\` tool to report it.`,
         ].filter(Boolean);
 
         return { content: [{ type: "text", text: lines.join("\n") }] };

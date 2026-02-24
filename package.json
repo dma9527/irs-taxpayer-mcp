@@ -1,6 +1,7 @@
 {
   "name": "irs-taxpayer-mcp",
-  "version": "0.5.2",
+  "version": "0.5.3",
+  "mcpName": "io.github.dma9527/irs-taxpayer",
   "description": "MCP server for individual US taxpayers - tax calculations, deduction analysis, IRS data lookup",
   "type": "module",
   "main": "dist/index.js",

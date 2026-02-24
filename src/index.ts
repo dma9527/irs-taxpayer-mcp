@@ -32,7 +32,7 @@ import http from "node:http";
 
 const server = new McpServer({
   name: "irs-taxpayer-mcp",
-  version: "0.5.2",
+  version: "0.5.3",
   description:
     "Tax calculation, credits, deductions, state taxes, and retirement strategy tools for individual US taxpayers. " +
     "All financial calculations run locally — your income data never leaves your machine.",
@@ -129,7 +129,7 @@ main().catch((err) => {
 
 function printHelp(): void {
   const help = `
-irs-taxpayer-mcp v0.5.2 — Tax assistant MCP server for US individual taxpayers
+irs-taxpayer-mcp v0.5.3 — Tax assistant MCP server for US individual taxpayers
 
 USAGE:
   npx irs-taxpayer-mcp              Start in stdio mode (default)

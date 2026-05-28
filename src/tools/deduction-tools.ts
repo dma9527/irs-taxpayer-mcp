@@ -57,7 +57,7 @@ export function registerDeductionTools(server: McpServer): void {
     "standard_vs_itemized",
     "Compare standard deduction vs itemized deductions to determine which is more beneficial.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: z.enum(["single", "married_filing_jointly", "married_filing_separately", "head_of_household"]),
       medicalExpenses: z.number().min(0).optional().describe("Unreimbursed medical expenses"),
       stateLocalTaxes: z.number().min(0).optional().describe("State/local income + property taxes paid"),

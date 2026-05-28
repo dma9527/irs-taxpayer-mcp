@@ -15,12 +15,12 @@ import { ERRORS, wrapToolHandler } from "./error-handler.js";
 export function registerTaxCalculationTools(server: McpServer): void {
   server.tool(
     "calculate_federal_tax",
-    "Calculate federal income tax for an individual taxpayer. Supports TY2024 and TY2025. " +
+    "Calculate federal income tax for an individual taxpayer. Supports TY2024, TY2025, and TY2026. " +
     "Includes bracket breakdown, effective/marginal rates, SE tax, NIIT, Additional Medicare Tax, " +
     "QBI deduction, capital gains, and child tax credit. " +
     "All calculations run locally — no data is sent to any server.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
       grossIncome: z.number().min(0).describe("Total gross income in USD"),
       w2Income: z.number().min(0).optional().describe("W-2 wage income"),
@@ -112,7 +112,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     "get_tax_brackets",
     "Get federal income tax brackets and standard deduction for a given tax year and filing status.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
     },
     async ({ taxYear, filingStatus }) => {
@@ -155,7 +155,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     "compare_filing_statuses",
     "Compare tax liability across different filing statuses for the same income. Helps determine the most advantageous filing status.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       grossIncome: z.number().min(0).describe("Total gross income"),
       itemizedDeductions: z.number().min(0).optional().describe("Itemized deductions if applicable"),
       dependents: z.number().int().min(0).optional().describe("Number of qualifying dependents"),
@@ -249,7 +249,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     "Calculate combined federal + state tax for a complete picture of total tax liability. " +
     "Returns federal breakdown, state tax, and combined totals in one call.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
       grossIncome: z.number().min(0).describe("Total gross income in USD"),
       stateCode: z.string().length(2).describe("Two-letter state code (e.g., 'CA', 'TX', 'NY')"),
@@ -328,7 +328,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     "Calculate recommended W-4 withholding settings. Estimates per-paycheck federal tax " +
     "and provides step-by-step W-4 form recommendations.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
       annualSalary: z.number().min(0).describe("Annual salary from this job"),
       payFrequency: z.enum(["weekly", "biweekly", "semimonthly", "monthly"]).describe("How often you get paid"),

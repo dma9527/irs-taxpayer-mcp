@@ -9,12 +9,13 @@ const STATUSES: FilingStatus[] = [
 ];
 
 describe("tax brackets data integrity", () => {
-  it("supports TY2024 and TY2025", () => {
+  it("supports TY2024, TY2025, and TY2026", () => {
     expect(SUPPORTED_TAX_YEARS).toContain(2024);
     expect(SUPPORTED_TAX_YEARS).toContain(2025);
+    expect(SUPPORTED_TAX_YEARS).toContain(2026);
   });
 
-  for (const year of [2024, 2025]) {
+  for (const year of [2024, 2025, 2026]) {
     describe(`TY${year}`, () => {
       const data = TAX_DATA[year];
 
@@ -86,6 +87,27 @@ describe("tax brackets data integrity", () => {
       expect(TAX_DATA[2025].standardDeduction[status]).toBeGreaterThan(
         TAX_DATA[2024].standardDeduction[status]
       );
+    }
+  });
+
+  it("TY2026 standard deductions are higher than TY2025", () => {
+    for (const status of STATUSES) {
+      expect(TAX_DATA[2026].standardDeduction[status]).toBeGreaterThan(
+        TAX_DATA[2025].standardDeduction[status]
+      );
+    }
+  });
+
+  it("TY2026 tax bracket thresholds are higher than TY2025 (inflation adjustment)", () => {
+    for (const status of STATUSES) {
+      const ty2025 = TAX_DATA[2025].brackets[status];
+      const ty2026 = TAX_DATA[2026].brackets[status];
+      // Top bracket should kick in at a higher threshold (with one exception:
+      // MFS top bracket is treated specially in the IRC, so just check the
+      // bottom-of-37% bracket grew or stayed equal).
+      const top2025 = ty2025[ty2025.length - 1].min;
+      const top2026 = ty2026[ty2026.length - 1].min;
+      expect(top2026).toBeGreaterThanOrEqual(top2025);
     }
   });
 

@@ -150,7 +150,7 @@ export function registerObbbTools(server: McpServer): void {
       const from = getTaxYearData(fromYear);
       const to = getTaxYearData(toYear);
       if (!from || !to) {
-        const supported = [2024, 2025].join(", ");
+        const supported = [2024, 2025, 2026].join(", ");
         return { content: [{ type: "text", text: `One or both tax years not supported. Available: ${supported}` }], isError: true };
       }
 

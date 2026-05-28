@@ -1,16 +1,18 @@
 /**
- * Federal income tax brackets and standard deductions for TY2024 and TY2025.
+ * Federal income tax brackets and standard deductions for TY2024, TY2025, and TY2026.
  *
  * IRS Sources:
  *   TY2024: Revenue Procedure 2023-34 (https://www.irs.gov/irb/2023-44_IRB#REV-PROC-2023-34)
  *   TY2025: Revenue Procedure 2024-40 (https://www.irs.gov/irb/2024-44_IRB#REV-PROC-2024-40)
+ *   TY2026: Revenue Procedure 2025-32 (https://www.irs.gov/irb/2025-45_IRB#REV-PROC-2025-32)
  *
  * Data points verified:
- *   - Tax brackets: Rev. Proc. §3.01 (Table 1-4)
- *   - Standard deduction: Rev. Proc. §3.02
- *   - Capital gains brackets: Rev. Proc. §3.03
- *   - Social Security wage base: SSA announcement
- *   - AMT exemption: Rev. Proc. §3.04
+ *   - Tax brackets: Rev. Proc. §3.01 / §4.01 (Table 1-4)
+ *   - Standard deduction: Rev. Proc. §3.02 / §4.14
+ *   - Capital gains brackets: Rev. Proc. §3.03 / §4.03
+ *   - Social Security wage base: SSA announcement (separate from IRS rev. proc.)
+ *   - AMT exemption: Rev. Proc. §3.04 / §4.10
+ *   - Child Tax Credit: Rev. Proc. §4.05 (TY2026: $2,200 per OBBB)
  */
 
 export type FilingStatus =
@@ -315,6 +317,153 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       mfs: 20000, // OBBB: MFS cap raised to $20K (was $5K)
       enhancedCap: 40000,
       enhancedAgiThreshold: 500000, // phases down above $500K MFJ / $250K MFS
+    },
+    obbbDeductions: {
+      seniorBonus: { amount: 6000, phaseoutSingle: 75000, phaseoutMFJ: 150000 },
+      tipsDeduction: { max: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      overtimeDeduction: { maxSingle: 12500, maxMFJ: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      autoLoanInterest: { max: 10000, agiLimitSingle: 100000, agiLimitMFJ: 200000 },
+    },
+  },
+  // Source: IRS Revenue Procedure 2025-32 (TY2026 inflation adjustments).
+  // OBBB-created items (SALT enhanced cap, senior bonus, tips/overtime/auto loan
+  // deductions) are not listed as adjusted items in Rev. Proc. 2025-32, so the
+  // TY2025 values are carried forward pending further IRS guidance.
+  2026: {
+    year: 2026,
+    brackets: {
+      single: [
+        { min: 0, max: 12400, rate: 0.10 },
+        { min: 12400, max: 50400, rate: 0.12 },
+        { min: 50400, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256225, rate: 0.32 },
+        { min: 256225, max: 640600, rate: 0.35 },
+        { min: 640600, max: null, rate: 0.37 },
+      ],
+      married_filing_jointly: [
+        { min: 0, max: 24800, rate: 0.10 },
+        { min: 24800, max: 100800, rate: 0.12 },
+        { min: 100800, max: 211400, rate: 0.22 },
+        { min: 211400, max: 403550, rate: 0.24 },
+        { min: 403550, max: 512450, rate: 0.32 },
+        { min: 512450, max: 768700, rate: 0.35 },
+        { min: 768700, max: null, rate: 0.37 },
+      ],
+      married_filing_separately: [
+        { min: 0, max: 12400, rate: 0.10 },
+        { min: 12400, max: 50400, rate: 0.12 },
+        { min: 50400, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256225, rate: 0.32 },
+        { min: 256225, max: 384350, rate: 0.35 },
+        { min: 384350, max: null, rate: 0.37 },
+      ],
+      head_of_household: [
+        { min: 0, max: 17700, rate: 0.10 },
+        { min: 17700, max: 67450, rate: 0.12 },
+        { min: 67450, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201750, rate: 0.24 },
+        { min: 201750, max: 256200, rate: 0.32 },
+        { min: 256200, max: 640600, rate: 0.35 },
+        { min: 640600, max: null, rate: 0.37 },
+      ],
+    },
+    standardDeduction: {
+      single: 16100,
+      married_filing_jointly: 32200,
+      married_filing_separately: 16100,
+      head_of_household: 24150,
+    },
+    additionalDeduction: {
+      // Rev. Proc. 2025-32 §4.14(3): $1,650 base, increased to $2,050 if the
+      // individual is unmarried and not a surviving spouse (i.e., single / HoH).
+      age65OrBlind: {
+        single: 2050,
+        married_filing_jointly: 1650,
+        married_filing_separately: 1650,
+        head_of_household: 2050,
+      },
+    },
+    qualifiedBusinessIncomeDeductionRate: 0.20,
+    capitalGainsBrackets: {
+      single: [
+        { rate: 0, threshold: 49450 },
+        { rate: 0.15, threshold: 545500 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      married_filing_jointly: [
+        { rate: 0, threshold: 98900 },
+        { rate: 0.15, threshold: 613700 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      married_filing_separately: [
+        { rate: 0, threshold: 49450 },
+        { rate: 0.15, threshold: 306850 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      head_of_household: [
+        { rate: 0, threshold: 66200 },
+        { rate: 0.15, threshold: 579600 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+    },
+    socialSecurity: {
+      // Source: SSA fact sheet for 2026 (announced October 2025).
+      // Not in Rev. Proc. 2025-32; separately published by the Social Security
+      // Administration.
+      taxRate: 0.062,
+      wageBase: 184500,
+    },
+    medicare: {
+      // Medicare Additional Tax thresholds are statutory ($200K single,
+      // $250K MFJ, $125K MFS) and not inflation-indexed.
+      taxRate: 0.0145,
+      additionalTaxRate: 0.009,
+      additionalTaxThreshold: {
+        single: 200000,
+        married_filing_jointly: 250000,
+        married_filing_separately: 125000,
+        head_of_household: 200000,
+      },
+    },
+    estimatedTaxSafeHarborPercent: 90,
+    childTaxCredit: {
+      // Rev. Proc. 2025-32 §4.05(1): Max credit $2,200.
+      // Phaseout start ($200K single / $400K MFJ) is statutory under OBBB
+      // and not inflation-indexed.
+      amount: 2200,
+      phaseoutStart: {
+        single: 200000,
+        married_filing_jointly: 400000,
+        married_filing_separately: 200000,
+        head_of_household: 200000,
+      },
+      phaseoutRate: 50,
+    },
+    amt: {
+      // Rev. Proc. 2025-32 §4.10
+      exemption: {
+        single: 90100,
+        married_filing_jointly: 140200,
+        married_filing_separately: 70100,
+        head_of_household: 90100,
+      },
+      phaseoutStart: {
+        single: 500000,
+        married_filing_jointly: 1000000,
+        married_filing_separately: 500000,
+        head_of_household: 500000,
+      },
+      rate28Threshold: 244500,
+    },
+    saltCap: {
+      // OBBB-enacted SALT cap. Not listed as inflation-adjusted in Rev. Proc.
+      // 2025-32, so TY2025 values are carried forward.
+      base: 10000,
+      mfs: 20000,
+      enhancedCap: 40000,
+      enhancedAgiThreshold: 500000,
     },
     obbbDeductions: {
       seniorBonus: { amount: 6000, phaseoutSingle: 75000, phaseoutMFJ: 150000 },

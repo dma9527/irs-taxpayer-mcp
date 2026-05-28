@@ -224,7 +224,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   const taxData = getTaxYearData(input.taxYear);
   if (!taxData) {
-    throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025`);
+    throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025, 2026`);
   }
 
   // Step 1: Calculate AGI

@@ -257,7 +257,7 @@ export function registerCreditTools(server: McpServer): void {
     "Calculate the exact Earned Income Tax Credit (EITC) amount. " +
     "The EITC is one of the largest refundable credits for low-to-moderate income workers.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: z.enum(["single", "married_filing_jointly", "married_filing_separately", "head_of_household"]),
       earnedIncome: z.number().min(0).describe("Earned income (wages, salary, self-employment)"),
       agi: z.number().min(0).describe("Adjusted Gross Income"),

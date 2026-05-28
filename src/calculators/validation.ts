@@ -17,7 +17,7 @@ export function validateIncome(value: number, field: string): ValidationError | 
 
 export function validateTaxYear(year: number): ValidationError | null {
   if (!Number.isInteger(year)) return { field: "taxYear", message: "Tax year must be an integer" };
-  if (year < 2024 || year > 2025) return { field: "taxYear", message: `Tax year ${year} not supported. Use 2024 or 2025` };
+  if (year < 2024 || year > 2026) return { field: "taxYear", message: `Tax year ${year} not supported. Use 2024, 2025, or 2026` };
   return null;
 }
 

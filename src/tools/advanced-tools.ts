@@ -477,7 +477,7 @@ export function registerAdvancedTools(server: McpServer): void {
       filingStatus: FilingStatusEnum,
       currentAge: z.number().int().min(0),
       years: z.array(z.object({
-        year: z.number().describe("Tax year (2024 or 2025)"),
+        year: z.number().describe("Tax year (2024, 2025, or 2026)"),
         expectedIncome: z.number().min(0).describe("Expected gross income"),
         selfEmploymentIncome: z.number().min(0).optional(),
         plannedRothConversion: z.number().min(0).optional().describe("Planned Roth conversion amount"),

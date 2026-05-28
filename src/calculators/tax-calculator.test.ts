@@ -404,3 +404,107 @@ describe("IRS Tax Table verification", () => {
     expect(r.ordinaryIncomeTax).toBeCloseTo(13449, 0);
   });
 });
+
+/**
+ * TY2026 verification — hand-calculated from Rev. Proc. 2025-32 published bracket data.
+ * Std ded (single): $16,100. Brackets: 10/12/22/24/32/35/37 at $12,400 / $50,400 /
+ * $105,700 / $201,775 / $256,225 / $640,600.
+ */
+describe("TY2026 IRS Tax Table verification (Rev. Proc. 2025-32)", () => {
+  it("TY2026 single $50k → tax $3,820", () => {
+    // Taxable: $50,000 - $16,100 = $33,900
+    // 10% × $12,400 = $1,240 + 12% × ($33,900 - $12,400) = 12% × $21,500 = $2,580
+    const r = calculateTax({ taxYear: 2026, filingStatus: "single", grossIncome: 50000 });
+    expect(r.taxableIncome).toBe(33900);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(3820, 0);
+  });
+
+  it("TY2026 single $100k → tax $13,170", () => {
+    // Taxable: $100,000 - $16,100 = $83,900
+    // 10% × $12,400 + 12% × $38,000 + 22% × ($83,900 - $50,400) = $1,240 + $4,560 + $7,370
+    const r = calculateTax({ taxYear: 2026, filingStatus: "single", grossIncome: 100000 });
+    expect(r.taxableIncome).toBe(83900);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(13170, 0);
+  });
+
+  it("TY2026 MFJ $150k → tax $15,340", () => {
+    // Taxable: $150,000 - $32,200 = $117,800
+    // 10% × $24,800 + 12% × $76,000 + 22% × ($117,800 - $100,800)
+    // = $2,480 + $9,120 + $3,740
+    const r = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 150000,
+    });
+    expect(r.taxableIncome).toBe(117800);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(15340, 0);
+  });
+
+  it("TY2026 single $500k → tax $138,134.25 (top of 35% bracket cite)", () => {
+    // Taxable: $500,000 - $16,100 = $483,900 — falls in 35% bracket
+    // Rev. Proc. 2025-32 Table 3: Over $256,225 but not over $640,600 →
+    //   $58,448 plus 35% of the excess over $256,225
+    // $58,448 + 35% × ($483,900 - $256,225) = $58,448 + $79,686.25 = $138,134.25
+    const r = calculateTax({ taxYear: 2026, filingStatus: "single", grossIncome: 500000 });
+    expect(r.taxableIncome).toBe(483900);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(138134.25, 0);
+  });
+
+  it("TY2026 single age 65+ standard deduction is $18,150", () => {
+    // Per Rev. Proc. 2025-32 §4.14(1) + §4.14(3): $16,100 base + $2,050 add-on
+    // (unmarried and not surviving spouse).
+    const r = calculateTax({
+      taxYear: 2026,
+      filingStatus: "single",
+      grossIncome: 100000,
+      age65OrOlder: true,
+    });
+    expect(r.deductionAmount).toBe(18150);
+    expect(r.taxableIncome).toBe(81850);
+  });
+
+  it("TY2026 MFJ age-65 add-on is $1,650 per spouse", () => {
+    // Per Rev. Proc. 2025-32 §4.14(3): $1,650 base (married, not unmarried).
+    const r = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 100000,
+      age65OrOlder: true,
+    });
+    expect(r.deductionAmount).toBe(32200 + 1650);
+  });
+
+  it("TY2026 single $80k w/ $50k LTCG spans 0% & 15% cap-gains brackets", () => {
+    // Gross $80K with $50K LTCG, single, std ded $16,100.
+    // Taxable income: $63,900. Ordinary portion: $13,900. LTCG: $50,000.
+    // Ordinary tax on $13,900: 10% × $12,400 + 12% × $1,500 = $1,240 + $180 = $1,420
+    // LTCG stacked above $13,900 of ordinary:
+    //   0% bracket up to $49,450 (Rev. Proc. 2025-32 §4.03): $49,450 - $13,900
+    //     = $35,550 of LTCG at 0% = $0
+    //   15% bracket: remaining $50,000 - $35,550 = $14,450 at 15% = $2,167.50
+    // NIIT: $0 (AGI $80K below $200K threshold).
+    const r = calculateTax({
+      taxYear: 2026,
+      filingStatus: "single",
+      grossIncome: 80000,
+      capitalGains: 50000,
+      capitalGainsLongTerm: true,
+    });
+    expect(r.taxableIncome).toBe(63900);
+    expect(r.ordinaryIncomeTax).toBeCloseTo(1420, 0);
+    expect(r.capitalGainsTax).toBeCloseTo(2167.5, 0);
+    expect(r.niit).toBe(0);
+    expect(r.amt).toBe(0);
+  });
+
+  it("TY2026 CTC remains $2,200 per child (OBBB continued)", () => {
+    // Rev. Proc. 2025-32 §4.05(1): max credit $2,200 — same as TY2025.
+    const r = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 100000,
+      dependents: 2,
+    });
+    expect(r.childTaxCredit).toBe(4400);
+  });
+});

@@ -342,6 +342,39 @@ describe("calculateTax", () => {
       });
       expect(result.amt).toBeGreaterThanOrEqual(0);
     });
+
+    it("no phantom AMT for LTCG-dominant return (Form 6251 Part III)", () => {
+      // Regression test for AMT bug where the LTCG portion of AMTI was taxed
+      // at the 26%/28% AMT rate instead of the preferential 0/15/20% rates.
+      // Real TY2025 single filer, age 65+: $320K gross with $247K LTCG,
+      // $72K itemized, no ISO spread, no SALT preference triggers.
+      // Before fix: tentative AMT ~$41.5K, AMT ~$11.5K (phantom).
+      // After fix: tentative AMT ~$29.8K (LTCG at 15%), AMT $0.
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 320012,
+        capitalGains: 247211,
+        capitalGainsLongTerm: true,
+        itemizedDeductions: 72282,
+        age65OrOlder: true,
+      });
+      expect(result.amt).toBe(0);
+    });
+
+    it("AMT still triggers from ISO spread even when LTCG is present", () => {
+      // Regression guard: ensure the LTCG carve-out does not suppress
+      // legitimate AMT from ISO exercise preference income.
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 200000,
+        capitalGains: 50000,
+        capitalGainsLongTerm: true,
+        isoExerciseSpread: 300000,
+      });
+      expect(result.amt).toBeGreaterThan(0);
+    });
   });
 
   describe("high income scenario", () => {

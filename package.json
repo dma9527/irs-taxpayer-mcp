@@ -4,6 +4,9 @@
   "mcpName": "io.github.dma9527/irs-taxpayer",
   "description": "MCP server for deterministic US individual tax estimates and planning for supported TY2024 and TY2025 scenarios",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "main": "dist/index.js",
   "bin": {
     "irs-taxpayer-mcp": "dist/index.js"

@@ -266,6 +266,8 @@ Numeric regression tests cite IRS Revenue Procedures, IRC sections, and relevant
 
 ## 🏗️ Build from Source
 
+Requires Node.js 20 or later.
+
 ```bash
 git clone https://github.com/dma9527/irs-taxpayer-mcp.git
 cd irs-taxpayer-mcp

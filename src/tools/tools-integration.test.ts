@@ -18,6 +18,7 @@ import { registerAdvancedTools } from "./advanced-tools.js";
 import { registerSmartTools } from "./smart-tools.js";
 
 import { registerTaxPlanTools } from "./tax-plan-tools.js";
+import { SERVER_VERSION } from "../version.js";
 // Helper to call a tool on the server
 async function callTool(
   server: McpServer,
@@ -959,7 +960,7 @@ describe("MCP Tools Integration", () => {
         description: "Synthetic planner feedback",
       });
 
-      expect(text).toContain("1.0.0");
+      expect(text).toContain(SERVER_VERSION);
       expect(text).toContain("No data is sent automatically");
       expect(text).not.toContain("0.5.3");
     });

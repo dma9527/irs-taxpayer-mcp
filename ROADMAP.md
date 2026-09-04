@@ -23,7 +23,7 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 273 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
+- Expanded the suite to 275 tests, including IRS numeric regressions, release metadata gates, and real Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -106,6 +106,8 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] Stdio MCP smoke coverage.
 - [x] All 43 tools use `registerTool` with annotations, output schemas, and structured content.
 - [x] Tool contract snapshot and stable agent evaluation suite.
+- [x] Tag-driven release workflow with OIDC, exact-tarball smoke, and idempotent retry checks.
+- [ ] Configure the npm Trusted Publisher and verify OIDC publishing on the next release tag.
 - [x] Stateless Streamable HTTP with loopback and Origin protections.
 - [x] IRS numeric regression tests for high-impact P0 defects.
 - [ ] Zero known production dependency vulnerabilities at release time.

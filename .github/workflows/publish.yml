@@ -1,0 +1,142 @@
+name: Publish release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Use npm 12.0.2
+        run: npm install --global npm@12.0.2
+
+      - name: Verify tag and release metadata
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(node --print 'require("./package.json").version')"
+          case "$TAG_VERSION" in
+            *-*) echo "Prerelease tags require an explicit npm dist-tag policy."; exit 1 ;;
+          esac
+          test "$TAG_VERSION" = "$PACKAGE_VERSION"
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Build and test
+        run: |
+          npm run build
+          npm test
+          npm audit --omit=dev --audit-level=high
+
+      - name: Pack release tarball
+        id: pack
+        run: |
+          TARBALL="$(npm pack --json | node --input-type=module -e 'import fs from "node:fs"; const result = JSON.parse(fs.readFileSync(0, "utf8")); console.log(result[0].filename);')"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "sha1=$(sha1sum "$TARBALL" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Run clean-install release-smoke
+        run: |
+          SMOKE_DIR="$RUNNER_TEMP/release-smoke"
+          mkdir -p "$SMOKE_DIR"
+          npm install --prefix "$SMOKE_DIR" --ignore-scripts --no-audit --no-fund \
+            "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
+          node scripts/release-smoke.mjs \
+            "$SMOKE_DIR/node_modules/.bin/irs-taxpayer-mcp" \
+            "${GITHUB_REF_NAME#v}"
+
+      - name: Publish npm package with OIDC
+        run: |
+          PACKAGE_NAME="$(node --print 'require("./package.json").name')"
+          PACKAGE_VERSION="$(node --print 'require("./package.json").version')"
+          if REMOTE_SHA1="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.shasum 2>/dev/null)"; then
+            test "$REMOTE_SHA1" = "${{ steps.pack.outputs.sha1 }}"
+            echo "$PACKAGE_NAME@$PACKAGE_VERSION already matches the release tarball."
+          else
+            npm publish --access public
+          fi
+
+      - name: Verify npm publication
+        run: |
+          PACKAGE_NAME="$(node --print 'require("./package.json").name')"
+          PACKAGE_VERSION="$(node --print 'require("./package.json").version')"
+          for attempt in $(seq 1 12); do
+            REMOTE_SHA1="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.shasum 2>/dev/null || true)"
+            if [ "$REMOTE_SHA1" = "${{ steps.pack.outputs.sha1 }}" ]; then
+              exit 0
+            fi
+            echo "Waiting for npm propagation, attempt $attempt of 12."
+            sleep 10
+          done
+          exit 1
+
+      - name: Install pinned MCP Publisher
+        run: |
+          curl --fail --location \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz" \
+            --output mcp-publisher.tar.gz
+          echo "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher.tar.gz" \
+            | sha256sum --check
+          tar xzf mcp-publisher.tar.gz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: Validate MCP Registry metadata
+        run: ./mcp-publisher validate
+
+      - name: Publish MCP Registry metadata with OIDC
+        run: |
+          export MCP_NAME="$(node --print 'require("./package.json").mcpName')"
+          export PACKAGE_VERSION="$(node --print 'require("./package.json").version')"
+          REGISTRY_HAS_VERSION="$(curl --fail --silent --get \
+            --data-urlencode "search=$MCP_NAME" \
+            "https://registry.modelcontextprotocol.io/v0.1/servers" \
+            | node --input-type=module -e '
+                import fs from "node:fs";
+                const response = JSON.parse(fs.readFileSync(0, "utf8"));
+                const servers = Array.isArray(response.servers) ? response.servers : [];
+                const found = servers.some((entry) => {
+                  const server = entry && typeof entry === "object"
+                    ? entry.server ?? entry
+                    : null;
+                  return server
+                    && server.name === process.env.MCP_NAME
+                    && server.version === process.env.PACKAGE_VERSION;
+                });
+                console.log(found);
+              ')"
+          if [ "$REGISTRY_HAS_VERSION" = "true" ]; then
+            echo "$MCP_NAME version $PACKAGE_VERSION is already published."
+          else
+            ./mcp-publisher login github-oidc
+            ./mcp-publisher publish
+          fi
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub Release $GITHUB_REF_NAME already exists."
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --verify-tag \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes
+          fi

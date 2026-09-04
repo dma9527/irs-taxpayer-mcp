@@ -4,6 +4,15 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- Added a tag-driven OIDC release workflow for npm, GitHub Releases, and the MCP Registry, including exact-tarball smoke and post-publish verification.
+- Added release metadata consistency tests and maintainer release documentation.
+
+### Tests
+
+- Expanded the post-0.6.0 suite to 275 tests across 11 test files.
+
 ## [0.6.0] - 2026-09-04
 
 ### Added

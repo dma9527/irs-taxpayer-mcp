@@ -1,6 +1,6 @@
 /**
- * MCP tools for IRS public data lookups.
- * These fetch from IRS public endpoints only — no authentication needed, no PII involved.
+ * MCP tools for bundled IRS public reference data.
+ * These perform no runtime network requests and require no taxpayer PII.
  */
 
 import { z } from "zod";

@@ -9,6 +9,7 @@ import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ERRORS } from "./error-handler.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
+import { SERVER_VERSION } from "../version.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 
 
@@ -519,7 +520,7 @@ export function registerSmartTools(server: McpServer): void {
   registerTaxTool(server,
     "submit_feedback",
     "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. " +
-    "No data is sent — the user clicks the link to submit. Use this after verifying the user's inputs.",
+    "No data is sent. The user clicks the link to submit. Use this after verifying the user's inputs.",
     {
       toolName: z.string().describe("Which tool produced the issue (e.g., calculate_federal_tax)"),
       taxYear: z.number().optional().describe("Tax year"),
@@ -536,7 +537,7 @@ export function registerSmartTools(server: McpServer): void {
         params.expected ? `\n**Expected result**: ${params.expected}` : "",
         params.actual ? `\n**Actual result**: ${params.actual}` : "",
         "",
-        `**Version**: 0.5.3`,
+        `**Version**: ${SERVER_VERSION}`,
       ].filter(Boolean).join("\n");
 
       const url = `https://github.com/dma9527/irs-taxpayer-mcp/issues/new?template=bug_report.md&title=${encodeURIComponent(`[BUG] ${params.toolName}: ${params.description.slice(0, 60)}`)}&body=${encodeURIComponent(body)}`;
@@ -549,8 +550,9 @@ export function registerSmartTools(server: McpServer): void {
             "",
             `Click the link below to submit this issue on GitHub:`,
             "",
-            `**[Open Issue →](${url})**`,
+            `**[Open Issue](${url})**`,
             "",
+            `> Use rounded or synthetic values. Do not include taxpayer PII or a real tax return in a public issue.`,
             `> No data is sent automatically. You control what gets submitted.`,
           ].join("\n"),
         }],

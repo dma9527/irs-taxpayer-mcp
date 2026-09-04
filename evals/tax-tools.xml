@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <evaluation>
   <qa_pair>
-    <question>For TY2026, what standard deduction and ordinary federal income tax does calculate_federal_tax return for a single filer with $100,000 gross income and no other inputs?</question>
-    <answer>$16,100 standard deduction; $13,170 ordinary income tax</answer>
+    <question>For TY2026, what adjusted gross income, federal tax after refundable credits, employee FICA, and total modeled tax does generate_tax_plan return for a single filer with $100,000 of W-2 income and no other inputs?</question>
+    <answer>$100,000 AGI; $13,170 federal tax; $7,650 employee FICA; $20,820 total modeled tax</answer>
   </qa_pair>
   <qa_pair>
     <question>For TY2025, what SALT deduction cap applies to a single filer with $510,000 MAGI?</question>

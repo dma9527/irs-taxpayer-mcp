@@ -1,11 +1,12 @@
 # Usage Guide: irs-taxpayer-mcp
 
-A practical guide to getting the most out of the 43 tax tools.
+A practical guide to getting the most out of the 44 tax tools.
 
 ## Quick Reference: Which Tool to Use
 
 | I want to...                              | Use this tool                    |
 | ----------------------------------------- | -------------------------------- |
+| Build a local plan with sources and trace     | `generate_tax_plan`              |
 | Calculate my federal tax                  | `calculate_federal_tax`          |
 | See my total tax (federal + state + FICA) | `generate_full_tax_report`       |
 | Compare states for relocation             | `compare_state_taxes`            |
@@ -102,10 +103,11 @@ These help you make decisions.
 - `compare_mfj_vs_mfs`: Joint vs separate filing
 - `simulate_tax_scenario`: What-if modeling
 
-### Full Reports (4 tools)
+### Full Reports (5 tools)
 
 These give you the big picture.
 
+- `generate_tax_plan`: Local structured plan with assumptions, sources, trace, and boundaries
 - `generate_full_tax_report`: Everything in one report
 - `process_1099_income`: Handle multiple 1099s
 - `get_personalized_tax_calendar`: Your deadlines
@@ -155,8 +157,9 @@ New law and compliance.
 
 ## Tips
 
-- Always specify `taxYear`: TY2024 and TY2025 have different rules (OBBB Act)
+- Always specify `taxYear`: TY2024 through TY2026 use different annual rules.
 - For the best supported estimate, provide all inputs requested by the selected tool and review its stated limitations.
-- Use `generate_full_tax_report` when you want everything at once
+- Use `generate_tax_plan` when you need structured results, assumptions, provenance, and explicit boundaries.
+- Use `generate_full_tax_report` when you want a detailed human-readable report.
 - Use `simulate_tax_scenario` when you want to compare two situations
 - All calculations are estimates: consult a tax professional for filing

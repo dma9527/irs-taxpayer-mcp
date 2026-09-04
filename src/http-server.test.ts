@@ -80,7 +80,7 @@ describe("Origin validation", () => {
     expect(healthResponse.status).toBe(200);
     expect(await healthResponse.json()).toEqual({
       status: "ok",
-      tools: 43,
+      tools: 44,
       transport: "streamable-http",
       host: "127.0.0.1",
     });
@@ -113,7 +113,7 @@ describe("Origin validation", () => {
     );
     await client.connect(transport);
     const tools = await client.listTools();
-    expect(tools.tools).toHaveLength(43);
+    expect(tools.tools).toHaveLength(44);
     await client.close();
   });
 });

@@ -5,3 +5,5 @@ dist
 .github
 *.md
 !README.md
+.mcpregistry_*
+.DS_Store

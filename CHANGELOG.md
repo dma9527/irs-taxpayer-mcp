@@ -4,14 +4,29 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-04
+
 ### Added
 
+- Added `generate_tax_plan`, a deterministic local workflow with domain structured results, privacy guarantees, assumptions, official source provenance, a calculation trace, and explicit unsupported boundaries.
+- Added separate CTC and EITC child facts, EITC investment-income handling, required retirement and QBI planning facts, and fail-closed exact-year state planning.
+- Added a privacy-safe Planner Feedback issue form and an executable filing-engine investment gate requiring paid demand, discovery interviews, a tax-domain partner, engineering capacity, and an annual maintenance owner.
 - Added a tag-driven OIDC release workflow for npm, GitHub Releases, and the MCP Registry, including exact-tarball smoke and post-publish verification.
 - Added release metadata consistency tests and maintainer release documentation.
 
+### Changed
+
+- Expanded the server to 44 tools and made the runtime version a shared source for server and feedback metadata.
+- Updated English, Chinese, Spanish, and Japanese documentation for TY2024 through TY2026 planning scope.
+
+### Security
+
+- The flagship planner performs no network requests, persistence, or telemetry and rejects unsupported tax years, state profiles, and required worksheet facts.
+- Release publishing uses short-lived OIDC credentials and pinned, checksum-verified release dependencies instead of long-lived publish tokens.
+
 ### Tests
 
-- Expanded the post-0.6.0 suite to 275 tests across 11 test files.
+- Expanded the suite to 286 tests across 12 test files, including real MCP planner contracts, privacy assertions, capital-loss normalization and carryover limits, EITC boundaries, required-fact rejection, release gates, and filing-engine gate decisions.
 
 ## [0.6.0] - 2026-09-04
 

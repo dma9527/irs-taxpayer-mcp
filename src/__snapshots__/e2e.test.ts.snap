@@ -4543,7 +4543,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "openWorldHint": false,
       "readOnlyHint": true,
     },
-    "description": "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. No data is sent — the user clicks the link to submit. Use this after verifying the user's inputs.",
+    "description": "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. No data is sent. The user clicks the link to submit. Use this after verifying the user's inputs.",
     "execution": {
       "taskSupport": "forbidden",
     },
@@ -4605,6 +4605,503 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "isError": {
           "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Generate a deterministic, privacy-first local tax plan with structured results, assumptions, source provenance, calculation trace, and explicit unsupported boundaries.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "business": {
+          "additionalProperties": false,
+          "properties": {
+            "isSstb": {
+              "type": "boolean",
+            },
+            "qualifiedBusinessIncome": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "qualifiedPropertyBasis": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "w2Wages": {
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "required": [
+            "qualifiedBusinessIncome",
+          ],
+          "type": "object",
+        },
+        "deductions": {
+          "additionalProperties": false,
+          "properties": {
+            "aboveTheLine": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "forceItemized": {
+              "type": "boolean",
+            },
+            "itemized": {
+              "description": "Eligible itemized deduction total after applicable limits",
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "education": {
+          "additionalProperties": false,
+          "properties": {
+            "aotcRefundableAllowed": {
+              "type": "boolean",
+            },
+            "aotcStudentQualifiedExpenses": {
+              "items": {
+                "minimum": 0,
+                "type": "number",
+              },
+              "type": "array",
+            },
+            "lifetimeLearningQualifiedExpenses": {
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "family": {
+          "additionalProperties": false,
+          "properties": {
+            "hasForm2555": {
+              "type": "boolean",
+            },
+            "marriedFilingSeparatelyLivedWithSpouse": {
+              "type": "boolean",
+            },
+            "otherDependentsForOdc": {
+              "minimum": 0,
+              "type": "integer",
+            },
+            "qualifyingChildrenForCtc": {
+              "minimum": 0,
+              "type": "integer",
+            },
+            "qualifyingChildrenForEitc": {
+              "minimum": 0,
+              "type": "integer",
+            },
+            "socialSecurityTaxesPaid": {
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "income": {
+          "additionalProperties": false,
+          "description": "Annual income facts. Qualified dividends are included in ordinary dividends.",
+          "properties": {
+            "earlyRetirementDistributionSubjectToPenalty": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "longTermCapitalGain": {
+              "type": "number",
+            },
+            "longTermCapitalLossCarryover": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "ordinaryDividends": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "other": {
+              "type": "number",
+            },
+            "qualifiedDividends": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "retirementDistributions": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "selfEmployment": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "shortTermCapitalGain": {
+              "type": "number",
+            },
+            "shortTermCapitalLossCarryover": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "socialSecurityBenefits": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "taxExemptInterest": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "taxableInterest": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "taxableRetirementDistributions": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "w2": {
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "payments": {
+          "additionalProperties": false,
+          "properties": {
+            "estimatedPayments": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "federalWithholding": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "stateWithholding": {
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "stateCode": {
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year: 2024, 2025, or 2026",
+          "type": "integer",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "income",
+      ],
+      "type": "object",
+    },
+    "name": "generate_tax_plan",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "plan": {
+          "additionalProperties": false,
+          "properties": {
+            "assumptions": {
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "calculationTrace": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                  },
+                  "description": {
+                    "type": "string",
+                  },
+                  "step": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "step",
+                  "amount",
+                  "description",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "contractVersion": {
+              "const": "1.0",
+              "type": "string",
+            },
+            "facts": {
+              "additionalProperties": false,
+              "properties": {
+                "cashIncome": {
+                  "type": "number",
+                },
+                "earnedIncome": {
+                  "type": "number",
+                },
+                "grossIncome": {
+                  "type": "number",
+                },
+                "investmentIncomeForEitc": {
+                  "type": "number",
+                },
+                "stateCode": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "grossIncome",
+                "cashIncome",
+                "earnedIncome",
+                "investmentIncomeForEitc",
+              ],
+              "type": "object",
+            },
+            "filingStatus": {
+              "enum": [
+                "single",
+                "married_filing_jointly",
+                "married_filing_separately",
+                "head_of_household",
+              ],
+              "type": "string",
+            },
+            "privacy": {
+              "additionalProperties": false,
+              "properties": {
+                "execution": {
+                  "const": "local",
+                  "type": "string",
+                },
+                "networkRequests": {
+                  "const": false,
+                  "type": "boolean",
+                },
+                "persisted": {
+                  "const": false,
+                  "type": "boolean",
+                },
+                "telemetry": {
+                  "const": false,
+                  "type": "boolean",
+                },
+              },
+              "required": [
+                "execution",
+                "networkRequests",
+                "persisted",
+                "telemetry",
+              ],
+              "type": "object",
+            },
+            "results": {
+              "additionalProperties": false,
+              "properties": {
+                "additionalMedicareTax": {
+                  "type": "number",
+                },
+                "adjustedGrossIncome": {
+                  "type": "number",
+                },
+                "amt": {
+                  "type": "number",
+                },
+                "capitalGainsTax": {
+                  "type": "number",
+                },
+                "deductionAmount": {
+                  "type": "number",
+                },
+                "deductionType": {
+                  "enum": [
+                    "standard",
+                    "itemized",
+                  ],
+                  "type": "string",
+                },
+                "effectiveFederalRate": {
+                  "type": "number",
+                },
+                "employeeFica": {
+                  "type": "number",
+                },
+                "estimatedQuarterlyPayment": {
+                  "type": "number",
+                },
+                "federalBalance": {
+                  "type": "number",
+                },
+                "federalTaxAfterRefundableCredits": {
+                  "type": "number",
+                },
+                "marginalRate": {
+                  "type": "number",
+                },
+                "niit": {
+                  "type": "number",
+                },
+                "ordinaryIncomeTax": {
+                  "type": "number",
+                },
+                "refundableCredits": {
+                  "type": "number",
+                },
+                "selfEmploymentTax": {
+                  "type": "number",
+                },
+                "stateBalance": {
+                  "type": "number",
+                },
+                "stateTax": {
+                  "type": "number",
+                },
+                "takeHomeIncome": {
+                  "type": "number",
+                },
+                "taxableIncome": {
+                  "type": "number",
+                },
+                "totalTax": {
+                  "type": "number",
+                },
+              },
+              "required": [
+                "adjustedGrossIncome",
+                "deductionType",
+                "deductionAmount",
+                "taxableIncome",
+                "ordinaryIncomeTax",
+                "capitalGainsTax",
+                "selfEmploymentTax",
+                "niit",
+                "additionalMedicareTax",
+                "amt",
+                "refundableCredits",
+                "federalTaxAfterRefundableCredits",
+                "employeeFica",
+                "stateTax",
+                "totalTax",
+                "takeHomeIncome",
+                "federalBalance",
+                "stateBalance",
+                "estimatedQuarterlyPayment",
+                "marginalRate",
+                "effectiveFederalRate",
+              ],
+              "type": "object",
+            },
+            "sources": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string",
+                  },
+                  "url": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "title",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "taxYear": {
+              "type": "number",
+            },
+            "unsupportedBoundaries": {
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "warnings": {
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+          },
+          "required": [
+            "contractVersion",
+            "taxYear",
+            "filingStatus",
+            "privacy",
+            "facts",
+            "results",
+            "assumptions",
+            "warnings",
+            "unsupportedBoundaries",
+            "sources",
+            "calculationTrace",
+          ],
+          "type": "object",
         },
         "text": {
           "type": "string",

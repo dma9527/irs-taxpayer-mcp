@@ -9,7 +9,7 @@ describe("MCP agent evaluations", () => {
 
     expect(questions).toHaveLength(10);
     expect(answers).toHaveLength(10);
-    expect(evaluation).toContain("calculate_federal_tax");
+    expect(evaluation).toContain("generate_tax_plan");
     expect(evaluation).toContain("calculate_eitc");
   });
 });

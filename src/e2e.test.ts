@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
 import { spawn } from "node:child_process";
 
 interface McpResponse {
@@ -100,9 +101,10 @@ describe("E2E Smoke Test", () => {
       // Verify key tools exist
       expect(toolNames).toContain("calculate_federal_tax");
       expect(toolNames).toContain("generate_full_tax_report");
+      expect(toolNames).toContain("generate_tax_plan");
       expect(toolNames).toContain("simulate_tax_scenario");
       expect(toolNames).toContain("assess_audit_risk");
-      expect(toolNames.length).toBe(43);
+      expect(toolNames.length).toBe(44);
       for (const tool of toolsResult.tools) {
         expect(tool.outputSchema).toBeDefined();
         expect(tool.annotations).toEqual({
@@ -140,9 +142,57 @@ describe("E2E Smoke Test", () => {
         isError: false,
       });
 
-      const errorResponse = await sendMcpMessage(proc, {
+      const planResponse = await sendMcpMessage(proc, {
         jsonrpc: "2.0",
         id: 4,
+        method: "tools/call",
+        params: {
+          name: "generate_tax_plan",
+          arguments: {
+            taxYear: 2026,
+            filingStatus: "single",
+            income: { w2: 100000 },
+            payments: { federalWithholding: 12000 },
+          },
+        },
+      });
+      const planResult = z.object({
+        structuredContent: z.object({
+          text: z.string(),
+          isError: z.literal(false),
+          plan: z.object({
+            contractVersion: z.literal("1.0"),
+            privacy: z.object({
+              execution: z.literal("local"),
+              networkRequests: z.literal(false),
+              persisted: z.literal(false),
+              telemetry: z.literal(false),
+            }),
+            results: z.object({
+              adjustedGrossIncome: z.number(),
+              federalTaxAfterRefundableCredits: z.number(),
+              totalTax: z.number(),
+            }),
+            calculationTrace: z.array(z.object({ step: z.string() })),
+            sources: z.array(z.object({ title: z.string() })),
+            unsupportedBoundaries: z.array(z.string()),
+          }),
+        }),
+      }).parse(planResponse.result);
+      expect(planResult.structuredContent.plan.results.adjustedGrossIncome)
+        .toBe(100000);
+      expect(planResult.structuredContent.plan.results.federalTaxAfterRefundableCredits)
+        .toBe(13170);
+      expect(planResult.structuredContent.plan.results.totalTax)
+        .toBe(20820);
+      expect(planResult.structuredContent.plan.calculationTrace)
+        .toContainEqual(expect.objectContaining({ step: "total_tax" }));
+      expect(planResult.structuredContent.plan.sources[0]?.title)
+        .toContain("Revenue Procedure 2025-32");
+
+      const errorResponse = await sendMcpMessage(proc, {
+        jsonrpc: "2.0",
+        id: 5,
         method: "tools/call",
         params: {
           name: "calculate_federal_tax",
@@ -166,7 +216,7 @@ describe("E2E Smoke Test", () => {
 
       const unavailableWorksheetResponse = await sendMcpMessage(proc, {
         jsonrpc: "2.0",
-        id: 5,
+        id: 6,
         method: "tools/call",
         params: {
           name: "calculate_federal_tax",

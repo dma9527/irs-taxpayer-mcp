@@ -35,7 +35,7 @@ It includes OBBB provisions modeled for TY2025, federal brackets, selected credi
 | All tax calculations | 100% local execution: zero network calls           |
 | User data storage    | Stateless: nothing saved between calls             |
 | Authentication       | Zero credentials: no SSN, no IRS login             |
-| Remote data          | Only public IRS info (form descriptions, deadlines) |
+| Public IRS data     | Bundled and versioned locally: zero runtime network calls |
 | Telemetry            | None: no analytics, no tracking, no logging        |
 | Source code          | Fully open-source (MIT): audit every calculation   |
 
@@ -117,9 +117,11 @@ The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` 
 
 </div>
 
-## 🛠️ Tools (43)
+## 🛠️ Tools (44)
 
 All tools use the current MCP `registerTool` API. Each advertises read-only annotations and an output schema, and returns both human-readable text and `structuredContent`. Error results include a stable error code, message, and recovery suggestion.
+
+The 1.0 flagship `generate_tax_plan` workflow returns domain structured results, assumptions, official source provenance, a calculation trace, and explicit unsupported boundaries. It performs no network requests, persistence, or telemetry. Unsupported tax years, state profiles, and required worksheet facts fail closed. See [Local Tax Planner 1.0 Contract](docs/PLANNER_CONTRACT.md).
 
 ### Federal Tax Calculations
 
@@ -158,6 +160,7 @@ All tools use the current MCP `registerTool` API. Each advertises read-only anno
 
 | Tool                             | What it does                                                                                                    |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `generate_tax_plan`              | Privacy-first local plan with structured results, assumptions, sources, trace, and explicit boundaries         |
 | `get_tax_planning_tips`          | Personalized year-end optimization: 401k maxing, HSA, Roth conversion, tax-loss harvesting, charitable bunching |
 | `compare_tax_years`              | Compare TY2024 vs TY2025 to see how bracket changes and OBBB affect your tax                                    |
 | `estimate_self_employment_tax`   | Full SE tax breakdown: Schedule C profit, SE tax, QBI deduction, quarterly payments, SEP/Solo 401k limits       |
@@ -295,7 +298,8 @@ npm run dev        # development mode (tsx)
 
 ## 🐛 Found a Bug?
 
-- **Calculation error or incorrect data?** [Open an issue](https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose): include the tool name, your inputs, and the expected result.
+- **Calculation error or incorrect data?** [Open an issue](https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose): include the tool name, tax year, a rounded or synthetic example, and the expected result. Do not post taxpayer PII.
+- **Planner use case or product gap?** [Use the Planner Feedback form](https://github.com/dma9527/irs-taxpayer-mcp/issues/new?template=planner_feedback.yml). Do not include taxpayer PII or a real tax return.
 - **Questions or discussion?** [GitHub Discussions](https://github.com/dma9527/irs-taxpayer-mcp/discussions)
 - **Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 

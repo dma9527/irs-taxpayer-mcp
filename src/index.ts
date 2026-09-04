@@ -3,9 +3,10 @@
  * IRS Taxpayer MCP Server
  *
  * A Model Context Protocol server for individual US taxpayers.
- * Hybrid architecture:
+ * Local architecture:
  *   - All tax calculations run locally (no PII leaves the machine)
- *   - Only public IRS data is fetched remotely when needed
+ *   - Public IRS reference data is bundled and versioned locally
+ *   - No runtime network calls, persistence, or telemetry
  *
  * Supports stdio and Streamable HTTP transports:
  *   stdio (default): npx irs-taxpayer-mcp
@@ -125,6 +126,7 @@ TOOLS (${TOOL_COUNT}):
     what_changed_between_tax_years Year-over-year diff
 
   Reports & Analysis
+    generate_tax_plan           Local structured plan with sources and trace
     generate_full_tax_report     Detailed estimation report
     process_1099_income          Process multiple 1099 forms
     get_personalized_tax_calendar Personalized deadlines

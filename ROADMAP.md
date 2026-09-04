@@ -4,7 +4,7 @@ _Last updated: 2026-09-04._
 
 ## Current Baseline
 
-Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning engine with 43 MCP tools. It is not tax preparation or filing software.
+Version 1.0.0 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 44 MCP tools. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -23,7 +23,11 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 275 tests, including IRS numeric regressions, release metadata gates, and real Streamable HTTP MCP initialization.
+- Added `generate_tax_plan` with domain structured results, local-only privacy guarantees, assumptions, official sources, a calculation trace, and explicit unsupported boundaries.
+- Added separate CTC and EITC child facts plus fail-closed retirement, QBI, state, and annual-source requirements.
+- Added an executable filing-engine investment gate and privacy-safe opt-in feedback intake.
+- Added tag-driven OIDC releases for npm, GitHub Releases, and the MCP Registry.
+- Expanded the suite to 286 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, and Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -45,6 +49,19 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 ### Explicit boundary
 
 The project does not currently generate, sign, or transmit a tax return. It does not determine filing eligibility, implement every Form 1040 line or schedule, validate every dependency rule, or transmit MeF data.
+
+## Filing-Engine Investment Gate
+
+Filing-grade federal work, state filing plugins, and MeF investment remain blocked until `scripts/evaluate-filing-gate.mjs` returns `READY` from reviewed aggregate evidence.
+
+- [x] Require five unique explicit paid-demand signals.
+- [x] Require three completed discovery interviews using synthetic or generalized facts.
+- [x] Require one committed CPA, Enrolled Agent, tax attorney, or tax software validation partner.
+- [x] Require two FTE of committed engineering capacity.
+- [x] Require a named owner for annual tax data, tests, security, and support readiness.
+- [x] Collect evidence through opt-in GitHub feedback with no taxpayer PII or telemetry.
+
+Current decision: `BLOCKED`. No qualifying evidence has been counted yet.
 
 ## Phase 1: Federal Return Domain Model
 
@@ -104,13 +121,13 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] TypeScript strict mode.
 - [x] Exact direct dependency versions.
 - [x] Stdio MCP smoke coverage.
-- [x] All 43 tools use `registerTool` with annotations, output schemas, and structured content.
+- [x] All 44 tools use `registerTool` with annotations, output schemas, and structured content.
 - [x] Tool contract snapshot and stable agent evaluation suite.
 - [x] Tag-driven release workflow with OIDC, exact-tarball smoke, and idempotent retry checks.
 - [ ] Configure the npm Trusted Publisher and verify OIDC publishing on the next release tag.
 - [x] Stateless Streamable HTTP with loopback and Origin protections.
 - [x] IRS numeric regression tests for high-impact P0 defects.
-- [ ] Zero known production dependency vulnerabilities at release time.
+- [x] Zero known production dependency vulnerabilities at release time.
 - [ ] Published support matrix generated from code-owned capability metadata.
 - [ ] Independent calculation review for each newly supported tax form.
 
@@ -134,3 +151,4 @@ This phase begins only after the filing-grade verification gates are met.
 | 0.5.0 | 2026-02-21 | Reports, planning tools, OBBB tools, and expanded integration tests. |
 | 0.5.2 | 2026-02-23 | W-2 and self-employment wage-base coordination fix. |
 | 0.6.0 | 2026-09-04 | Planning-grade P0/P1 corrections, 43 modern MCP contracts, Streamable HTTP, and npm release. |
+| 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |

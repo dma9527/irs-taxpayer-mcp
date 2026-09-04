@@ -2,7 +2,7 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**Servidor MCP con 43 herramientas de estimación y planificación fiscal para escenarios TY2024 y TY2025 expresamente modelados.**
+**Servidor MCP con 44 herramientas de estimación y planificación fiscal para escenarios TY2024 a TY2026 expresamente modelados.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -22,7 +22,7 @@
 
 **Sus datos financieros nunca salen de su computadora.** Todos los cálculos se ejecutan localmente.
 
-## 🛠️ Herramientas (43)
+## 🛠️ Herramientas (44)
 
 | Categoría           | Cant. | Descripción                                                                                                 |
 | ------------------- | ----- | ----------------------------------------------------------------------------------------------------------- |
@@ -30,7 +30,7 @@
 | Deducciones         | 2     | Explorar deducciones, estándar vs detallada                                                                 |
 | Créditos            | 3     | 20+ créditos federales, elegibilidad, EITC preciso                                                          |
 | Jubilación          | 2     | Cuentas de jubilación, estrategias Backdoor Roth                                                            |
-| Planificación       | 6     | Optimización de fin de año, comparación anual, autónomos, hipoteca, educación, MFJ vs MFS                   |
+| Planificación       | 7     | Plan local estructurado, fin de año, comparación anual, autónomos, hipoteca, educación, MFJ vs MFS           |
 | Impuestos estatales | 4     | Información estatal, estimación, comparación, estados sin impuesto                                          |
 | Información IRS     | 3     | Fechas límite, estado de reembolso, formularios                                                             |
 | Ley OBBB            | 2     | Nuevas deducciones, cambios entre años                                                                      |

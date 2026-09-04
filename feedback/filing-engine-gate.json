@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "thresholds": {
+    "paidDemandSignals": 5,
+    "discoveryInterviews": 3,
+    "domainPartners": 1,
+    "maintainerFte": 2,
+    "annualMaintenanceOwner": true
+  }
+}

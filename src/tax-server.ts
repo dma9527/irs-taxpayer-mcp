@@ -10,17 +10,19 @@ import { registerSmartTools } from "./tools/smart-tools.js";
 import { registerStateTaxTools } from "./tools/state-tax-tools.js";
 import { registerTaxCalculationTools } from "./tools/tax-calculation-tools.js";
 
+import { registerTaxPlanTools } from "./tools/tax-plan-tools.js";
+import { SERVER_VERSION } from "./version.js";
+export { SERVER_VERSION } from "./version.js";
 export const SERVER_NAME = "irs-taxpayer-mcp";
-export const SERVER_VERSION = "0.6.0";
-export const TOOL_COUNT = 43;
+export const TOOL_COUNT = 44;
 
 export function createTaxServer(): McpServer {
   const server = new McpServer({
     name: SERVER_NAME,
     version: SERVER_VERSION,
     description:
-      "Tax calculation, credits, deductions, state taxes, and retirement strategy tools for individual US taxpayers. " +
-      "All financial calculations run locally; your income data never leaves your machine.",
+      "Privacy-first local tax calculation and planning tools for individual US taxpayers. " +
+      "All financial calculations are deterministic and run locally; your income data never leaves your machine.",
   });
 
   registerTaxCalculationTools(server);
@@ -33,6 +35,7 @@ export function createTaxServer(): McpServer {
   registerComprehensiveTools(server);
   registerAdvancedTools(server);
   registerSmartTools(server);
+  registerTaxPlanTools(server);
 
   return server;
 }

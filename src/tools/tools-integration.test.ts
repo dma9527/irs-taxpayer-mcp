@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { registerTaxCalculationTools } from "./tax-calculation-tools.js";
 import { registerDeductionTools } from "./deduction-tools.js";
 import { registerIrsLookupTools } from "./irs-lookup-tools.js";
@@ -16,20 +17,29 @@ import { registerComprehensiveTools } from "./comprehensive-tools.js";
 import { registerAdvancedTools } from "./advanced-tools.js";
 import { registerSmartTools } from "./smart-tools.js";
 
+import { registerTaxPlanTools } from "./tax-plan-tools.js";
 // Helper to call a tool on the server
 async function callTool(
   server: McpServer,
   name: string,
   args: Record<string, unknown>
-): Promise<{ text: string; isError?: boolean }> {
+): Promise<{
+  text: string;
+  isError?: boolean;
+  structuredContent?: Record<string, unknown>;
+}> {
   const serverInternal = server as unknown as {
-    _registeredTools: Record<string, { handler: (args: Record<string, unknown>, extra: unknown) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> }>;
+    _registeredTools: Record<string, { handler: (args: Record<string, unknown>, extra: unknown) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean; structuredContent?: Record<string, unknown> }> }>;
   };
   const tool = serverInternal._registeredTools[name];
   if (!tool) throw new Error(`Tool "${name}" not found`);
   const result = await tool.handler(args, {});
   const text = result.content.map((c) => c.text).join("\n");
-  return { text, isError: result.isError };
+  return {
+    text,
+    isError: result.isError,
+    structuredContent: result.structuredContent,
+  };
 }
 
 describe("MCP Tools Integration", () => {
@@ -47,6 +57,7 @@ describe("MCP Tools Integration", () => {
     registerComprehensiveTools(server);
     registerAdvancedTools(server);
     registerSmartTools(server);
+    registerTaxPlanTools(server);
   });
 
   // --- Tax Calculation Tools ---
@@ -519,6 +530,177 @@ describe("MCP Tools Integration", () => {
     });
   });
 
+  describe("generate_tax_plan", () => {
+    it("returns deterministic domain structured content without persistence", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: {
+          w2: 100000,
+          taxableInterest: 500,
+          ordinaryDividends: 1000,
+          qualifiedDividends: 800,
+        },
+        payments: { federalWithholding: 14000 },
+      });
+      const structured = z.object({
+        text: z.string(),
+        isError: z.literal(false),
+        plan: z.object({
+          contractVersion: z.literal("1.0"),
+          taxYear: z.literal(2026),
+          privacy: z.object({
+            execution: z.literal("local"),
+            networkRequests: z.literal(false),
+            persisted: z.literal(false),
+            telemetry: z.literal(false),
+          }),
+          facts: z.object({ grossIncome: z.number() }),
+          results: z.object({
+            adjustedGrossIncome: z.number(),
+            totalTax: z.number(),
+            federalBalance: z.number(),
+          }),
+          sources: z.array(z.object({ title: z.string() })),
+          calculationTrace: z.array(z.object({ step: z.string() })),
+        }),
+      }).parse(result.structuredContent);
+
+      expect(result.text).toContain("Local Tax Plan for TY2026");
+      expect(structured.plan.facts.grossIncome).toBe(101500);
+      expect(structured.plan.results.totalTax).toBeGreaterThan(0);
+      expect(structured.plan.sources[0]?.title)
+        .toContain("Revenue Procedure 2025-32");
+    });
+
+    it("rejects qualified dividends above ordinary dividends", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: {
+          w2: 100000,
+          ordinaryDividends: 1000,
+          qualifiedDividends: 1500,
+        },
+      });
+      const structured = z.object({
+        isError: z.literal(true),
+        error: z.object({ code: z.literal("INVALID_INPUT") }),
+      }).parse(result.structuredContent);
+
+      expect(result.isError).toBe(true);
+      expect(structured.error.code).toBe("INVALID_INPUT");
+    });
+
+    it("fails closed for a state without an exact-year numeric profile", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: { w2: 100000 },
+        stateCode: "CA",
+      });
+      const structured = z.object({
+        isError: z.literal(true),
+        error: z.object({ code: z.literal("NOT_AVAILABLE") }),
+      }).parse(result.structuredContent);
+
+      expect(result.isError).toBe(true);
+      expect(structured.error.code).toBe("NOT_AVAILABLE");
+    });
+
+    it("limits capital losses before deriving gross income", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2024,
+        filingStatus: "single",
+        income: { w2: 100000, longTermCapitalGain: -10000 },
+      });
+      const structured = z.object({
+        plan: z.object({
+          facts: z.object({ grossIncome: z.number() }),
+          results: z.object({ adjustedGrossIncome: z.number() }),
+        }),
+      }).parse(result.structuredContent);
+
+      expect(structured.plan.facts.grossIncome).toBe(97000);
+      expect(structured.plan.results.adjustedGrossIncome).toBe(97000);
+    });
+
+    it("limits capital-loss carryovers without double counting", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: { w2: 100000, longTermCapitalLossCarryover: 10000 },
+      });
+      const structured = z.object({
+        plan: z.object({
+          facts: z.object({
+            grossIncome: z.number(),
+            cashIncome: z.number(),
+          }),
+          results: z.object({ adjustedGrossIncome: z.number() }),
+        }),
+      }).parse(result.structuredContent);
+
+      expect(structured.plan.facts.cashIncome).toBe(100000);
+      expect(structured.plan.facts.grossIncome).toBe(97000);
+      expect(structured.plan.results.adjustedGrossIncome).toBe(97000);
+    });
+
+    it("uses separate EITC children and tax-exempt investment income", async () => {
+      const eligible = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: { w2: 18290 },
+        family: { qualifyingChildrenForEitc: 3 },
+      });
+      const disqualified = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: { w2: 18290, taxExemptInterest: 20000 },
+        family: { qualifyingChildrenForEitc: 3 },
+      });
+      const ResultSchema = z.object({
+        plan: z.object({
+          results: z.object({ refundableCredits: z.number() }),
+        }),
+      });
+
+      expect(ResultSchema.parse(eligible.structuredContent)
+        .plan.results.refundableCredits).toBe(8231);
+      expect(ResultSchema.parse(disqualified.structuredContent)
+        .plan.results.refundableCredits).toBe(0);
+    });
+
+    it.each([
+      {
+        name: "taxable retirement amount",
+        input: {
+          taxYear: 2026,
+          filingStatus: "single",
+          income: { w2: 50000, retirementDistributions: 10000 },
+        },
+      },
+      {
+        name: "QBI limitation facts",
+        input: {
+          taxYear: 2026,
+          filingStatus: "single",
+          income: { w2: 50000 },
+          business: { qualifiedBusinessIncome: 10000 },
+        },
+      },
+    ])("requires $name", async ({ input }) => {
+      const result = await callTool(server, "generate_tax_plan", input);
+      const structured = z.object({
+        isError: z.literal(true),
+        error: z.object({ code: z.literal("INVALID_INPUT") }),
+      }).parse(result.structuredContent);
+
+      expect(result.isError).toBe(true);
+      expect(structured.error.code).toBe("INVALID_INPUT");
+    });
+  });
+
   describe("process_1099_income", () => {
     it("processes multiple 1099 forms", async () => {
       const { text } = await callTool(server, "process_1099_income", {
@@ -766,6 +948,20 @@ describe("MCP Tools Integration", () => {
     it("handles unknown form", async () => {
       const { text } = await callTool(server, "get_form_filing_guide", { formNumber: "Form 99999" });
       expect(text).toContain("Not Available");
+    });
+  });
+
+  describe("submit_feedback", () => {
+    it("uses the shared runtime version without sending data", async () => {
+      const { text } = await callTool(server, "submit_feedback", {
+        toolName: "generate_tax_plan",
+        taxYear: 2026,
+        description: "Synthetic planner feedback",
+      });
+
+      expect(text).toContain("1.0.0");
+      expect(text).toContain("No data is sent automatically");
+      expect(text).not.toContain("0.5.3");
     });
   });
 

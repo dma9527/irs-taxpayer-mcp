@@ -4,6 +4,15 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected the TY2025 SALT enhanced-cap phase-down to 30% of excess MAGI, including MFS thresholds and floors.
+- Added an explicit full net-investment-income input so NIIT includes taxable interest, dividends, gains, rents, royalties, and passive income without double-counting gains.
+
+### Tests
+
+- Added federal, Schedule A, and full-report regressions for SALT phase-down and NIIT investment-income coverage.
+
 ## [0.6.0] - 2026-09-04
 
 ### Fixed

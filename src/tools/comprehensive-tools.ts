@@ -98,6 +98,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         capitalGains: Math.max(0, ltcg) + qualDiv > 0 ? Math.max(0, ltcg) + qualDiv : undefined,
         capitalGainsLongTerm: true,
         shortTermCapitalGains: stcg > 0 ? stcg : undefined,
+        netInvestmentIncome: interest + dividends + Math.max(0, ltcg) + Math.max(0, stcg),
         aboveTheLineDeductions: params.aboveTheLineDeductions,
         itemizedDeductions: totalItemized > 0 ? totalItemized : undefined,
         dependents: params.dependents,
@@ -322,6 +323,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         capitalGains: ltcgTotal > 0 ? ltcgTotal : undefined,
         capitalGainsLongTerm: true,
         shortTermCapitalGains: stcgTotal > 0 ? stcgTotal : undefined,
+        netInvestmentIncome: intTotal + divTotal + Math.max(0, ltcgTotal) + Math.max(0, stcgTotal),
         qualifiedBusinessIncome: necTotal > 0 ? necTotal : undefined,
       });
 

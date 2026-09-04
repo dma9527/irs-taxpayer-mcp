@@ -20,6 +20,7 @@ export interface TaxInput {
   capitalGains?: number;
   capitalGainsLongTerm?: boolean;
   shortTermCapitalGains?: number;
+  netInvestmentIncome?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
   forceItemizedDeductions?: boolean;
@@ -281,9 +282,10 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2)
     : 0;
 
-  // Step 8: NIIT (3.8% on investment income above threshold)
-  const investmentIncome = longTermGains + shortTermGains;
-  const niit = calculateNIIT(agi, investmentIncome, input.filingStatus);
+  // Step 8: NIIT (3.8% on the lesser of NII or excess MAGI)
+  const netInvestmentIncome = input.netInvestmentIncome
+    ?? Math.max(0, longTermGains + shortTermGains);
+  const niit = calculateNIIT(agi, netInvestmentIncome, input.filingStatus);
 
   // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
   const earnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);

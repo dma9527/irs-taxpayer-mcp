@@ -661,6 +661,18 @@ describe("MCP Tools Integration", () => {
 
       expect(text).toContain("| Social Security | $910 | ~$910 | +$0 |");
     });
+
+    it("includes taxable interest and dividends in full-report NIIT", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2024,
+        filingStatus: "single",
+        w2Income: 250000,
+        interestIncome: 25000,
+        dividendIncome: 25000,
+      });
+
+      expect(text).toContain("| NIIT (3.8%) | $1,900 |");
+    });
   });
 
   describe("MFJ and MFS accuracy regressions", () => {

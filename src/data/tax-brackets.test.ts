@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TAX_DATA, SUPPORTED_TAX_YEARS, getTaxYearData, type FilingStatus } from "./tax-brackets.js";
+import { TAX_DATA, SUPPORTED_TAX_YEARS, getTaxYearData, getSaltCap, type FilingStatus } from "./tax-brackets.js";
 
 const STATUSES: FilingStatus[] = [
   "single",
@@ -91,5 +91,21 @@ describe("tax brackets data integrity", () => {
 
   it("returns undefined for unsupported year", () => {
     expect(getTaxYearData(2020)).toBeUndefined();
+  });
+
+  describe("TY2025 SALT cap phase-down", () => {
+    it("reduces the enhanced cap by 30 percent of excess MAGI", () => {
+      expect(getSaltCap(2025, "single", 500000)).toBe(40000);
+      expect(getSaltCap(2025, "single", 510000)).toBe(37000);
+      expect(getSaltCap(2025, "married_filing_jointly", 550000)).toBe(25000);
+      expect(getSaltCap(2025, "head_of_household", 600000)).toBe(10000);
+    });
+
+    it("uses the MFS threshold, enhanced cap, and floor", () => {
+      expect(getSaltCap(2024, "married_filing_separately", 100000)).toBe(5000);
+      expect(getSaltCap(2025, "married_filing_separately", 250000)).toBe(20000);
+      expect(getSaltCap(2025, "married_filing_separately", 260000)).toBe(17000);
+      expect(getSaltCap(2025, "married_filing_separately", 300000)).toBe(5000);
+    });
   });
 });

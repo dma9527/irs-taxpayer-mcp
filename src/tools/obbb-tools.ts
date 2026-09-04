@@ -233,7 +233,7 @@ export function registerObbbTools(server: McpServer): void {
         `| | TY${fromYear} | TY${toYear} |`,
         `|---|---|---|`,
         `| Base cap | $${fmt(from.saltCap.base)} | $${fmt(to.saltCap.base)} |`,
-        `| MFS cap | $${fmt(from.saltCap.mfs)} | $${fmt(to.saltCap.mfs)} |`,
+        `| MFS cap | $${fmt(from.saltCap.enhancedMfsCap ?? from.saltCap.mfs)} | $${fmt(to.saltCap.enhancedMfsCap ?? to.saltCap.mfs)} |`,
         to.saltCap.enhancedCap ? `| Enhanced cap (AGI ≤ $${fmt(to.saltCap.enhancedAgiThreshold!)}) | N/A | $${fmt(to.saltCap.enhancedCap)} |` : "",
         "",
         `### Social Security`,

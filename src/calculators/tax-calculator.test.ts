@@ -224,6 +224,30 @@ describe("calculateTax", () => {
       // NIIT = min(50000, 10000) * 3.8% = 380
       expect(result.niit).toBeCloseTo(380, 0);
     });
+
+    it("includes interest and dividends in net investment income", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        netInvestmentIncome: 50000,
+      });
+
+      expect(result.niit).toBeCloseTo(1900, 0);
+    });
+
+    it("uses an explicit full NII amount instead of double-counting capital gains", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        capitalGains: 30000,
+        capitalGainsLongTerm: true,
+        netInvestmentIncome: 50000,
+      });
+
+      expect(result.niit).toBeCloseTo(1900, 0);
+    });
   });
 
   describe("Additional Medicare Tax", () => {

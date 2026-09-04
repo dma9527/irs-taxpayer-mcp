@@ -58,7 +58,10 @@ export interface TaxYearData {
     base: number;
     mfs: number;
     enhancedCap?: number;
+    enhancedMfsCap?: number;
     enhancedAgiThreshold?: number;
+    enhancedMfsAgiThreshold?: number;
+    phaseoutRate?: number;
   };
   /** OBBB new deductions (TY2025+) */
   obbbDeductions?: {
@@ -312,9 +315,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
     },
     saltCap: {
       base: 10000,
-      mfs: 20000, // OBBB: MFS cap raised to $20K (was $5K)
+      mfs: 5000,
       enhancedCap: 40000,
-      enhancedAgiThreshold: 500000, // phases down above $500K MFJ / $250K MFS
+      enhancedMfsCap: 20000,
+      enhancedAgiThreshold: 500000,
+      enhancedMfsAgiThreshold: 250000,
+      phaseoutRate: 0.30,
     },
     obbbDeductions: {
       seniorBonus: { amount: 6000, phaseoutSingle: 75000, phaseoutMFJ: 150000 },
@@ -346,15 +352,18 @@ export function getSaltCap(
   if (!data) return 10000;
 
   const cap = data.saltCap;
-  if (filingStatus === "married_filing_separately") return cap.mfs;
+  const isMfs = filingStatus === "married_filing_separately";
+  const floor = isMfs ? cap.mfs : cap.base;
+  const enhancedCap = isMfs ? cap.enhancedMfsCap : cap.enhancedCap;
+  const phaseoutThreshold = isMfs
+    ? cap.enhancedMfsAgiThreshold
+    : cap.enhancedAgiThreshold;
 
-  if (cap.enhancedCap && cap.enhancedAgiThreshold) {
-    if (agi <= cap.enhancedAgiThreshold) return cap.enhancedCap;
-    // Phase down: for every $1K over threshold, reduce by $1K (simplified)
-    const excess = agi - cap.enhancedAgiThreshold;
-    const reduction = Math.min(excess, cap.enhancedCap - cap.base);
-    return Math.max(cap.base, cap.enhancedCap - reduction);
+  if (enhancedCap !== undefined && phaseoutThreshold !== undefined) {
+    if (agi <= phaseoutThreshold) return enhancedCap;
+    const reduction = (agi - phaseoutThreshold) * (cap.phaseoutRate ?? 0);
+    return Math.max(floor, enhancedCap - reduction);
   }
 
-  return cap.base;
+  return floor;
 }

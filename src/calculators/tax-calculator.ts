@@ -29,6 +29,9 @@ export interface TaxInput {
   retirementDistributions?: number;
   taxableRetirementDistributions?: number;
   earlyRetirementDistributionSubjectToPenalty?: number;
+  aotcStudentQualifiedExpenses?: number[];
+  aotcRefundableAllowed?: boolean;
+  lifetimeLearningQualifiedExpenses?: number;
   netInvestmentIncome?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
@@ -69,6 +72,10 @@ export interface TaxBreakdown {
   taxableSocialSecurityBenefits: number;
   taxableRetirementDistributions: number;
   earlyRetirementDistributionAdditionalTax: number;
+  americanOpportunityCredit: number;
+  refundableAmericanOpportunityCredit: number;
+  nonrefundableAmericanOpportunityCreditApplied: number;
+  lifetimeLearningCreditApplied: number;
   selfEmploymentTax: number;
   niit: number;
   additionalMedicareTax: number;
@@ -299,6 +306,85 @@ function calculateTaxableSocialSecurityBenefits(
     benefits * 0.85,
     firstTierTaxable + (provisionalIncome - adjustedBaseAmount) * 0.85,
   );
+}
+
+interface EducationCreditResult {
+  americanOpportunityCredit: number;
+  refundableAmericanOpportunityCredit: number;
+  nonrefundableAmericanOpportunityCredit: number;
+  lifetimeLearningCredit: number;
+}
+
+function calculateEducationCredits(
+  agi: number,
+  filingStatus: FilingStatus,
+  aotcStudentQualifiedExpenses: number[] | undefined,
+  aotcRefundableAllowed: boolean | undefined,
+  lifetimeLearningQualifiedExpenses: number,
+  hasForm2555: boolean,
+): EducationCreditResult {
+  const aotcExpenses = aotcStudentQualifiedExpenses ?? [];
+  const hasEducationExpenses = aotcExpenses.length > 0
+    || lifetimeLearningQualifiedExpenses > 0;
+  if (!hasEducationExpenses) {
+    return {
+      americanOpportunityCredit: 0,
+      refundableAmericanOpportunityCredit: 0,
+      nonrefundableAmericanOpportunityCredit: 0,
+      lifetimeLearningCredit: 0,
+    };
+  }
+  if (filingStatus === "married_filing_separately") {
+    throw new Error("Married filing separately cannot claim AOTC or Lifetime Learning Credit.");
+  }
+  if (hasForm2555) {
+    throw new Error(
+      "Education-credit MAGI with Form 2555 requires additional Form 8863 worksheet inputs and is not supported.",
+    );
+  }
+  if (aotcExpenses.some((expense) => expense < 0)
+    || lifetimeLearningQualifiedExpenses < 0) {
+    throw new Error("Qualified education expenses must be nonnegative.");
+  }
+  if (aotcExpenses.length > 0 && aotcRefundableAllowed === undefined) {
+    throw new Error(
+      "aotcRefundableAllowed is required after applying the under-age-24 support rules.",
+    );
+  }
+
+  const lowerPhaseout = filingStatus === "married_filing_jointly"
+    ? 160000
+    : 80000;
+  const upperPhaseout = filingStatus === "married_filing_jointly"
+    ? 180000
+    : 90000;
+  const phaseoutFactor = agi <= lowerPhaseout
+    ? 1
+    : agi >= upperPhaseout
+      ? 0
+      : (upperPhaseout - agi) / (upperPhaseout - lowerPhaseout);
+
+  const tentativeAotc = aotcExpenses.reduce((total, expense) => {
+    const firstTier = Math.min(expense, 2000);
+    const secondTier = Math.min(Math.max(0, expense - 2000), 2000) * 0.25;
+    return total + firstTier + secondTier;
+  }, 0) * phaseoutFactor;
+  const refundableAmericanOpportunityCredit = aotcRefundableAllowed
+    ? tentativeAotc * 0.40
+    : 0;
+  const nonrefundableAmericanOpportunityCredit = tentativeAotc
+    - refundableAmericanOpportunityCredit;
+  const lifetimeLearningCredit = Math.min(
+    lifetimeLearningQualifiedExpenses,
+    10000,
+  ) * 0.20 * phaseoutFactor;
+
+  return {
+    americanOpportunityCredit: tentativeAotc,
+    refundableAmericanOpportunityCredit,
+    nonrefundableAmericanOpportunityCredit,
+    lifetimeLearningCredit,
+  };
 }
 
 interface QBIResult {
@@ -655,10 +741,33 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     saltDeducted,
   );
 
-  // Nonrefundable CTC and ODC offset income tax and AMT, not SE tax or surtaxes.
+  const educationCredits = calculateEducationCredits(
+    agi,
+    input.filingStatus,
+    input.aotcStudentQualifiedExpenses,
+    input.aotcRefundableAllowed,
+    input.lifetimeLearningQualifiedExpenses ?? 0,
+    input.hasForm2555 ?? false,
+  );
+
+  // Form 8863 nonrefundable credits reduce the tax available to CTC and ODC.
   const incomeTaxBeforeCredits = regularIncomeTax + amt;
-  const childCredit = Math.min(childCreditAfterPhaseout, incomeTaxBeforeCredits);
-  const taxAfterChildCredit = incomeTaxBeforeCredits - childCredit;
+  const nonrefundableAmericanOpportunityCreditApplied = Math.min(
+    educationCredits.nonrefundableAmericanOpportunityCredit,
+    incomeTaxBeforeCredits,
+  );
+  const taxAfterAotc = incomeTaxBeforeCredits
+    - nonrefundableAmericanOpportunityCreditApplied;
+  const lifetimeLearningCreditApplied = Math.min(
+    educationCredits.lifetimeLearningCredit,
+    taxAfterAotc,
+  );
+  const taxAfterEducationCredits = taxAfterAotc - lifetimeLearningCreditApplied;
+  const childCredit = Math.min(
+    childCreditAfterPhaseout,
+    taxAfterEducationCredits,
+  );
+  const taxAfterChildCredit = taxAfterEducationCredits - childCredit;
   const creditForOtherDependents = Math.min(
     otherDependentCreditAfterPhaseout,
     taxAfterChildCredit,
@@ -723,7 +832,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     + niit
     + additionalMedicareTax
     + earlyRetirementDistributionAdditionalTax
-    - additionalChildTaxCredit;
+    - additionalChildTaxCredit
+    - educationCredits.refundableAmericanOpportunityCredit;
   const taxableIncome = adjustedTaxableOrdinary + taxablePreferentialIncome;
 
   return {
@@ -745,6 +855,11 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     taxableSocialSecurityBenefits,
     taxableRetirementDistributions: taxableRetirementDistributions ?? 0,
     earlyRetirementDistributionAdditionalTax,
+    americanOpportunityCredit: educationCredits.americanOpportunityCredit,
+    refundableAmericanOpportunityCredit:
+      educationCredits.refundableAmericanOpportunityCredit,
+    nonrefundableAmericanOpportunityCreditApplied,
+    lifetimeLearningCreditApplied,
     selfEmploymentTax: seTax,
     niit,
     additionalMedicareTax,

@@ -148,6 +148,21 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Early Retirement Distribution Additional Tax | $1,000");
     });
 
+    it("calculates refundable and nonrefundable education credits", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 40000,
+        aotcStudentQualifiedExpenses: [4000],
+        aotcRefundableAllowed: true,
+        lifetimeLearningQualifiedExpenses: 5000,
+      });
+
+      expect(text).toContain("American Opportunity Credit (nonrefundable) | -$1,500");
+      expect(text).toContain("American Opportunity Credit (refundable) | -$1,000");
+      expect(text).toContain("Lifetime Learning Credit | -$1,000");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,

@@ -669,6 +669,83 @@ describe("calculateTax", () => {
     });
   });
 
+  describe("education credits", () => {
+    it("splits the maximum AOTC into refundable and nonrefundable portions", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 40000,
+        aotcStudentQualifiedExpenses: [4000],
+        aotcRefundableAllowed: true,
+      });
+
+      expect(result.americanOpportunityCredit).toBe(2500);
+      expect(result.refundableAmericanOpportunityCredit).toBe(1000);
+      expect(result.nonrefundableAmericanOpportunityCreditApplied).toBe(1500);
+    });
+
+    it("phases out education credits using MAGI", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 85000,
+        aotcStudentQualifiedExpenses: [4000],
+        aotcRefundableAllowed: true,
+      });
+
+      expect(result.americanOpportunityCredit).toBe(1250);
+      expect(result.refundableAmericanOpportunityCredit).toBe(500);
+    });
+
+    it("calculates the nonrefundable Lifetime Learning Credit", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 60000,
+        lifetimeLearningQualifiedExpenses: 10000,
+      });
+
+      expect(result.lifetimeLearningCreditApplied).toBe(2000);
+    });
+
+    it("applies education credits before CTC and ACTC limitation", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "head_of_household",
+        grossIncome: 24125,
+        w2Income: 24125,
+        qualifyingChildrenForCtc: 1,
+        earnedIncome: 24125,
+        aotcStudentQualifiedExpenses: [500],
+        aotcRefundableAllowed: true,
+      });
+
+      expect(result.nonrefundableAmericanOpportunityCreditApplied).toBe(50);
+      expect(result.refundableAmericanOpportunityCredit).toBe(200);
+      expect(result.childTaxCredit).toBe(0);
+      expect(result.additionalChildTaxCredit).toBe(1700);
+      expect(result.totalFederalTax).toBe(-1900);
+    });
+
+    it("requires explicit AOTC refundable eligibility", () => {
+      expect(() => calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 40000,
+        aotcStudentQualifiedExpenses: [4000],
+      })).toThrow("aotcRefundableAllowed");
+    });
+
+    it("rejects education credits for MFS", () => {
+      expect(() => calculateTax({
+        taxYear: 2025,
+        filingStatus: "married_filing_separately",
+        grossIncome: 40000,
+        lifetimeLearningQualifiedExpenses: 5000,
+      })).toThrow("Married filing separately");
+    });
+  });
+
   describe("estimated quarterly payment", () => {
     it("divides total tax by 4", () => {
       const result = calculateTax(base2024Single);

@@ -266,6 +266,7 @@ See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federa
 | Alternative Minimum Tax (AMT)                | Modeled with preferential rates and stated preference-item limits |
 | QBI Deduction (Section 199A)                 | Planning-grade with wage, UBIA, and SSTB limits |
 | Child Tax Credit with phase-out              | ✅     |
+| AOTC and Lifetime Learning Credit             | Form 8863 planning model |
 | EITC TY2024/TY2025/TY2026 calculation               | ✅     |
 | Standard vs itemized deduction               | ✅     |
 | Year-specific SALT cap (OBBB)                | ✅     |

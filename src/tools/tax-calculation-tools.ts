@@ -286,7 +286,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
         const stateFilingStatus = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
         const stateResult = calculateStateTax({
           stateCode: params.stateCode,
-          taxableIncome: federal.adjustedGrossIncome,
+          incomeBeforeDeductions: federal.adjustedGrossIncome,
           filingStatus: stateFilingStatus,
         });
 

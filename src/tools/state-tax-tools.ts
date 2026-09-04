@@ -90,20 +90,41 @@ export function registerStateTaxTools(server: McpServer): void {
     "Estimate state income tax for a given income and state. Simplified calculation using state brackets.",
     {
       stateCode: z.string().length(2).describe("Two-letter state code"),
-      taxableIncome: z.number().min(0).describe("State taxable income (after state deductions)"),
+      incomeBeforeStateDeductions: z.number().min(0).optional().describe("State income before the modeled state standard deduction and personal exemption"),
+      taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
     },
-    async ({ stateCode, taxableIncome, filingStatus }) => {
+    async ({ stateCode, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
       const state = getStateInfo(stateCode);
       if (!state) {
         return ERRORS.invalidState(stateCode);
       }
 
+      const hasExplicitIncome = incomeBeforeStateDeductions !== undefined;
+      const hasLegacyIncome = taxableIncome !== undefined;
+      if (hasExplicitIncome === hasLegacyIncome) {
+        return {
+          content: [{
+            type: "text",
+            text: "Provide exactly one of incomeBeforeStateDeductions or taxableIncome.",
+          }],
+          isError: true,
+        };
+      }
+      const stateIncome = incomeBeforeStateDeductions ?? taxableIncome;
+      if (stateIncome === undefined) {
+        return {
+          content: [{ type: "text", text: "State income before deductions is required." }],
+          isError: true,
+        };
+      }
+      const usedLegacyIncome = !hasExplicitIncome;
+
       if (state.taxType === "none") {
         return {
           content: [{
             type: "text",
-            text: `## ${state.name} — No State Income Tax 🎉\n\nEstimated state tax: $0\n\n${state.notes ?? ""}`,
+            text: `## ${state.name} — No State Income Tax 🎉\n\nEstimated state tax: $0\n\n${state.notes ?? ""}${usedLegacyIncome ? "\n\n> ⚠️ taxableIncome is deprecated; use incomeBeforeStateDeductions." : ""}`,
           }],
         };
       }
@@ -111,7 +132,11 @@ export function registerStateTaxTools(server: McpServer): void {
       const status = filingStatus ?? "single";
       let result: ReturnType<typeof calculateStateTax>;
       try {
-        result = calculateStateTax({ stateCode, taxableIncome, filingStatus: status });
+        result = calculateStateTax({
+          stateCode,
+          incomeBeforeDeductions: stateIncome,
+          filingStatus: status,
+        });
       } catch (error: unknown) {
         if (error instanceof UnsupportedStateTaxCalculationError) {
           return {
@@ -133,7 +158,7 @@ export function registerStateTaxTools(server: McpServer): void {
         "",
         `| Item | Amount |`,
         `|------|--------|`,
-        `| Gross State Income | $${taxableIncome.toLocaleString()} |`,
+        `| Income Before State Deductions | $${stateIncome.toLocaleString()} |`,
         deduction > 0 ? `| State Deductions | -$${deduction.toLocaleString()} |` : "",
         `| Taxable Income | $${adjustedIncome.toLocaleString()} |`,
         `| **Estimated State Tax** | **$${Math.round(tax).toLocaleString()}** |`,
@@ -141,6 +166,7 @@ export function registerStateTaxTools(server: McpServer): void {
         "",
         state.localTaxes ? "⚠️ Does not include local/city income taxes" : "",
         state.notes ? `📝 ${state.notes}` : "",
+        usedLegacyIncome ? "> ⚠️ taxableIncome is deprecated; use incomeBeforeStateDeductions." : "",
         "",
         "> This is a simplified estimate. State tax rules vary significantly. Consult a tax professional for accuracy.",
       ].filter(Boolean);
@@ -154,10 +180,29 @@ export function registerStateTaxTools(server: McpServer): void {
     "Compare state income tax across multiple states for the same income. Useful for relocation decisions.",
     {
       states: z.array(z.string().length(2)).min(2).max(10).describe("Array of state codes to compare (e.g., ['CA', 'TX', 'WA', 'NY'])"),
-      taxableIncome: z.number().min(0).describe("Annual taxable income"),
+      incomeBeforeStateDeductions: z.number().min(0).optional().describe("Annual income before modeled state deductions"),
+      taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
     },
-    async ({ states, taxableIncome, filingStatus }) => {
+    async ({ states, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
+      const hasExplicitIncome = incomeBeforeStateDeductions !== undefined;
+      const hasLegacyIncome = taxableIncome !== undefined;
+      if (hasExplicitIncome === hasLegacyIncome) {
+        return {
+          content: [{
+            type: "text",
+            text: "Provide exactly one of incomeBeforeStateDeductions or taxableIncome.",
+          }],
+          isError: true,
+        };
+      }
+      const stateIncome = incomeBeforeStateDeductions ?? taxableIncome;
+      if (stateIncome === undefined) {
+        return {
+          content: [{ type: "text", text: "State income before deductions is required." }],
+          isError: true,
+        };
+      }
       const status = filingStatus ?? "single";
       const results: Array<{
         code: string;
@@ -177,7 +222,7 @@ export function registerStateTaxTools(server: McpServer): void {
         try {
           result = calculateStateTax({
             stateCode: code,
-            taxableIncome,
+            incomeBeforeDeductions: stateIncome,
             filingStatus: status,
           });
         } catch (error: unknown) {
@@ -206,7 +251,7 @@ export function registerStateTaxTools(server: McpServer): void {
       results.sort((a, b) => a.tax - b.tax);
 
       const lines = [
-        `## State Tax Comparison — $${taxableIncome.toLocaleString()} Income`,
+        `## State Tax Comparison — $${stateIncome.toLocaleString()} Income Before State Deductions`,
         "",
         `| Rank | State | Tax Type | Est. Tax | Effective Rate |`,
         `|------|-------|----------|----------|---------------|`,

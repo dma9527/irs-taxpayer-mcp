@@ -20,12 +20,27 @@ describe("calculateStateTax accuracy safeguards", () => {
     });
     const married = calculateStateTax({
       stateCode: "CA",
-      taxableIncome: 100000,
+      incomeBeforeDeductions: 100000,
       filingStatus: "married",
     });
 
     expect(single?.tax).toBe(5438);
     expect(married?.tax).toBe(2581);
+  });
+
+  it("keeps the legacy taxableIncome alias equivalent", () => {
+    const explicit = calculateStateTax({
+      stateCode: "CA",
+      incomeBeforeDeductions: 100000,
+      filingStatus: "single",
+    });
+    const legacy = calculateStateTax({
+      stateCode: "CA",
+      taxableIncome: 100000,
+      filingStatus: "single",
+    });
+
+    expect(legacy).toEqual(explicit);
   });
 
   it("applies California mental-health surcharge above $1M for married filers", () => {

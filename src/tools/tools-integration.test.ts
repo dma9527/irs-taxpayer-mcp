@@ -789,11 +789,33 @@ describe("MCP Tools Integration", () => {
     it("uses California married brackets in the state estimate", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
         stateCode: "CA",
-        taxableIncome: 100000,
+        incomeBeforeStateDeductions: 100000,
         filingStatus: "married",
       });
 
       expect(text).toContain("| **Estimated State Tax** | **$2,581** |");
+    });
+
+    it("keeps taxableIncome as a deprecated compatibility alias", async () => {
+      const { text } = await callTool(server, "estimate_state_tax", {
+        stateCode: "CA",
+        taxableIncome: 100000,
+        filingStatus: "single",
+      });
+
+      expect(text).toContain("taxableIncome is deprecated");
+      expect(text).toContain("| **Estimated State Tax** | **$5,438** |");
+    });
+
+    it("rejects conflicting state income fields", async () => {
+      const { text, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "CA",
+        incomeBeforeStateDeductions: 100000,
+        taxableIncome: 90000,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("Provide exactly one of incomeBeforeStateDeductions or taxableIncome");
     });
 
     it("fails the comparison when any requested state lacks supported brackets", async () => {

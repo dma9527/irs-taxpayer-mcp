@@ -14,7 +14,9 @@ export class UnsupportedStateTaxCalculationError extends Error {
 
 export interface StateTaxInput {
   stateCode: string;
-  taxableIncome: number;
+  incomeBeforeDeductions?: number;
+  /** @deprecated Use incomeBeforeDeductions. */
+  taxableIncome?: number;
   filingStatus?: "single" | "married";
 }
 
@@ -35,14 +37,26 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   const state = getStateInfo(input.stateCode);
   if (!state) return null;
 
+  const hasExplicitIncome = input.incomeBeforeDeductions !== undefined;
+  const hasLegacyIncome = input.taxableIncome !== undefined;
+  if (hasExplicitIncome === hasLegacyIncome) {
+    throw new Error(
+      "Provide exactly one of incomeBeforeDeductions or taxableIncome",
+    );
+  }
+  const incomeBeforeDeductions = input.incomeBeforeDeductions ?? input.taxableIncome;
+  if (incomeBeforeDeductions === undefined) {
+    throw new Error("State income before deductions is required");
+  }
+
   if (state.taxType === "none") {
     return {
       stateCode: state.code,
       stateName: state.name,
       taxType: "none",
-      grossIncome: input.taxableIncome,
+      grossIncome: incomeBeforeDeductions,
       deduction: 0,
-      adjustedIncome: input.taxableIncome,
+      adjustedIncome: incomeBeforeDeductions,
       tax: 0,
       effectiveRate: 0,
       hasLocalTaxes: false,
@@ -60,7 +74,7 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     deduction += status === "married" ? state.personalExemption.married : state.personalExemption.single;
   }
 
-  const adjustedIncome = Math.max(0, input.taxableIncome - deduction);
+  const adjustedIncome = Math.max(0, incomeBeforeDeductions - deduction);
   let tax = 0;
 
   if (state.taxType === "flat") {
@@ -84,11 +98,11 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     stateCode: state.code,
     stateName: state.name,
     taxType: state.taxType,
-    grossIncome: input.taxableIncome,
+    grossIncome: incomeBeforeDeductions,
     deduction,
     adjustedIncome,
     tax: Math.round(tax),
-    effectiveRate: input.taxableIncome > 0 ? tax / input.taxableIncome : 0,
+    effectiveRate: incomeBeforeDeductions > 0 ? tax / incomeBeforeDeductions : 0,
     hasLocalTaxes: state.localTaxes ?? false,
     notes: state.notes,
   };

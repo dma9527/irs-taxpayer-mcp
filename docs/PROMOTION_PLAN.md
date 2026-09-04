@@ -2,7 +2,7 @@
 
 ## 项目现状
 
-- npm: `irs-taxpayer-mcp@0.5.3`
+- npm: `irs-taxpayer-mcp@0.6.0`
 - GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 - 43 个工具，197 个测试
 - TY2024 + TY2025 (OBBB Act)

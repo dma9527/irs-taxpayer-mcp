@@ -1,10 +1,10 @@
 # irs-taxpayer-mcp Roadmap
 
-_Last updated: 2026-09-03._
+_Last updated: 2026-09-04._
 
 ## Current Baseline
 
-Version 0.5.3 is a deterministic TY2024 and TY2025 estimation and planning engine with 43 MCP tools. It is not tax preparation or filing software.
+Version 0.6.0 is a deterministic TY2024 and TY2025 estimation and planning engine with 43 MCP tools. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -123,4 +123,4 @@ This phase begins only after the filing-grade verification gates are met.
 | 0.3.0 | 2026-02-20 | AMT, EITC, OBBB data, and legacy SSE. |
 | 0.5.0 | 2026-02-21 | Reports, planning tools, OBBB tools, and expanded integration tests. |
 | 0.5.2 | 2026-02-23 | W-2 and self-employment wage-base coordination fix. |
-| Unreleased | 2026-09-03 | P0 calculation corrections, fail-closed state estimates, dependency updates, and Streamable HTTP. |
+| 0.6.0 | 2026-09-04 | P0 calculation corrections, fail-closed state estimates, dependency updates, and Streamable HTTP. |

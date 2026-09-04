@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.dma9527/irs-taxpayer",
-  "description": "39 tax tools for US taxpayers: federal/state tax, credits, deductions, retirement. All local.",
+  "description": "43 local US tax estimation and planning tools for supported TY2024 and TY2025 scenarios.",
   "repository": {
     "url": "https://github.com/dma9527/irs-taxpayer-mcp",
     "source": "github"
   },
-  "version": "0.5.3",
+  "version": "0.6.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "irs-taxpayer-mcp",
-      "version": "0.5.3",
+      "version": "0.6.0",
       "transport": {
         "type": "stdio"
       }

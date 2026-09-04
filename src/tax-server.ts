@@ -11,7 +11,7 @@ import { registerStateTaxTools } from "./tools/state-tax-tools.js";
 import { registerTaxCalculationTools } from "./tools/tax-calculation-tools.js";
 
 export const SERVER_NAME = "irs-taxpayer-mcp";
-export const SERVER_VERSION = "0.5.3";
+export const SERVER_VERSION = "0.6.0";
 export const TOOL_COUNT = 43;
 
 export function createTaxServer(): McpServer {

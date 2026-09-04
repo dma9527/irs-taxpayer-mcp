@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-04
+
 ### Fixed
 
 - Corrected TY2024 and TY2025 EITC parameters using IRS Revenue Procedures 2023-34 and 2024-40.
@@ -33,6 +35,7 @@ All notable changes to irs-taxpayer-mcp.
 - Corrected CLI, health, and documentation tool counts to 43.
 - Clarified that the project is an estimation and planning engine, not tax filing software.
 - Documented supported state-calculation paths and fail-closed behavior.
+- Set Node.js 20 as the minimum supported runtime and updated CI to Node 20, 22, and 24.
 
 ### Tests
 

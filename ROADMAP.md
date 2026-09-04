@@ -131,4 +131,4 @@ This phase begins only after the filing-grade verification gates are met.
 | 0.3.0 | 2026-02-20 | AMT, EITC, OBBB data, and legacy SSE. |
 | 0.5.0 | 2026-02-21 | Reports, planning tools, OBBB tools, and expanded integration tests. |
 | 0.5.2 | 2026-02-23 | W-2 and self-employment wage-base coordination fix. |
-| 0.6.0 | 2026-09-04 | P0 calculation corrections, fail-closed state estimates, dependency updates, and Streamable HTTP. |
+| 0.6.0 | 2026-09-04 | Planning-grade P0/P1 corrections, 43 modern MCP contracts, Streamable HTTP, and npm release. |

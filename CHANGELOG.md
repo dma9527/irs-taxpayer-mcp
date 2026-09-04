@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-04
+
 ### Added
 
 - Added structured tool output contracts, typed error metadata, a 43-tool schema snapshot, and 10 stable agent evaluations.
@@ -12,6 +14,12 @@ All notable changes to irs-taxpayer-mcp.
 
 - Migrated all 43 tools from deprecated `server.tool` registration to SDK `registerTool` through a shared read-only contract wrapper.
 - Every tool now advertises read-only, non-destructive, idempotent, closed-world annotations and returns both text content and structured content.
+- Updated `@modelcontextprotocol/sdk` to 1.30.0.
+- Kept `--sse` only as a deprecated alias for `--http`; removed the old `/sse` and `/messages` routes.
+- Corrected CLI, health, and documentation tool counts to 43.
+- Clarified that the project is an estimation and planning engine, not tax filing software.
+- Documented supported state-calculation paths and fail-closed behavior.
+- Set Node.js 20 as the minimum supported runtime and updated CI to Node 20, 22, and 24.
 
 ### Fixed
 
@@ -33,16 +41,6 @@ All notable changes to irs-taxpayer-mcp.
 - Versioned numeric state calculation profiles by tax year and source, requiring direct and high-level callers to select an exact supported state-year path.
 - Updated California TY2024 single and married brackets to the official FTB schedules and removed unverified state profiles from numeric calculations.
 - Removed silent annual-data reuse from multi-year and relocation projections; unsupported future years now return an error.
-
-### Tests
-
-- Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
-- Expanded the suite to 273 tests across 10 test files.
-
-## [0.6.0] - 2026-09-04
-
-### Fixed
-
 - Corrected TY2024 and TY2025 EITC parameters using IRS Revenue Procedures 2023-34 and 2024-40.
 - Applied unused deductions before taxing long-term capital gains.
 - Excluded net capital gain from the QBI overall taxable-income limit.
@@ -63,20 +61,12 @@ All notable changes to irs-taxpayer-mcp.
 - Added exact browser Origin allowlists and rejected malformed Origin configuration.
 - Pinned MCP SDK, Zod, TypeScript, Vitest, tsx, and type packages to exact versions.
 
-### Changed
-
-- Updated `@modelcontextprotocol/sdk` to 1.30.0.
-- Kept `--sse` only as a deprecated alias for `--http`; removed the old `/sse` and `/messages` routes.
-- Corrected CLI, health, and documentation tool counts to 43.
-- Clarified that the project is an estimation and planning engine, not tax filing software.
-- Documented supported state-calculation paths and fail-closed behavior.
-- Set Node.js 20 as the minimum supported runtime and updated CI to Node 20, 22, and 24.
-
 ### Tests
 
+- Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
+- Expanded the suite to 273 tests across 10 test files.
 - Added IRS numeric regressions for EITC, capital gains, QBI, CTC ordering, refundable credits, OBBB deductions, and state brackets.
 - Added HTTP security, health, initialization, and real `tools/list` coverage.
-- Expanded the suite to 197 tests across 9 test files.
 
 ## [0.5.2] - 2026-02-23
 

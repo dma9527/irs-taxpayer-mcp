@@ -4,7 +4,13 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { STATE_TAX_DATA, getStateInfo, getNoIncomeTaxStates, type StateTaxType } from "../data/state-taxes.js";
+import {
+  STATE_TAX_CALCULATION_DATA,
+  STATE_TAX_DATA,
+  getStateInfo,
+  getNoIncomeTaxStates,
+  type StateTaxType,
+} from "../data/state-taxes.js";
 import {
   calculateStateTax,
   UnsupportedStateTaxCalculationError,
@@ -25,9 +31,15 @@ export function registerStateTaxTools(server: McpServer): void {
         return ERRORS.invalidState(stateCode, codes);
       }
 
+      const calculationYears = Object.entries(STATE_TAX_CALCULATION_DATA)
+        .filter(([, profiles]) => profiles[state.code] !== undefined)
+        .map(([year]) => year)
+        .join(", ");
+
       const lines = [
         `## ${state.name} (${state.code}) — State Income Tax`,
         "",
+        `**Numeric Calculation Years**: ${calculationYears || "None"}`,
         `**Tax Type**: ${state.taxType === "none" ? "No Income Tax 🎉" : state.taxType === "flat" ? "Flat Rate" : "Graduated Brackets"}`,
         state.taxType !== "none" ? `**Top Marginal Rate**: ${(state.topRate * 100).toFixed(2)}%` : "",
       ];
@@ -78,8 +90,13 @@ export function registerStateTaxTools(server: McpServer): void {
       }
 
       if (state.saltDeductionOnFederal) {
-        lines.push("", "💡 State income taxes paid are deductible on federal return (subject to SALT cap — $10K for TY2024, $40K for TY2025)");
+        lines.push("", "💡 State income taxes paid may be federally deductible, subject to the applicable annual SALT cap.");
       }
+
+      lines.push(
+        "",
+        "> Reference metadata may span source years. Numeric estimates use only the exact tax-year profiles listed above.",
+      );
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
     }
@@ -87,14 +104,15 @@ export function registerStateTaxTools(server: McpServer): void {
 
   server.tool(
     "estimate_state_tax",
-    "Estimate state income tax for a given income and state. Simplified calculation using state brackets.",
+    "Estimate state income tax using an explicit tax-year calculation profile. Unsupported state-year paths fail closed.",
     {
       stateCode: z.string().length(2).describe("Two-letter state code"),
+      taxYear: z.number().int().describe("Tax year for the versioned state calculation profile"),
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("State income before the modeled state standard deduction and personal exemption"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
     },
-    async ({ stateCode, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
+    async ({ stateCode, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
       const state = getStateInfo(stateCode);
       if (!state) {
         return ERRORS.invalidState(stateCode);
@@ -120,20 +138,12 @@ export function registerStateTaxTools(server: McpServer): void {
       }
       const usedLegacyIncome = !hasExplicitIncome;
 
-      if (state.taxType === "none") {
-        return {
-          content: [{
-            type: "text",
-            text: `## ${state.name} — No State Income Tax 🎉\n\nEstimated state tax: $0\n\n${state.notes ?? ""}${usedLegacyIncome ? "\n\n> ⚠️ taxableIncome is deprecated; use incomeBeforeStateDeductions." : ""}`,
-          }],
-        };
-      }
-
       const status = filingStatus ?? "single";
       let result: ReturnType<typeof calculateStateTax>;
       try {
         result = calculateStateTax({
           stateCode,
+          taxYear,
           incomeBeforeDeductions: stateIncome,
           filingStatus: status,
         });
@@ -149,6 +159,15 @@ export function registerStateTaxTools(server: McpServer): void {
 
       if (!result) {
         return ERRORS.invalidState(stateCode);
+      }
+
+      if (result.taxType === "none") {
+        return {
+          content: [{
+            type: "text",
+            text: `## ${state.name} — No State Income Tax 🎉\n\nEstimated state tax: $0\n\n${state.notes ?? ""}${usedLegacyIncome ? "\n\n> ⚠️ taxableIncome is deprecated; use incomeBeforeStateDeductions." : ""}`,
+          }],
+        };
       }
 
       const { adjustedIncome, deduction, tax, effectiveRate } = result;
@@ -177,14 +196,15 @@ export function registerStateTaxTools(server: McpServer): void {
 
   server.tool(
     "compare_state_taxes",
-    "Compare state income tax across multiple states for the same income. Useful for relocation decisions.",
+    "Compare state income tax for one tax year only when every requested state has an explicit calculation profile.",
     {
       states: z.array(z.string().length(2)).min(2).max(10).describe("Array of state codes to compare (e.g., ['CA', 'TX', 'WA', 'NY'])"),
+      taxYear: z.number().int().describe("Tax year for all versioned state calculation profiles"),
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("Annual income before modeled state deductions"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
     },
-    async ({ states, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
+    async ({ states, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
       const hasExplicitIncome = incomeBeforeStateDeductions !== undefined;
       const hasLegacyIncome = taxableIncome !== undefined;
       if (hasExplicitIncome === hasLegacyIncome) {
@@ -222,6 +242,7 @@ export function registerStateTaxTools(server: McpServer): void {
         try {
           result = calculateStateTax({
             stateCode: code,
+            taxYear,
             incomeBeforeDeductions: stateIncome,
             filingStatus: status,
           });

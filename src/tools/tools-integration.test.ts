@@ -290,7 +290,7 @@ describe("MCP Tools Integration", () => {
   describe("estimate_state_tax", () => {
     it("estimates CA tax", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
-        stateCode: "CA", taxableIncome: 100000,
+        stateCode: "CA", taxYear: 2024, taxableIncome: 100000,
       });
       expect(text).toContain("California");
       expect(text).toContain("Estimated State Tax");
@@ -298,7 +298,7 @@ describe("MCP Tools Integration", () => {
 
     it("shows zero for no-tax state", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
-        stateCode: "TX", taxableIncome: 100000,
+        stateCode: "TX", taxYear: 2024, taxableIncome: 100000,
       });
       expect(text).toContain("No State Income Tax");
     });
@@ -307,7 +307,7 @@ describe("MCP Tools Integration", () => {
   describe("compare_state_taxes", () => {
     it("compares multiple states", async () => {
       const { text } = await callTool(server, "compare_state_taxes", {
-        states: ["CA", "TX", "NY"], taxableIncome: 150000,
+        states: ["CA", "TX", "NY"], taxYear: 2024, taxableIncome: 150000,
       });
       expect(text).toContain("State Tax Comparison");
       expect(text).toContain("California");
@@ -583,7 +583,7 @@ describe("MCP Tools Integration", () => {
     it("analyzes relocation from CA to TX", async () => {
       const { text } = await callTool(server, "analyze_relocation_taxes", {
         taxYear: 2024, filingStatus: "single", grossIncome: 200000,
-        fromState: "CA", toState: "TX",
+        fromState: "CA", toState: "TX", yearsToProject: 1,
       });
       expect(text).toContain("Relocation Tax Analysis");
       expect(text).toContain("California");
@@ -800,17 +800,19 @@ describe("MCP Tools Integration", () => {
     it("returns an error instead of applying Arkansas top rate to all income", async () => {
       const { text, isError } = await callTool(server, "estimate_state_tax", {
         stateCode: "AR",
+        taxYear: 2024,
         taxableIncome: 100000,
         filingStatus: "single",
       });
 
       expect(isError).toBe(true);
-      expect(text).toContain("Arkansas graduated tax brackets are not available");
+      expect(text).toContain("Arkansas TY2024 calculation data are not available");
     });
 
     it("uses California married brackets in the state estimate", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
         stateCode: "CA",
+        taxYear: 2024,
         incomeBeforeStateDeductions: 100000,
         filingStatus: "married",
       });
@@ -821,6 +823,7 @@ describe("MCP Tools Integration", () => {
     it("keeps taxableIncome as a deprecated compatibility alias", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
         stateCode: "CA",
+        taxYear: 2024,
         taxableIncome: 100000,
         filingStatus: "single",
       });
@@ -832,6 +835,7 @@ describe("MCP Tools Integration", () => {
     it("rejects conflicting state income fields", async () => {
       const { text, isError } = await callTool(server, "estimate_state_tax", {
         stateCode: "CA",
+        taxYear: 2024,
         incomeBeforeStateDeductions: 100000,
         taxableIncome: 90000,
       });
@@ -840,14 +844,26 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Provide exactly one of incomeBeforeStateDeductions or taxableIncome");
     });
 
+    it("fails closed when the requested state year is not versioned", async () => {
+      const { text, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "CA",
+        taxYear: 2025,
+        incomeBeforeStateDeductions: 100000,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("California TY2025 calculation data are not available");
+    });
+
     it("fails the comparison when any requested state lacks supported brackets", async () => {
       const { text, isError } = await callTool(server, "compare_state_taxes", {
         states: ["AR", "TX"],
+        taxYear: 2024,
         taxableIncome: 100000,
       });
 
       expect(isError).toBe(true);
-      expect(text).toContain("Arkansas graduated tax brackets are not available");
+      expect(text).toContain("Arkansas TY2024 calculation data are not available");
     });
 
     it.each([

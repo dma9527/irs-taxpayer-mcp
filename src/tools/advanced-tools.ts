@@ -493,7 +493,7 @@ export function registerAdvancedTools(server: McpServer): void {
         const totalIncome = yr.expectedIncome + (yr.plannedRothConversion ?? 0);
 
         const federal = calculateTax({
-          taxYear: Math.min(yr.year, 2025), // use 2025 data for future years
+          taxYear: yr.year,
           filingStatus: params.filingStatus,
           grossIncome: totalIncome,
           selfEmploymentIncome: yr.selfEmploymentIncome,
@@ -506,6 +506,7 @@ export function registerAdvancedTools(server: McpServer): void {
         if (yr.stateCode) {
           const sr = calculateStateTax({
             stateCode: yr.stateCode,
+            taxYear: yr.year,
             incomeBeforeDeductions: federal.adjustedGrossIncome,
             filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
           });
@@ -598,7 +599,7 @@ export function registerAdvancedTools(server: McpServer): void {
         lines.push(`### 🎯 Age Milestones`, "", ...milestones.map((m) => `- ${m}`), "");
       }
 
-      lines.push(`> ⚠️ Uses TY2024/2025 tax law for all years. Future tax law changes may affect projections.`);
+      lines.push(`> ⚠️ Each projection year requires explicit annual federal and state calculation data. Unsupported years return an error.`);
 
       return { content: [{ type: "text", text: lines.join("\n") }] };
     })
@@ -638,8 +639,8 @@ export function registerAdvancedTools(server: McpServer): void {
 
       const stateFS = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
 
-      const fromResult = calculateStateTax({ stateCode: params.fromState, incomeBeforeDeductions: federal.adjustedGrossIncome, filingStatus: stateFS });
-      const toResult = calculateStateTax({ stateCode: params.toState, incomeBeforeDeductions: federal.adjustedGrossIncome, filingStatus: stateFS });
+      const fromResult = calculateStateTax({ stateCode: params.fromState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, filingStatus: stateFS });
+      const toResult = calculateStateTax({ stateCode: params.toState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, filingStatus: stateFS });
 
       if (!fromResult || !toResult) {
         return ERRORS.invalidState(params.fromState);
@@ -653,13 +654,14 @@ export function registerAdvancedTools(server: McpServer): void {
 
       for (let i = 0; i < projYears; i++) {
         const yearIncome = Math.round(params.grossIncome * Math.pow(1 + growth, i));
+        const projectionTaxYear = params.taxYear + i;
         const yearFederal = calculateTax({
-          taxYear: Math.min(params.taxYear + i, 2025),
+          taxYear: projectionTaxYear,
           filingStatus: params.filingStatus,
           grossIncome: yearIncome,
         });
-        const yearFrom = calculateStateTax({ stateCode: params.fromState, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
-        const yearTo = calculateStateTax({ stateCode: params.toState, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
+        const yearFrom = calculateStateTax({ stateCode: params.fromState, taxYear: projectionTaxYear, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
+        const yearTo = calculateStateTax({ stateCode: params.toState, taxYear: projectionTaxYear, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, filingStatus: stateFS });
         const yearSavings = (yearFrom?.tax ?? 0) - (yearTo?.tax ?? 0);
         cumulativeSavings += yearSavings;
         projections.push({

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { STATE_TAX_DATA, getStateInfo, getNoIncomeTaxStates } from "./state-taxes.js";
+import {
+  STATE_TAX_DATA,
+  getStateInfo,
+  getStateCalculationInfo,
+  getNoIncomeTaxStates,
+} from "./state-taxes.js";
 
 describe("state tax data integrity", () => {
   it("has all 50 states + DC", () => {
@@ -48,6 +53,23 @@ describe("state tax data integrity", () => {
 
   it("returns undefined for invalid state", () => {
     expect(getStateInfo("XX")).toBeUndefined();
+  });
+
+  it("versions numeric calculation profiles by tax year", () => {
+    expect(getStateCalculationInfo("CA", 2024)?.taxYear).toBe(2024);
+    expect(getStateCalculationInfo("CA", 2025)).toBeUndefined();
+    expect(getStateCalculationInfo("IN", 2025)?.taxYear).toBe(2025);
+    expect(getStateCalculationInfo("IN", 2024)).toBeUndefined();
+    expect(getStateCalculationInfo("IA", 2025)?.taxYear).toBe(2025);
+    expect(getStateCalculationInfo("MS", 2026)?.taxYear).toBe(2026);
+  });
+
+  it("supports no-broad-income-tax profiles for applicable years", () => {
+    expect(getStateCalculationInfo("TX", 2024)?.taxType).toBe("none");
+    expect(getStateCalculationInfo("TX", 2025)?.taxType).toBe("none");
+    expect(getStateCalculationInfo("TX", 2026)?.taxType).toBe("none");
+    expect(getStateCalculationInfo("NH", 2024)).toBeUndefined();
+    expect(getStateCalculationInfo("NH", 2025)?.taxType).toBe("none");
   });
 
   it("no-tax states have topRate of 0", () => {

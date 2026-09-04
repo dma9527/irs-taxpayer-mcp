@@ -17,11 +17,13 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 - Improved MFJ versus MFS dependent allocation and mandatory itemization behavior.
 - Corrected OBBB tips, overtime, senior, and auto-loan phase-outs using the applicable IRC sections.
 - Removed unsafe graduated-state top-rate fallback calculations. Unsupported state paths now fail closed.
+- Replaced the ambiguous state income input with an explicit pre-deduction contract and a deprecated compatibility alias.
+- Added exact-year state calculation profiles and required every numeric state call to select a supported tax year.
 - Added California TY2024 married brackets. Other graduated married paths remain unsupported unless explicit brackets are present.
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 228 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
+- Expanded the suite to 232 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -35,11 +37,13 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 
 ### State estimates
 
-- Reference data for all 50 states and DC.
-- Numeric estimates for modeled no-tax and flat-tax states.
-- Graduated single brackets for AL, CA, CT, DE, HI, MN, MO, NJ, NY, and OR.
-- Graduated married brackets for CA.
-- Unsupported graduated and filing-status combinations return an error.
+- Reference metadata for all 50 states and DC.
+- Exact-year numeric profiles for selected TY2024, TY2025, and TY2026 state paths.
+- TY2024 graduated single profiles for AL, CA, CT, DE, HI, MN, MO, NJ, NY, and OR.
+- California TY2024 married brackets.
+- TY2025 flat profiles for IA and IN, and a TY2026 flat profile for MS.
+- No-broad-income-tax profiles by applicable tax year.
+- Unsupported state-year and filing-status combinations return an error.
 
 ### Explicit boundary
 
@@ -72,7 +76,7 @@ The project does not currently generate, sign, or transmit a tax return. It does
 - [ ] Add separate HoH, MFS, and qualifying-surviving-spouse paths where applicable.
 - [ ] Add part-year resident and nonresident allocation models.
 - [ ] Add local income taxes only where official jurisdiction data and allocation rules are modeled.
-- [ ] Version all state data by tax year and source publication.
+- [x] Version numeric state calculation profiles by tax year and source publication.
 - [ ] Keep unsupported paths fail closed throughout expansion.
 
 ## Phase 4: Filing-Grade Verification

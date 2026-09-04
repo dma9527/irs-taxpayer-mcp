@@ -6,20 +6,23 @@ describe("calculateStateTax accuracy safeguards", () => {
     expect(() =>
       calculateStateTax({
         stateCode: "AR",
+        taxYear: 2024,
         taxableIncome: 100000,
         filingStatus: "single",
       }),
-    ).toThrow("Arkansas graduated tax brackets are not available");
+    ).toThrow("Arkansas TY2024 calculation data are not available");
   });
 
   it("uses explicit California married brackets", () => {
     const single = calculateStateTax({
       stateCode: "CA",
+      taxYear: 2024,
       taxableIncome: 100000,
       filingStatus: "single",
     });
     const married = calculateStateTax({
       stateCode: "CA",
+      taxYear: 2024,
       incomeBeforeDeductions: 100000,
       filingStatus: "married",
     });
@@ -31,11 +34,13 @@ describe("calculateStateTax accuracy safeguards", () => {
   it("keeps the legacy taxableIncome alias equivalent", () => {
     const explicit = calculateStateTax({
       stateCode: "CA",
+      taxYear: 2024,
       incomeBeforeDeductions: 100000,
       filingStatus: "single",
     });
     const legacy = calculateStateTax({
       stateCode: "CA",
+      taxYear: 2024,
       taxableIncome: 100000,
       filingStatus: "single",
     });
@@ -46,6 +51,7 @@ describe("calculateStateTax accuracy safeguards", () => {
   it("applies California mental-health surcharge above $1M for married filers", () => {
     const result = calculateStateTax({
       stateCode: "CA",
+      taxYear: 2024,
       taxableIncome: 1200000,
       filingStatus: "married",
     });
@@ -54,10 +60,22 @@ describe("calculateStateTax accuracy safeguards", () => {
     expect(result?.tax).toBe(114181);
   });
 
+  it("fails closed when the state has no profile for the requested year", () => {
+    expect(() =>
+      calculateStateTax({
+        stateCode: "CA",
+        taxYear: 2025,
+        incomeBeforeDeductions: 100000,
+        filingStatus: "single",
+      }),
+    ).toThrow("California TY2025 calculation data are not available");
+  });
+
   it("fails closed for married filers when only single brackets are available", () => {
     expect(() =>
       calculateStateTax({
         stateCode: "NY",
+        taxYear: 2024,
         taxableIncome: 100000,
         filingStatus: "married",
       }),

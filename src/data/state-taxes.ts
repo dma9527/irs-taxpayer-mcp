@@ -1,7 +1,8 @@
 /**
- * State income tax data for all 50 states + DC.
- * Simplified: uses top marginal rate and basic structure.
- * For states with graduated brackets, includes full bracket data.
+ * State income tax reference metadata for all 50 states and DC.
+ *
+ * STATE_TAX_DATA is reference-only and may span source years. Numeric calculations
+ * use STATE_TAX_CALCULATION_DATA and require an exact tax-year profile.
  *
  * Sources:
  *   Tax Foundation: "State Individual Income Tax Rates and Brackets" (2024)
@@ -37,6 +38,11 @@ export interface StateInfo {
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
   localTaxData?: LocalTaxInfo[];
+}
+
+export interface StateCalculationInfo extends StateInfo {
+  taxYear: number;
+  source: string;
 }
 
 export const STATE_TAX_DATA: Record<string, StateInfo> = {
@@ -197,8 +203,108 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
   DC: { code: "DC", name: "District of Columbia", taxType: "graduated", topRate: 0.1075, saltDeductionOnFederal: true },
 };
 
+const NO_BROAD_INCOME_TAX_CODES = ["AK", "FL", "NV", "SD", "TN", "TX", "WY"] as const;
+const TY2024_GRADUATED_PROFILE_CODES = [
+  "AL", "CA", "CT", "DE", "HI", "MN", "MO", "NJ", "NY", "OR",
+] as const;
+
+function createCalculationProfile(
+  stateCode: string,
+  taxYear: number,
+  source: string,
+): StateCalculationInfo {
+  const state = STATE_TAX_DATA[stateCode];
+  if (!state) {
+    throw new Error(`Unknown state calculation profile: ${stateCode}`);
+  }
+  return { ...state, taxYear, source };
+}
+
+function createNoTaxProfiles(taxYear: number): Partial<Record<string, StateCalculationInfo>> {
+  return Object.fromEntries(
+    NO_BROAD_INCOME_TAX_CODES.map((stateCode) => [
+      stateCode,
+      createCalculationProfile(
+        stateCode,
+        taxYear,
+        `${STATE_TAX_DATA[stateCode].name} revenue authority, TY${taxYear}`,
+      ),
+    ]),
+  );
+}
+
+function createProfiles(
+  stateCodes: readonly string[],
+  taxYear: number,
+  source: string,
+): Partial<Record<string, StateCalculationInfo>> {
+  return Object.fromEntries(
+    stateCodes.map((stateCode) => [
+      stateCode,
+      createCalculationProfile(stateCode, taxYear, source),
+    ]),
+  );
+}
+
+export const STATE_TAX_CALCULATION_DATA: Record<
+  number,
+  Partial<Record<string, StateCalculationInfo>>
+> = {
+  2024: {
+    ...createNoTaxProfiles(2024),
+    ...createProfiles(
+      TY2024_GRADUATED_PROFILE_CODES,
+      2024,
+      "TY2024 state revenue authority rate schedules",
+    ),
+    CA: createCalculationProfile(
+      "CA",
+      2024,
+      "California Franchise Tax Board 2024 tax rate schedules",
+    ),
+  },
+  2025: {
+    ...createNoTaxProfiles(2025),
+    NH: createCalculationProfile(
+      "NH",
+      2025,
+      "New Hampshire Department of Revenue Administration, interest and dividends tax repeal effective TY2025",
+    ),
+    IN: createCalculationProfile(
+      "IN",
+      2025,
+      "Indiana Department of Revenue TY2025 individual income tax rate",
+    ),
+    IA: createCalculationProfile(
+      "IA",
+      2025,
+      "Iowa Department of Revenue TY2025 flat individual income tax rate",
+    ),
+  },
+  2026: {
+    ...createNoTaxProfiles(2026),
+    NH: createCalculationProfile(
+      "NH",
+      2026,
+      "New Hampshire Department of Revenue Administration, no broad individual income tax",
+    ),
+    MS: createCalculationProfile(
+      "MS",
+      2026,
+      "Mississippi Department of Revenue TY2026 flat individual income tax rate",
+    ),
+  },
+};
+
 export function getStateInfo(stateCode: string): StateInfo | undefined {
   return STATE_TAX_DATA[stateCode.toUpperCase()];
+}
+
+export function getStateCalculationInfo(
+  stateCode: string,
+  taxYear: number,
+): StateCalculationInfo | undefined {
+  return STATE_TAX_CALCULATION_DATA[taxYear]?.[stateCode.toUpperCase()];
 }
 
 export function getNoIncomeTaxStates(): StateInfo[] {

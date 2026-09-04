@@ -137,6 +137,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         const stateFilingStatus = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
         const stateResult = calculateStateTax({
           stateCode: params.stateCode,
+          taxYear: params.taxYear,
           incomeBeforeDeductions: federalResult.adjustedGrossIncome,
           filingStatus: stateFilingStatus,
         });
@@ -614,6 +615,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       if (params.currentState) {
         const sr = calculateStateTax({
           stateCode: params.currentState,
+          taxYear: params.taxYear,
           incomeBeforeDeductions: currentFederal.adjustedGrossIncome,
           filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
         });
@@ -651,6 +653,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       if (whatIfStateCode) {
         const sr = calculateStateTax({
           stateCode: whatIfStateCode,
+          taxYear: params.taxYear,
           incomeBeforeDeductions: whatIfFederal.adjustedGrossIncome,
           filingStatus: newFilingStatus === "married_filing_jointly" ? "married" : "single",
         });

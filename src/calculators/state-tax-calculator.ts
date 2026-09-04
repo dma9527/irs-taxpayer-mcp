@@ -3,7 +3,11 @@
  * Extracted for reuse across tools (estimate_state_tax, calculate_total_tax).
  */
 
-import { getStateInfo, type StateBracket } from "../data/state-taxes.js";
+import {
+  getStateCalculationInfo,
+  getStateInfo,
+  type StateBracket,
+} from "../data/state-taxes.js";
 
 export class UnsupportedStateTaxCalculationError extends Error {
   constructor(message: string) {
@@ -14,6 +18,7 @@ export class UnsupportedStateTaxCalculationError extends Error {
 
 export interface StateTaxInput {
   stateCode: string;
+  taxYear: number;
   incomeBeforeDeductions?: number;
   /** @deprecated Use incomeBeforeDeductions. */
   taxableIncome?: number;
@@ -34,8 +39,15 @@ export interface StateTaxResult {
 }
 
 export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
-  const state = getStateInfo(input.stateCode);
-  if (!state) return null;
+  const stateReference = getStateInfo(input.stateCode);
+  if (!stateReference) return null;
+
+  const state = getStateCalculationInfo(input.stateCode, input.taxYear);
+  if (!state) {
+    throw new UnsupportedStateTaxCalculationError(
+      `${stateReference.name} TY${input.taxYear} calculation data are not available`,
+    );
+  }
 
   const hasExplicitIncome = input.incomeBeforeDeductions !== undefined;
   const hasLegacyIncome = input.taxableIncome !== undefined;

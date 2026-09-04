@@ -12,11 +12,13 @@ All notable changes to irs-taxpayer-mcp.
 - Replaced the ambiguous internal state taxable-income contract with explicit pre-deduction income, while retaining a deprecated compatibility alias for MCP clients.
 - Added TY2026 ordinary and capital-gains brackets, deductions, CTC, EITC, AMT, SALT, and Social Security wage-base data from official IRS and SSA sources.
 - Modeled the AMT 28% rate threshold separately for MFS and other filing statuses.
+- Versioned numeric state calculation profiles by tax year and source, requiring direct and high-level callers to select an exact supported state-year path.
+- Removed silent annual-data reuse from multi-year and relocation projections; unsupported future years now return an error.
 
 ### Tests
 
 - Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
-- Expanded the suite to 228 tests across 9 test files.
+- Expanded the suite to 232 tests across 9 test files.
 
 ## [0.6.0] - 2026-09-04
 

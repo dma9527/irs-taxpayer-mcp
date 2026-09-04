@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-04
+
 ### Fixed
 
 - Updated release automation to parse both npm 11 array and npm 12 keyed-object `npm pack --json` output.

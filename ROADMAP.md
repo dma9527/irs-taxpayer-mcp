@@ -4,7 +4,7 @@ _Last updated: 2026-09-04._
 
 ## Current Baseline
 
-Version 0.6.0 is a deterministic TY2024 and TY2025 estimation and planning engine with 43 MCP tools. It is not tax preparation or filing software.
+Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning engine with 43 MCP tools. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -12,6 +12,8 @@ Version 0.6.0 is a deterministic TY2024 and TY2025 estimation and planning engin
 - Corrected unused standard-deduction allocation for capital gains, the QBI taxable-income limit, and nonrefundable CTC ordering.
 - Added qualified-dividend treatment and preserved refundable EITC in full-report refund estimates.
 - Corrected Social Security wage-base selection by tax year.
+- Added TY2026 brackets, deductions, capital-gains thresholds, CTC, EITC, AMT, SALT, and Social Security data from official IRS and SSA sources.
+- Modeled AMT 28% thresholds separately for MFS and other filing statuses.
 - Improved MFJ versus MFS dependent allocation and mandatory itemization behavior.
 - Corrected OBBB tips, overtime, senior, and auto-loan phase-outs using the applicable IRC sections.
 - Removed unsafe graduated-state top-rate fallback calculations. Unsupported state paths now fail closed.
@@ -19,7 +21,7 @@ Version 0.6.0 is a deterministic TY2024 and TY2025 estimation and planning engin
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 197 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
+- Expanded the suite to 228 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -106,7 +108,7 @@ This phase begins only after the filing-grade verification gates are met.
 
 ## Known Limitations
 
-- Only TY2024 and TY2025 are modeled.
+- TY2024 through TY2026 federal data are modeled from annual IRS and SSA sources.
 - QBI and AMT are planning approximations for unsupported high-complexity paths.
 - Most graduated states lack explicit married brackets, and state HoH and MFS brackets are not modeled.
 - Local, part-year, nonresident, community-property, and multi-state allocation rules are incomplete.

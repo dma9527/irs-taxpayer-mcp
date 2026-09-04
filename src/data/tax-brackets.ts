@@ -1,9 +1,10 @@
 /**
- * Federal income tax brackets and standard deductions for TY2024 and TY2025.
+ * Federal income tax brackets and standard deductions for TY2024 through TY2026.
  *
  * IRS Sources:
  *   TY2024: Revenue Procedure 2023-34 (https://www.irs.gov/irb/2023-44_IRB#REV-PROC-2023-34)
  *   TY2025: Revenue Procedure 2024-40 (https://www.irs.gov/irb/2024-44_IRB#REV-PROC-2024-40)
+ *   TY2026: Revenue Procedure 2025-32 (https://www.irs.gov/irb/2025-45_IRB#REV-PROC-2025-32)
  *
  * Data points verified:
  *   - Tax brackets: Rev. Proc. §3.01 (Table 1-4)
@@ -56,7 +57,7 @@ export interface TaxYearData {
   amt: {
     exemption: Record<FilingStatus, number>;
     phaseoutStart: Record<FilingStatus, number>;
-    rate28Threshold: number;
+    rate28Threshold: Record<FilingStatus, number>;
   };
   saltCap: {
     base: number;
@@ -196,7 +197,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         married_filing_separately: 609350,
         head_of_household: 609350,
       },
-      rate28Threshold: 232600,
+      rate28Threshold: {
+        single: 232600,
+        married_filing_jointly: 232600,
+        married_filing_separately: 116300,
+        head_of_household: 232600,
+      },
     },
     saltCap: {
       base: 10000,
@@ -323,7 +329,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         married_filing_separately: 626350,
         head_of_household: 626350,
       },
-      rate28Threshold: 239100,
+      rate28Threshold: {
+        single: 239100,
+        married_filing_jointly: 239100,
+        married_filing_separately: 119550,
+        head_of_household: 239100,
+      },
     },
     saltCap: {
       base: 10000,
@@ -332,6 +343,149 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       enhancedMfsCap: 20000,
       enhancedAgiThreshold: 500000,
       enhancedMfsAgiThreshold: 250000,
+      phaseoutRate: 0.30,
+    },
+    obbbDeductions: {
+      seniorBonus: { amount: 6000, phaseoutSingle: 75000, phaseoutMFJ: 150000 },
+      tipsDeduction: { max: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      overtimeDeduction: { maxSingle: 12500, maxMFJ: 25000, agiLimitSingle: 150000, agiLimitMFJ: 300000 },
+      autoLoanInterest: { max: 10000, agiLimitSingle: 100000, agiLimitMFJ: 200000 },
+    },
+  },
+  // Sources: IRS Revenue Procedure 2025-32, SSA 2026 contribution and benefit base
+  2026: {
+    year: 2026,
+    brackets: {
+      single: [
+        { min: 0, max: 12400, rate: 0.10 },
+        { min: 12400, max: 50400, rate: 0.12 },
+        { min: 50400, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256225, rate: 0.32 },
+        { min: 256225, max: 640600, rate: 0.35 },
+        { min: 640600, max: null, rate: 0.37 },
+      ],
+      married_filing_jointly: [
+        { min: 0, max: 24800, rate: 0.10 },
+        { min: 24800, max: 100800, rate: 0.12 },
+        { min: 100800, max: 211400, rate: 0.22 },
+        { min: 211400, max: 403550, rate: 0.24 },
+        { min: 403550, max: 512450, rate: 0.32 },
+        { min: 512450, max: 768700, rate: 0.35 },
+        { min: 768700, max: null, rate: 0.37 },
+      ],
+      married_filing_separately: [
+        { min: 0, max: 12400, rate: 0.10 },
+        { min: 12400, max: 50400, rate: 0.12 },
+        { min: 50400, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256225, rate: 0.32 },
+        { min: 256225, max: 384350, rate: 0.35 },
+        { min: 384350, max: null, rate: 0.37 },
+      ],
+      head_of_household: [
+        { min: 0, max: 17700, rate: 0.10 },
+        { min: 17700, max: 67450, rate: 0.12 },
+        { min: 67450, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201750, rate: 0.24 },
+        { min: 201750, max: 256200, rate: 0.32 },
+        { min: 256200, max: 640600, rate: 0.35 },
+        { min: 640600, max: null, rate: 0.37 },
+      ],
+    },
+    standardDeduction: {
+      single: 16100,
+      married_filing_jointly: 32200,
+      married_filing_separately: 16100,
+      head_of_household: 24150,
+    },
+    additionalDeduction: {
+      age65OrBlind: {
+        single: 2050,
+        married_filing_jointly: 1650,
+        married_filing_separately: 1650,
+        head_of_household: 2050,
+      },
+    },
+    qualifiedBusinessIncomeDeductionRate: 0.20,
+    capitalGainsBrackets: {
+      single: [
+        { rate: 0, threshold: 49450 },
+        { rate: 0.15, threshold: 545500 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      married_filing_jointly: [
+        { rate: 0, threshold: 98900 },
+        { rate: 0.15, threshold: 613700 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      married_filing_separately: [
+        { rate: 0, threshold: 49450 },
+        { rate: 0.15, threshold: 306850 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+      head_of_household: [
+        { rate: 0, threshold: 66200 },
+        { rate: 0.15, threshold: 579600 },
+        { rate: 0.20, threshold: Infinity },
+      ],
+    },
+    socialSecurity: {
+      taxRate: 0.062,
+      wageBase: 184500,
+    },
+    medicare: {
+      taxRate: 0.0145,
+      additionalTaxRate: 0.009,
+      additionalTaxThreshold: {
+        single: 200000,
+        married_filing_jointly: 250000,
+        married_filing_separately: 125000,
+        head_of_household: 200000,
+      },
+    },
+    estimatedTaxSafeHarborPercent: 90,
+    childTaxCredit: {
+      amount: 2200,
+      refundableAmount: 1700,
+      otherDependentAmount: 500,
+      earnedIncomeThreshold: 2500,
+      refundableRate: 0.15,
+      phaseoutStart: {
+        single: 200000,
+        married_filing_jointly: 400000,
+        married_filing_separately: 200000,
+        head_of_household: 200000,
+      },
+      phaseoutRate: 50,
+    },
+    amt: {
+      exemption: {
+        single: 90100,
+        married_filing_jointly: 140200,
+        married_filing_separately: 70100,
+        head_of_household: 90100,
+      },
+      phaseoutStart: {
+        single: 500000,
+        married_filing_jointly: 1000000,
+        married_filing_separately: 500000,
+        head_of_household: 500000,
+      },
+      rate28Threshold: {
+        single: 244500,
+        married_filing_jointly: 244500,
+        married_filing_separately: 122250,
+        head_of_household: 244500,
+      },
+    },
+    saltCap: {
+      base: 10000,
+      mfs: 5000,
+      enhancedCap: 40400,
+      enhancedMfsCap: 20200,
+      enhancedAgiThreshold: 505000,
+      enhancedMfsAgiThreshold: 252500,
       phaseoutRate: 0.30,
     },
     obbbDeductions: {

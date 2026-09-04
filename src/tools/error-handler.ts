@@ -77,7 +77,7 @@ export function wrapToolHandler<T>(
         return toolError({
           code: "UNSUPPORTED_TAX_YEAR",
           message,
-          suggestion: "Use taxYear 2024 or 2025. These are the currently supported tax years.",
+          suggestion: "Use taxYear 2024, 2025, or 2026. These are the currently supported tax years.",
         });
       }
 
@@ -85,7 +85,7 @@ export function wrapToolHandler<T>(
         return toolError({
           code: "INVALID_INPUT",
           message,
-          suggestion: "Check your input values. Income should be positive, tax year should be 2024 or 2025.",
+          suggestion: "Check your input values. Income should be positive, tax year should be 2024, 2025, or 2026.",
         });
       }
 
@@ -103,7 +103,7 @@ export const ERRORS = {
   unsupportedYear: (year: number) => toolError({
     code: "UNSUPPORTED_TAX_YEAR",
     message: `Tax year ${year} is not supported.`,
-    suggestion: "Use taxYear 2024 or 2025. Data is sourced from IRS Rev. Proc. 2023-34 (TY2024) and Rev. Proc. 2024-40 + OBBB Act (TY2025).",
+    suggestion: "Use taxYear 2024, 2025, or 2026. Data is sourced from IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 plus OBBB (TY2025), and Rev. Proc. 2025-32 plus SSA data (TY2026).",
   }),
 
   invalidState: (code: string, available?: string) => toolError({

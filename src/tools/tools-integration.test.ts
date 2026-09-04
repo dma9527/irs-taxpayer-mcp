@@ -60,6 +60,16 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Marginal Tax Rate");
     });
 
+    it("uses official TY2026 federal values", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 100000,
+      });
+
+      expect(text).toContain("TY2026");
+      expect(text).toContain("$16,100");
+      expect(text).toContain("$13,170");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,
@@ -241,6 +251,18 @@ describe("MCP Tools Integration", () => {
       });
       expect(text).toContain("EITC");
       expect(text).toContain("refundable");
+    });
+
+    it("uses TY2026 EITC parameters", async () => {
+      const { text } = await callTool(server, "calculate_eitc", {
+        taxYear: 2026,
+        filingStatus: "single",
+        earnedIncome: 18290,
+        agi: 18290,
+        qualifyingChildren: 3,
+      });
+
+      expect(text).toContain("$8,231");
     });
 
     it("shows ineligible for MFS", async () => {

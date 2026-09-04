@@ -551,7 +551,7 @@ export function registerPlanningTools(server: McpServer): void {
     "Compare Married Filing Jointly (MFJ) vs Married Filing Separately (MFS). " +
     "Shows tax difference and lists all MFS restrictions that may affect your situation.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       spouse1Income: z.number().min(0).describe("Spouse 1 gross income"),
       spouse2Income: z.number().min(0).describe("Spouse 2 gross income"),
       dependents: z.number().int().min(0).max(20).optional().describe("Number of qualifying children (maximum 20)"),

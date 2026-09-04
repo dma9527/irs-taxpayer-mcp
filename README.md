@@ -24,7 +24,7 @@
 
 Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.
 
-This MCP server puts a tax-aware assistant inside your AI chat. Ask about a supported tax scenario in plain language and get deterministic estimates from versioned TY2024 and TY2025 data. Calculations run locally on your machine. No IRS login or SSN is required.
+This MCP server puts a tax-aware assistant inside your AI chat. Ask about a supported tax scenario in plain language and get deterministic estimates from versioned TY2024 through TY2026 data. Calculations run locally on your machine. No IRS login or SSN is required.
 
 It includes OBBB provisions modeled for TY2025, federal brackets, selected credits and deductions, and explicitly supported state-tax paths. Unsupported state calculations fail closed instead of applying a rough top-rate estimate.
 
@@ -184,7 +184,7 @@ The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` 
 | Tool                             | What it does                                                                               |
 | -------------------------------- | ------------------------------------------------------------------------------------------ |
 | `calculate_obbb_deductions`      | Calculate all 4 new OBBB deductions: tips, overtime, senior bonus, auto loan interest      |
-| `what_changed_between_tax_years` | Full diff between TY2024 and TY2025: brackets, deductions, credits, SALT, OBBB provisions |
+| `what_changed_between_tax_years` | Diff any two supported years: brackets, deductions, credits, SALT, and OBBB provisions |
 
 ### Full Reports & Analysis
 
@@ -228,11 +228,21 @@ Reflects OBBB signed July 4, 2025:
 - New deductions: tips ($25K), overtime ($12.5K), senior bonus ($6K age 65+), auto loan interest ($10K)
 - 401k catch-up: $11,250 for ages 60-63 (SECURE 2.0)
 
+### TY2026
+
+Uses IRS Revenue Procedure 2025-32 and the SSA 2026 contribution and benefit base:
+
+- Standard deduction: $16,100 (single) / $32,200 (MFJ) / $24,150 (HoH)
+- Child Tax Credit: $2,200 per qualifying child, with up to $1,700 refundable
+- SALT cap: $40,400 for MAGI up to $505,000; $20,200 and $252,500 for MFS
+- Social Security wage base: $184,500
+- Updated ordinary, capital-gains, EITC, and AMT thresholds
+
 ## Supported Scope and Boundaries
 
 This project is a deterministic estimation and planning engine, not tax preparation or filing software.
 
-- Federal estimates cover the modeled TY2024 and TY2025 inputs exposed by each tool. They do not implement every Form 1040 line, schedule, election, limitation, carryforward, or dependency rule.
+- Federal estimates cover the modeled TY2024 through TY2026 inputs exposed by each tool. They do not implement every Form 1040 line, schedule, election, limitation, carryforward, or dependency rule.
 - State reference information covers all 50 states and DC. Numeric estimates support all modeled no-tax and flat-tax states, graduated single brackets for AL, CA, CT, DE, HI, MN, MO, NJ, NY, and OR, and graduated married brackets for CA. Unsupported graduated or filing-status paths return an error.
 - State calculations do not yet model part-year or nonresident allocation, every local tax, or separate HoH and MFS brackets.
 - QBI, AMT, audit-risk, retirement, relocation, and multi-year outputs are planning estimates with documented simplifications.
@@ -253,7 +263,7 @@ See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federa
 | Alternative Minimum Tax (AMT)                | Modeled with stated limitations |
 | QBI Deduction (Section 199A)                 | Modeled with stated limitations |
 | Child Tax Credit with phase-out              | ✅     |
-| EITC TY2024/TY2025 calculation               | ✅     |
+| EITC TY2024/TY2025/TY2026 calculation               | ✅     |
 | Standard vs itemized deduction               | ✅     |
 | Year-specific SALT cap (OBBB)                | ✅     |
 | State reference data (50 states + DC)        | ✅     |

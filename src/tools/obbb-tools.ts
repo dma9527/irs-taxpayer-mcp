@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { fmt, FilingStatusEnum } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
+import { getTaxYearData, SUPPORTED_TAX_YEARS, type FilingStatus } from "../data/tax-brackets.js";
 import { ERRORS } from "./error-handler.js";
 
 
@@ -200,7 +200,7 @@ export function registerObbbTools(server: McpServer): void {
       const from = getTaxYearData(fromYear);
       const to = getTaxYearData(toYear);
       if (!from || !to) {
-        const supported = [2024, 2025].join(", ");
+        const supported = SUPPORTED_TAX_YEARS.join(", ");
         return { content: [{ type: "text", text: `One or both tax years not supported. Available: ${supported}` }], isError: true };
       }
 
@@ -266,7 +266,7 @@ export function registerObbbTools(server: McpServer): void {
 
       lines.push(
         "",
-        `> Source: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 (TY2025), One Big Beautiful Bill Act (2025)`,
+        `> Source: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 plus OBBB (TY2025), Rev. Proc. 2025-32 plus SSA data (TY2026)`,
       );
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };

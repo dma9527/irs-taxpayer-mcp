@@ -212,7 +212,7 @@ function calculateAMT(
   const amtBase = Math.max(0, amtIncome - exemption);
 
   // 26% on first portion, 28% on remainder
-  const threshold = taxData.amt.rate28Threshold;
+  const threshold = taxData.amt.rate28Threshold[filingStatus];
   let tentativeAMT: number;
   if (amtBase <= threshold) {
     tentativeAMT = amtBase * 0.26;
@@ -236,7 +236,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   const taxData = getTaxYearData(input.taxYear);
   if (!taxData) {
-    throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025`);
+    throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025, 2026`);
   }
 
   // Step 1: Calculate AGI

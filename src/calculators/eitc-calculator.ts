@@ -1,6 +1,6 @@
 /**
  * Earned Income Tax Credit (EITC) precise calculation.
- * Source: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 (TY2025)
+ * Source: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 (TY2025), Rev. Proc. 2025-32 (TY2026)
  */
 
 import type { FilingStatus } from "../data/tax-brackets.js";
@@ -31,15 +31,24 @@ const EITC_2025: Record<number, EITCParams> = {
   3: { creditRate: 0.45, earnedIncomeThreshold: 17880, maxCredit: 8046, phaseoutRate: 0.2106, phaseoutStart: 23350, phaseoutStartMFJ: 30470, completionThreshold: 61555, completionThresholdMFJ: 68675 },
 };
 
+const EITC_2026: Record<number, EITCParams> = {
+  0: { creditRate: 0.0765, earnedIncomeThreshold: 8680, maxCredit: 664, phaseoutRate: 0.0765, phaseoutStart: 10860, phaseoutStartMFJ: 18140, completionThreshold: 19540, completionThresholdMFJ: 26820 },
+  1: { creditRate: 0.34, earnedIncomeThreshold: 13020, maxCredit: 4427, phaseoutRate: 0.1598, phaseoutStart: 23890, phaseoutStartMFJ: 31160, completionThreshold: 51593, completionThresholdMFJ: 58863 },
+  2: { creditRate: 0.40, earnedIncomeThreshold: 18290, maxCredit: 7316, phaseoutRate: 0.2106, phaseoutStart: 23890, phaseoutStartMFJ: 31160, completionThreshold: 58629, completionThresholdMFJ: 65899 },
+  3: { creditRate: 0.45, earnedIncomeThreshold: 18290, maxCredit: 8231, phaseoutRate: 0.2106, phaseoutStart: 23890, phaseoutStartMFJ: 31160, completionThreshold: 62974, completionThresholdMFJ: 70244 },
+};
+
 const EITC_DATA: Record<number, Record<number, EITCParams>> = {
   2024: EITC_2024,
   2025: EITC_2025,
+  2026: EITC_2026,
 };
 
 // Investment income limit
 const INVESTMENT_INCOME_LIMIT: Record<number, number> = {
   2024: 11600,
   2025: 11950,
+  2026: 12200,
 };
 
 export interface EITCInput {

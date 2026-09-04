@@ -9,12 +9,13 @@ const STATUSES: FilingStatus[] = [
 ];
 
 describe("tax brackets data integrity", () => {
-  it("supports TY2024 and TY2025", () => {
+  it("supports TY2024 through TY2026", () => {
     expect(SUPPORTED_TAX_YEARS).toContain(2024);
     expect(SUPPORTED_TAX_YEARS).toContain(2025);
+    expect(SUPPORTED_TAX_YEARS).toContain(2026);
   });
 
-  for (const year of [2024, 2025]) {
+  for (const year of [2024, 2025, 2026]) {
     describe(`TY${year}`, () => {
       const data = TAX_DATA[year];
 
@@ -91,6 +92,68 @@ describe("tax brackets data integrity", () => {
         TAX_DATA[2024].standardDeduction[status]
       );
     }
+  });
+
+  describe("TY2026 official values", () => {
+    it("uses Rev. Proc. 2025-32 ordinary and capital-gains thresholds", () => {
+      const data = TAX_DATA[2026];
+
+      expect(data.brackets.single.map(({ max }) => max)).toEqual([
+        12400, 50400, 105700, 201775, 256225, 640600, null,
+      ]);
+      expect(data.brackets.married_filing_jointly.map(({ max }) => max)).toEqual([
+        24800, 100800, 211400, 403550, 512450, 768700, null,
+      ]);
+      expect(data.brackets.married_filing_separately.map(({ max }) => max)).toEqual([
+        12400, 50400, 105700, 201775, 256225, 384350, null,
+      ]);
+      expect(data.brackets.head_of_household.map(({ max }) => max)).toEqual([
+        17700, 67450, 105700, 201750, 256200, 640600, null,
+      ]);
+      expect(data.capitalGainsBrackets.single.map(({ threshold }) => threshold)).toEqual([
+        49450, 545500, Infinity,
+      ]);
+      expect(data.capitalGainsBrackets.married_filing_jointly.map(({ threshold }) => threshold)).toEqual([
+        98900, 613700, Infinity,
+      ]);
+    });
+
+    it("uses TY2026 deductions, credits, payroll, AMT, and SALT values", () => {
+      const data = TAX_DATA[2026];
+
+      expect(data.standardDeduction).toEqual({
+        single: 16100,
+        married_filing_jointly: 32200,
+        married_filing_separately: 16100,
+        head_of_household: 24150,
+      });
+      expect(data.additionalDeduction.age65OrBlind).toEqual({
+        single: 2050,
+        married_filing_jointly: 1650,
+        married_filing_separately: 1650,
+        head_of_household: 2050,
+      });
+      expect(data.socialSecurity.wageBase).toBe(184500);
+      expect(data.childTaxCredit.amount).toBe(2200);
+      expect(data.childTaxCredit.refundableAmount).toBe(1700);
+      expect(data.amt.exemption).toEqual({
+        single: 90100,
+        married_filing_jointly: 140200,
+        married_filing_separately: 70100,
+        head_of_household: 90100,
+      });
+      expect(data.amt.phaseoutStart).toEqual({
+        single: 500000,
+        married_filing_jointly: 1000000,
+        married_filing_separately: 500000,
+        head_of_household: 500000,
+      });
+      expect(data.amt.rate28Threshold.married_filing_separately).toBe(122250);
+      expect(data.amt.rate28Threshold.single).toBe(244500);
+      expect(getSaltCap(2026, "single", 505000)).toBe(40400);
+      expect(getSaltCap(2026, "single", 510000)).toBe(38900);
+      expect(getSaltCap(2026, "married_filing_separately", 252500)).toBe(20200);
+    });
   });
 
   it("returns undefined for unsupported year", () => {

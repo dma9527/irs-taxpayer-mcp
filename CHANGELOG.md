@@ -10,10 +10,13 @@ All notable changes to irs-taxpayer-mcp.
 - Added an explicit full net-investment-income input so NIIT includes taxable interest, dividends, gains, rents, royalties, and passive income without double-counting gains.
 - Added Schedule 8812 planning support for qualifying-child CTC, nonrefundable ODC, refundable ACTC, the three-child payroll-tax method, and Form 2555 exclusion with explicit limitations.
 - Replaced the ambiguous internal state taxable-income contract with explicit pre-deduction income, while retaining a deprecated compatibility alias for MCP clients.
+- Added TY2026 ordinary and capital-gains brackets, deductions, CTC, EITC, AMT, SALT, and Social Security wage-base data from official IRS and SSA sources.
+- Modeled the AMT 28% rate threshold separately for MFS and other filing statuses.
 
 ### Tests
 
-- Added federal, Schedule A, and full-report regressions for SALT phase-down and NIIT investment-income coverage.
+- Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
+- Expanded the suite to 228 tests across 9 test files.
 
 ## [0.6.0] - 2026-09-04
 

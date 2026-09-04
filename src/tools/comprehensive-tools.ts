@@ -22,7 +22,7 @@ export function registerComprehensiveTools(server: McpServer): void {
     "Generate a detailed tax estimate combining federal tax, supported state tax, FICA, " +
     "modeled credits, deductions, take-home pay, and refund inputs.",
     {
-      taxYear: z.number().describe("Tax year (2024 or 2025)"),
+      taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum,
       // Income
       w2Income: z.number().min(0).optional().describe("W-2 wages"),

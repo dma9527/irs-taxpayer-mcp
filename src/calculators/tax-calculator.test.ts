@@ -72,6 +72,20 @@ describe("calculateTax", () => {
     });
   });
 
+  describe("TY2026 brackets", () => {
+    it("uses TY2026 standard deduction and ordinary brackets", () => {
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "single",
+        grossIncome: 100000,
+      });
+
+      expect(result.deductionAmount).toBe(16100);
+      expect(result.taxableIncome).toBe(83900);
+      expect(result.ordinaryIncomeTax).toBe(13170);
+    });
+  });
+
   describe("additional deductions for age/blind", () => {
     it("adds extra deduction for age 65+", () => {
       const result = calculateTax({

@@ -125,7 +125,7 @@ TOOLS (${TOOL_COUNT}):
     what_changed_between_tax_years Year-over-year diff
 
   Reports & Analysis
-    generate_full_tax_report     Full TurboTax-style report
+    generate_full_tax_report     Detailed estimation report
     process_1099_income          Process multiple 1099 forms
     get_personalized_tax_calendar Personalized deadlines
     analyze_paycheck             Verify paycheck withholding
@@ -146,7 +146,7 @@ TOOLS (${TOOL_COUNT}):
     submit_feedback              Generate a GitHub issue link for feedback
 
 PRIVACY: All calculations run locally. No data leaves your machine.
-DATA: TY2024 (Rev. Proc. 2023-34) and TY2025 (OBBB Act).
+DATA: TY2024 through TY2026 from annual IRS and SSA sources.
 `;
   console.log(help);
 }

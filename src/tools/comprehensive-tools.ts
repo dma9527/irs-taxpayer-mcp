@@ -19,8 +19,8 @@ export function registerComprehensiveTools(server: McpServer): void {
   // --- Tool 1: Full Tax Report ---
   server.tool(
     "generate_full_tax_report",
-    "Generate a full tax estimate report combining federal tax, state tax, FICA, " +
-    "all credits and deductions into one summary. Like a TurboTax final page.",
+    "Generate a detailed tax estimate combining federal tax, supported state tax, FICA, " +
+    "modeled credits, deductions, take-home pay, and refund inputs.",
     {
       taxYear: z.number().describe("Tax year (2024 or 2025)"),
       filingStatus: FilingStatusEnum,
@@ -41,7 +41,10 @@ export function registerComprehensiveTools(server: McpServer): void {
       medicalExpenses: z.number().min(0).optional().describe("Unreimbursed medical expenses"),
       otherItemized: z.number().min(0).optional().describe("Other itemized deductions"),
       // Credits & dependents
-      dependents: z.number().int().min(0).optional().describe("Qualifying children under 17"),
+      dependents: z.number().int().min(0).optional().describe("Children already verified as CTC, ACTC, and EITC qualifying children"),
+      otherDependents: z.number().int().min(0).optional().describe("Dependents already verified for the nonrefundable ODC"),
+      socialSecurityTaxesPaid: z.number().min(0).optional().describe("Schedule 8812 payroll-tax amount for 3-or-more-child ACTC method"),
+      hasForm2555: z.boolean().optional().describe("Whether Form 2555 is filed"),
       qualifiedBusinessIncome: z.number().min(0).optional().describe("QBI for Section 199A"),
       // State
       stateCode: z.string().length(2).optional().describe("State code for state tax estimate"),
@@ -102,6 +105,11 @@ export function registerComprehensiveTools(server: McpServer): void {
         aboveTheLineDeductions: params.aboveTheLineDeductions,
         itemizedDeductions: totalItemized > 0 ? totalItemized : undefined,
         dependents: params.dependents,
+        qualifyingChildrenForCtc: params.dependents,
+        otherDependentsForOdc: params.otherDependents,
+        earnedIncome: w2 + Math.max(0, se),
+        socialSecurityTaxesPaid: params.socialSecurityTaxesPaid,
+        hasForm2555: params.hasForm2555,
         qualifiedBusinessIncome: params.qualifiedBusinessIncome,
       });
 
@@ -192,6 +200,8 @@ export function registerComprehensiveTools(server: McpServer): void {
         federalResult.additionalMedicareTax > 0 ? `| Additional Medicare (0.9%) | $${fmt(federalResult.additionalMedicareTax)} |` : "",
         federalResult.amt > 0 ? `| AMT | $${fmt(federalResult.amt)} |` : "",
         federalResult.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(federalResult.childTaxCredit)} |` : "",
+        federalResult.creditForOtherDependents > 0 ? `| Credit for Other Dependents | -$${fmt(federalResult.creditForOtherDependents)} |` : "",
+        federalResult.additionalChildTaxCredit > 0 ? `| Additional Child Tax Credit | -$${fmt(federalResult.additionalChildTaxCredit)} |` : "",
         eitcResult.eligible ? `| EITC | -$${fmt(eitcResult.credit)} |` : "",
         `| **Federal Tax After Refundable Credits** | **${formatTaxAmount(totalFederal)}** |`,
         `| Effective Federal Rate | ${(totalFederal / grossIncome * 100).toFixed(2)}% |`,
@@ -259,6 +269,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         "",
         federalResult.qbiDeduction > 0 ? `> ℹ️ QBI deduction uses simplified 20% calculation. For AGI above $191,950 (single) / $383,900 (MFJ), W-2 wage limits and SSTB rules may reduce the deduction.` : "",
         federalResult.amt > 0 ? `> ℹ️ AMT uses simplified calculation (ISO spread + SALT add-back). Does not apply preferential capital gains rates under AMT.` : "",
+        ...federalResult.limitations.map((limitation) => `> ⚠️ ${limitation}`),
         `> ⚠️ This is an estimate for educational purposes only. Actual tax liability may differ. Consult a qualified tax professional.`,
       );
 

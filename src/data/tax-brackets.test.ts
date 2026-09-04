@@ -75,8 +75,12 @@ describe("tax brackets data integrity", () => {
       });
 
       it("CTC amount matches tax year", () => {
-        const expected = year === 2024 ? 2000 : 2200; // OBBB: $2,200 for TY2025+
+        const expected = year === 2024 ? 2000 : 2200;
         expect(data.childTaxCredit.amount).toBe(expected);
+        expect(data.childTaxCredit.refundableAmount).toBe(1700);
+        expect(data.childTaxCredit.otherDependentAmount).toBe(500);
+        expect(data.childTaxCredit.earnedIncomeThreshold).toBe(2500);
+        expect(data.childTaxCredit.refundableRate).toBe(0.15);
       });
     });
   }

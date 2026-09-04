@@ -636,7 +636,7 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("| **Federal Tax After Refundable Credits** | **$16,841** |");
     });
 
-    it("reports refundable EITC as a refund when no tax or withholding remains", async () => {
+    it("reports refundable EITC and ACTC when no withholding remains", async () => {
       const { text } = await callTool(server, "generate_full_tax_report", {
         taxYear: 2024,
         filingStatus: "single",
@@ -644,9 +644,10 @@ describe("MCP Tools Integration", () => {
         dependents: 1,
       });
 
+      expect(text).toContain("| Additional Child Tax Credit | -$1,700 |");
       expect(text).toContain("| EITC | -$4,213 |");
-      expect(text).toContain("| **Federal Tax After Refundable Credits** | **-$4,213** |");
-      expect(text).toContain("| **Federal Refund** | **$4,213**");
+      expect(text).toContain("| **Federal Tax After Refundable Credits** | **-$5,913** |");
+      expect(text).toContain("| **Federal Refund** | **$5,913**");
     });
 
     it("uses the TY2025 Social Security wage base in paycheck analysis", async () => {

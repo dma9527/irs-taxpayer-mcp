@@ -8,6 +8,7 @@ All notable changes to irs-taxpayer-mcp.
 
 - Corrected the TY2025 SALT enhanced-cap phase-down to 30% of excess MAGI, including MFS thresholds and floors.
 - Added an explicit full net-investment-income input so NIIT includes taxable interest, dividends, gains, rents, royalties, and passive income without double-counting gains.
+- Added Schedule 8812 planning support for qualifying-child CTC, nonrefundable ODC, refundable ACTC, the three-child payroll-tax method, and Form 2555 exclusion with explicit limitations.
 
 ### Tests
 

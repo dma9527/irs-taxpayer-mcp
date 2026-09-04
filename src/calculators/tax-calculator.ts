@@ -25,6 +25,12 @@ export interface TaxInput {
   itemizedDeductions?: number;
   forceItemizedDeductions?: boolean;
   dependents?: number;
+  qualifyingChildrenForCtc?: number;
+  otherDependentsForOdc?: number;
+  earnedIncome?: number;
+  socialSecurityTaxesPaid?: number;
+  earnedIncomeCredit?: number;
+  hasForm2555?: boolean;
   age65OrOlder?: boolean;
   blind?: boolean;
   spouseAge65OrOlder?: boolean;
@@ -54,6 +60,10 @@ export interface TaxBreakdown {
   effectiveRate: number;
   marginalRate: number;
   childTaxCredit: number;
+  creditForOtherDependents: number;
+  additionalChildTaxCredit: number;
+  actcCalculationMethod: "none" | "earned_income" | "earned_income_limited" | "three_child_payroll";
+  limitations: string[];
   estimatedQuarterlyPayment: number;
 }
 
@@ -288,17 +298,29 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const niit = calculateNIIT(agi, netInvestmentIncome, input.filingStatus);
 
   // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
-  const earnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
-  const additionalMedicareTax = calculateAdditionalMedicareTax(earnedIncome, input.filingStatus, taxData);
+  const medicareEarnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
+  const additionalMedicareTax = calculateAdditionalMedicareTax(medicareEarnedIncome, input.filingStatus, taxData);
 
-  // Step 10: Potential Child Tax Credit after AGI phase-out
-  const dependents = input.dependents ?? 0;
-  let potentialChildCredit = dependents * taxData.childTaxCredit.amount;
+  // Step 10: CTC and ODC after the combined MAGI phase-out.
+  // Legacy dependents remain nonrefundable-only unless qualifying children are explicit.
+  const explicitActcChildren = input.qualifyingChildrenForCtc ?? 0;
+  const qualifyingChildren = input.qualifyingChildrenForCtc ?? input.dependents ?? 0;
+  const otherDependents = input.otherDependentsForOdc ?? 0;
+  const grossChildCredit = qualifyingChildren * taxData.childTaxCredit.amount;
+  const grossOtherDependentCredit = otherDependents * taxData.childTaxCredit.otherDependentAmount;
   const phaseoutStart = taxData.childTaxCredit.phaseoutStart[input.filingStatus];
-  if (agi > phaseoutStart) {
-    const excess = Math.ceil((agi - phaseoutStart) / 1000) * taxData.childTaxCredit.phaseoutRate;
-    potentialChildCredit = Math.max(0, potentialChildCredit - excess);
-  }
+  const phaseoutReduction = agi > phaseoutStart
+    ? Math.ceil((agi - phaseoutStart) / 1000) * taxData.childTaxCredit.phaseoutRate
+    : 0;
+  const combinedCreditAfterPhaseout = Math.max(
+    0,
+    grossChildCredit + grossOtherDependentCredit - phaseoutReduction,
+  );
+  const childCreditAfterPhaseout = Math.min(grossChildCredit, combinedCreditAfterPhaseout);
+  const otherDependentCreditAfterPhaseout = Math.min(
+    grossOtherDependentCredit,
+    Math.max(0, combinedCreditAfterPhaseout - childCreditAfterPhaseout),
+  );
 
   // Step 11: AMT
   const isoSpread = input.isoExerciseSpread ?? 0;
@@ -307,11 +329,68 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const taxableIncomeBeforeQBI = taxableOrdinaryIncome + taxableLongTermGains;
   const amt = calculateAMT(regularIncomeTax, taxableIncomeBeforeQBI, input.filingStatus, taxData, isoSpread, saltDeducted);
 
-  // Nonrefundable CTC offsets income tax and AMT, not SE tax or surtaxes.
+  // Nonrefundable CTC and ODC offset income tax and AMT, not SE tax or surtaxes.
   const incomeTaxBeforeCredits = regularIncomeTax + amt;
-  const childCredit = Math.min(potentialChildCredit, incomeTaxBeforeCredits);
-  const incomeTaxAfterCredits = incomeTaxBeforeCredits - childCredit;
-  const totalTax = incomeTaxAfterCredits + seTax + niit + additionalMedicareTax;
+  const childCredit = Math.min(childCreditAfterPhaseout, incomeTaxBeforeCredits);
+  const taxAfterChildCredit = incomeTaxBeforeCredits - childCredit;
+  const creditForOtherDependents = Math.min(
+    otherDependentCreditAfterPhaseout,
+    taxAfterChildCredit,
+  );
+  const incomeTaxAfterCredits = taxAfterChildCredit - creditForOtherDependents;
+
+  // Refundable ACTC uses the Schedule 8812 earned-income method. For 3+ children,
+  // the payroll-tax method is used only when the required values are supplied.
+  const limitations: string[] = [];
+  const unusedChildCredit = Math.max(0, childCreditAfterPhaseout - childCredit);
+  const actcEarnedIncome = input.earnedIncome
+    ?? ((input.w2Income ?? 0) + Math.max(0, (input.selfEmploymentIncome ?? 0) - seDeduction));
+  const earnedIncomeMethod = Math.max(
+    0,
+    actcEarnedIncome - taxData.childTaxCredit.earnedIncomeThreshold,
+  ) * taxData.childTaxCredit.refundableRate;
+  let actcMethodAmount = earnedIncomeMethod;
+  let actcCalculationMethod: TaxBreakdown["actcCalculationMethod"] = "none";
+
+  if (explicitActcChildren > 0 && unusedChildCredit > 0 && !input.hasForm2555) {
+    actcCalculationMethod = "earned_income";
+    if (explicitActcChildren >= 3) {
+      if (input.socialSecurityTaxesPaid !== undefined) {
+        const payrollTaxMethod = Math.max(
+          0,
+          input.socialSecurityTaxesPaid - (input.earnedIncomeCredit ?? 0),
+        );
+        if (payrollTaxMethod > earnedIncomeMethod) {
+          actcMethodAmount = payrollTaxMethod;
+          actcCalculationMethod = "three_child_payroll";
+        }
+      } else {
+        actcCalculationMethod = "earned_income_limited";
+        limitations.push(
+          "ACTC for 3 or more children may be understated without socialSecurityTaxesPaid and earnedIncomeCredit.",
+        );
+      }
+    }
+  } else if (input.hasForm2555 && explicitActcChildren > 0) {
+    limitations.push("ACTC is unavailable when Form 2555 is filed.");
+  } else if (input.dependents !== undefined && input.qualifyingChildrenForCtc === undefined) {
+    limitations.push(
+      "ACTC was not calculated because qualifyingChildrenForCtc was not provided.",
+    );
+  }
+
+  const additionalChildTaxCredit = input.hasForm2555
+    ? 0
+    : Math.min(
+        unusedChildCredit,
+        explicitActcChildren * taxData.childTaxCredit.refundableAmount,
+        actcMethodAmount,
+      );
+  const totalTax = incomeTaxAfterCredits
+    + seTax
+    + niit
+    + additionalMedicareTax
+    - additionalChildTaxCredit;
   const taxableIncome = adjustedTaxableOrdinary + taxableLongTermGains;
 
   return {
@@ -334,6 +413,10 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     effectiveRate: input.grossIncome > 0 ? totalTax / input.grossIncome : 0,
     marginalRate,
     childTaxCredit: childCredit,
-    estimatedQuarterlyPayment: Math.ceil(totalTax / 4),
+    creditForOtherDependents,
+    additionalChildTaxCredit,
+    actcCalculationMethod,
+    limitations,
+    estimatedQuarterlyPayment: Math.max(0, Math.ceil(totalTax / 4)),
   };
 }

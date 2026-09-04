@@ -320,6 +320,69 @@ describe("calculateTax", () => {
       // Phaseout starts at 400000, income below threshold
       expect(result.childTaxCredit).toBe(4000);
     });
+
+    it("calculates refundable ACTC from unused CTC and earned income", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 20000,
+        w2Income: 20000,
+        qualifyingChildrenForCtc: 1,
+        earnedIncome: 20000,
+      });
+
+      expect(result.childTaxCredit).toBe(540);
+      expect(result.additionalChildTaxCredit).toBe(1460);
+      expect(result.creditForOtherDependents).toBe(0);
+      expect(result.totalFederalTax).toBe(-1460);
+    });
+
+    it("keeps the credit for other dependents nonrefundable", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 10000,
+        w2Income: 10000,
+        otherDependentsForOdc: 1,
+        earnedIncome: 10000,
+      });
+
+      expect(result.childTaxCredit).toBe(0);
+      expect(result.creditForOtherDependents).toBe(0);
+      expect(result.additionalChildTaxCredit).toBe(0);
+      expect(result.totalFederalTax).toBe(0);
+    });
+
+    it("uses the three-child payroll-tax method when it is larger", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 30000,
+        w2Income: 30000,
+        qualifyingChildrenForCtc: 3,
+        earnedIncome: 10000,
+        socialSecurityTaxesPaid: 5000,
+        earnedIncomeCredit: 1000,
+      });
+
+      expect(result.additionalChildTaxCredit).toBe(4000);
+      expect(result.actcCalculationMethod).toBe("three_child_payroll");
+    });
+
+    it("does not calculate ACTC for Form 2555 filers", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 20000,
+        w2Income: 20000,
+        qualifyingChildrenForCtc: 1,
+        earnedIncome: 20000,
+        hasForm2555: true,
+      });
+
+      expect(result.additionalChildTaxCredit).toBe(0);
+      expect(result.limitations).toContain("ACTC is unavailable when Form 2555 is filed.");
+    });
   });
 
   describe("estimated quarterly payment", () => {

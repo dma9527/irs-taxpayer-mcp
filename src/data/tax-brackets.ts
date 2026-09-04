@@ -46,6 +46,10 @@ export interface TaxYearData {
   estimatedTaxSafeHarborPercent: number;
   childTaxCredit: {
     amount: number;
+    refundableAmount: number;
+    otherDependentAmount: number;
+    earnedIncomeThreshold: number;
+    refundableRate: number;
     phaseoutStart: Record<FilingStatus, number>;
     phaseoutRate: number; // reduction per $1000 over threshold
   };
@@ -167,6 +171,10 @@ export const TAX_DATA: Record<number, TaxYearData> = {
     estimatedTaxSafeHarborPercent: 90,
     childTaxCredit: {
       amount: 2000,
+      refundableAmount: 1700,
+      otherDependentAmount: 500,
+      earnedIncomeThreshold: 2500,
+      refundableRate: 0.15,
       phaseoutStart: {
         single: 200000,
         married_filing_jointly: 400000,
@@ -289,7 +297,11 @@ export const TAX_DATA: Record<number, TaxYearData> = {
     },
     estimatedTaxSafeHarborPercent: 90,
     childTaxCredit: {
-      amount: 2200, // OBBB: increased from $2,000 to $2,200 for TY2025+
+      amount: 2200, // WFTC: increased from $2,000 to $2,200 for TY2025+
+      refundableAmount: 1700,
+      otherDependentAmount: 500,
+      earnedIncomeThreshold: 2500,
+      refundableRate: 0.15,
       phaseoutStart: {
         single: 200000,
         married_filing_jointly: 400000,

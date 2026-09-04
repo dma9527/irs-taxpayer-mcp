@@ -34,6 +34,7 @@ export interface TaxYearData {
     age65OrBlind: Record<FilingStatus, number>;
   };
   qualifiedBusinessIncomeDeductionRate: number;
+  qbiLimit: Record<FilingStatus, { threshold: number; phaseoutEnd: number }>;
   capitalGainsBrackets: Record<FilingStatus, { rate: number; threshold: number }[]>;
   socialSecurity: {
     taxRate: number;
@@ -133,6 +134,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
     },
     qualifiedBusinessIncomeDeductionRate: 0.20,
+    qbiLimit: {
+      single: { threshold: 191950, phaseoutEnd: 241950 },
+      married_filing_jointly: { threshold: 383900, phaseoutEnd: 483900 },
+      married_filing_separately: { threshold: 191950, phaseoutEnd: 241950 },
+      head_of_household: { threshold: 191950, phaseoutEnd: 241950 },
+    },
     capitalGainsBrackets: {
       single: [
         { rate: 0, threshold: 47025 },
@@ -265,6 +272,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
     },
     qualifiedBusinessIncomeDeductionRate: 0.20,
+    qbiLimit: {
+      single: { threshold: 197300, phaseoutEnd: 247300 },
+      married_filing_jointly: { threshold: 394600, phaseoutEnd: 494600 },
+      married_filing_separately: { threshold: 197300, phaseoutEnd: 247300 },
+      head_of_household: { threshold: 197300, phaseoutEnd: 247300 },
+    },
     capitalGainsBrackets: {
       single: [
         { rate: 0, threshold: 48350 },
@@ -408,6 +421,12 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       },
     },
     qualifiedBusinessIncomeDeductionRate: 0.20,
+    qbiLimit: {
+      single: { threshold: 201750, phaseoutEnd: 276750 },
+      married_filing_jointly: { threshold: 403500, phaseoutEnd: 553500 },
+      married_filing_separately: { threshold: 201775, phaseoutEnd: 276775 },
+      head_of_household: { threshold: 201750, phaseoutEnd: 276750 },
+    },
     capitalGainsBrackets: {
       single: [
         { rate: 0, threshold: 49450 },

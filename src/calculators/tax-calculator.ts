@@ -39,6 +39,9 @@ export interface TaxInput {
   spouseAge65OrOlder?: boolean;
   spouseBlind?: boolean;
   qualifiedBusinessIncome?: number;
+  qualifiedBusinessW2Wages?: number;
+  qualifiedBusinessPropertyBasis?: number;
+  qualifiedBusinessIsSstb?: boolean;
   isoExerciseSpread?: number;
   stateTaxDeducted?: number;
 }
@@ -61,6 +64,15 @@ export interface TaxBreakdown {
   niit: number;
   additionalMedicareTax: number;
   qbiDeduction: number;
+  qbiWagePropertyLimit: number;
+  qbiPhaseInPercentage: number;
+  qbiCalculationMethod:
+    | "none"
+    | "below_threshold"
+    | "phase_in"
+    | "wage_property_limited"
+    | "sstb_phase_out"
+    | "sstb_disallowed";
   amt: number;
   totalFederalTax: number;
   effectiveRate: number;
@@ -222,19 +234,102 @@ function calculateAdditionalMedicareTax(
   return (earnedIncome - threshold) * taxData.medicare.additionalTaxRate;
 }
 
-/**
- * Qualified Business Income (QBI) deduction — Section 199A.
- * Simplified: 20% of QBI, limited to 20% of taxable income.
- */
+interface QBIResult {
+  deduction: number;
+  wagePropertyLimit: number;
+  phaseInPercentage: number;
+  method: TaxBreakdown["qbiCalculationMethod"];
+}
+
+/** Qualified Business Income deduction under Section 199A planning rules. */
 function calculateQBIDeduction(
   qbi: number,
   taxableIncomeBeforeQBI: number,
-  taxData: TaxYearData
-): number {
-  if (qbi <= 0) return 0;
-  const deduction = qbi * taxData.qualifiedBusinessIncomeDeductionRate;
-  const limit = taxableIncomeBeforeQBI * taxData.qualifiedBusinessIncomeDeductionRate;
-  return Math.min(deduction, limit);
+  netCapitalGain: number,
+  filingStatus: FilingStatus,
+  taxData: TaxYearData,
+  isSstb: boolean | undefined,
+  w2Wages: number | undefined,
+  qualifiedPropertyBasis: number | undefined,
+): QBIResult {
+  if (qbi <= 0) {
+    return {
+      deduction: 0,
+      wagePropertyLimit: 0,
+      phaseInPercentage: 0,
+      method: "none",
+    };
+  }
+
+  const rate = taxData.qualifiedBusinessIncomeDeductionRate;
+  const taxableIncomeLimit = Math.max(
+    0,
+    taxableIncomeBeforeQBI - netCapitalGain,
+  ) * rate;
+  const baseDeduction = Math.min(qbi * rate, taxableIncomeLimit);
+  const limit = taxData.qbiLimit[filingStatus];
+
+  if (taxableIncomeBeforeQBI <= limit.threshold) {
+    return {
+      deduction: baseDeduction,
+      wagePropertyLimit: 0,
+      phaseInPercentage: 0,
+      method: "below_threshold",
+    };
+  }
+
+  if (isSstb === undefined) {
+    throw new Error(
+      "qualifiedBusinessIsSstb is required when taxable income exceeds the QBI threshold.",
+    );
+  }
+  if (w2Wages === undefined || qualifiedPropertyBasis === undefined) {
+    throw new Error(
+      "qualifiedBusinessW2Wages and qualifiedBusinessPropertyBasis are required above the QBI threshold; pass 0 when none apply.",
+    );
+  }
+  if (w2Wages < 0 || qualifiedPropertyBasis < 0) {
+    throw new Error("QBI wage and qualified-property inputs must be nonnegative.");
+  }
+
+  const phaseInPercentage = Math.min(
+    1,
+    (taxableIncomeBeforeQBI - limit.threshold)
+      / (limit.phaseoutEnd - limit.threshold),
+  );
+  if (isSstb && phaseInPercentage >= 1) {
+    return {
+      deduction: 0,
+      wagePropertyLimit: 0,
+      phaseInPercentage,
+      method: "sstb_disallowed",
+    };
+  }
+
+  const applicablePercentage = isSstb ? 1 - phaseInPercentage : 1;
+  const applicableQbi = qbi * applicablePercentage;
+  const applicableWages = w2Wages * applicablePercentage;
+  const applicablePropertyBasis = qualifiedPropertyBasis * applicablePercentage;
+  const tentativeDeduction = Math.min(applicableQbi * rate, taxableIncomeLimit);
+  const wagePropertyLimit = Math.max(
+    applicableWages * 0.50,
+    applicableWages * 0.25 + applicablePropertyBasis * 0.025,
+  );
+  const wagePropertyReduction = Math.max(
+    0,
+    tentativeDeduction - wagePropertyLimit,
+  ) * phaseInPercentage;
+
+  return {
+    deduction: Math.max(0, tentativeDeduction - wagePropertyReduction),
+    wagePropertyLimit,
+    phaseInPercentage,
+    method: isSstb
+      ? "sstb_phase_out"
+      : phaseInPercentage < 1
+        ? "phase_in"
+        : "wage_property_limited",
+  };
 }
 
 /**
@@ -361,7 +456,17 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Step 4: QBI deduction
   const qbi = input.qualifiedBusinessIncome ?? 0;
-  const qbiDeduction = calculateQBIDeduction(qbi, taxableOrdinaryIncome, taxData);
+  const qbiResult = calculateQBIDeduction(
+    qbi,
+    taxableOrdinaryIncome + taxablePreferentialIncome,
+    taxablePreferentialIncome,
+    input.filingStatus,
+    taxData,
+    input.qualifiedBusinessIsSstb,
+    input.qualifiedBusinessW2Wages,
+    input.qualifiedBusinessPropertyBasis,
+  );
+  const qbiDeduction = qbiResult.deduction;
 
   const adjustedTaxableOrdinary = Math.max(0, taxableOrdinaryIncome - qbiDeduction);
 
@@ -508,6 +613,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     niit,
     additionalMedicareTax,
     qbiDeduction,
+    qbiWagePropertyLimit: qbiResult.wagePropertyLimit,
+    qbiPhaseInPercentage: qbiResult.phaseInPercentage,
+    qbiCalculationMethod: qbiResult.method,
     amt,
     totalFederalTax: totalTax,
     effectiveRate: input.grossIncome > 0 ? totalTax / input.grossIncome : 0,

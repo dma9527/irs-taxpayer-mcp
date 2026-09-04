@@ -48,6 +48,9 @@ export function registerComprehensiveTools(server: McpServer): void {
       socialSecurityTaxesPaid: z.number().min(0).optional().describe("Schedule 8812 payroll-tax amount for 3-or-more-child ACTC method"),
       hasForm2555: z.boolean().optional().describe("Whether Form 2555 is filed"),
       qualifiedBusinessIncome: z.number().min(0).optional().describe("QBI for Section 199A"),
+      qualifiedBusinessIsSstb: z.boolean().optional(),
+      qualifiedBusinessW2Wages: z.number().min(0).optional(),
+      qualifiedBusinessPropertyBasis: z.number().min(0).optional(),
       // State
       stateCode: z.string().length(2).optional().describe("State code for state tax estimate"),
       // Withholding
@@ -144,6 +147,9 @@ export function registerComprehensiveTools(server: McpServer): void {
         socialSecurityTaxesPaid: params.socialSecurityTaxesPaid,
         hasForm2555: params.hasForm2555,
         qualifiedBusinessIncome: params.qualifiedBusinessIncome,
+        qualifiedBusinessIsSstb: params.qualifiedBusinessIsSstb,
+        qualifiedBusinessW2Wages: params.qualifiedBusinessW2Wages,
+        qualifiedBusinessPropertyBasis: params.qualifiedBusinessPropertyBasis,
       });
 
       // FICA (employee share only for W-2; SE tax already in federal calc)
@@ -228,6 +234,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         charity > 0 ? `| ↳ Charitable | $${fmt(charity)} |` : "",
         medical > 0 ? `| ↳ Medical (above 7.5% AGI) | $${fmt(medical)} |` : "",
         federalResult.qbiDeduction > 0 ? `| QBI Deduction (§199A) | $${fmt(federalResult.qbiDeduction)} |` : "",
+        (params.qualifiedBusinessIncome ?? 0) > 0 ? `| QBI Method | ${federalResult.qbiCalculationMethod} |` : "",
         federalResult.capitalLossDeduction > 0 ? `| Capital Loss Deduction | $${fmt(federalResult.capitalLossDeduction)} |` : "",
         `| **Taxable Income** | **$${fmt(federalResult.taxableIncome)}** |`,
         "",
@@ -331,6 +338,9 @@ export function registerComprehensiveTools(server: McpServer): void {
       w2Income: z.number().min(0).optional().describe("W-2 income (for context)"),
       shortTermCapitalLossCarryover: z.number().min(0).optional(),
       longTermCapitalLossCarryover: z.number().min(0).optional(),
+      qualifiedBusinessIsSstb: z.boolean().optional(),
+      qualifiedBusinessW2Wages: z.number().min(0).optional(),
+      qualifiedBusinessPropertyBasis: z.number().min(0).optional(),
       forms: z.array(z.object({
         type: z.enum(["1099-NEC", "1099-INT", "1099-DIV", "1099-B", "1099-MISC"]),
         payer: z.string().optional().describe("Payer name"),
@@ -345,6 +355,9 @@ export function registerComprehensiveTools(server: McpServer): void {
       w2Income,
       shortTermCapitalLossCarryover,
       longTermCapitalLossCarryover,
+      qualifiedBusinessIsSstb,
+      qualifiedBusinessW2Wages,
+      qualifiedBusinessPropertyBasis,
       forms,
     }) => {
       const w2 = w2Income ?? 0;
@@ -404,6 +417,9 @@ export function registerComprehensiveTools(server: McpServer): void {
             - (longTermCapitalLossCarryover ?? 0),
         ),
         qualifiedBusinessIncome: necTotal > 0 ? necTotal : undefined,
+        qualifiedBusinessIsSstb,
+        qualifiedBusinessW2Wages,
+        qualifiedBusinessPropertyBasis,
       });
 
       const lines = [

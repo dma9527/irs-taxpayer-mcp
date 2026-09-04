@@ -156,6 +156,18 @@ describe("tax brackets data integrity", () => {
     });
   });
 
+  describe("QBI annual thresholds", () => {
+    it("uses annual Section 199A thresholds and phase-out endpoints", () => {
+      expect(TAX_DATA[2024].qbiLimit.single).toEqual({ threshold: 191950, phaseoutEnd: 241950 });
+      expect(TAX_DATA[2024].qbiLimit.married_filing_jointly).toEqual({ threshold: 383900, phaseoutEnd: 483900 });
+      expect(TAX_DATA[2025].qbiLimit.single).toEqual({ threshold: 197300, phaseoutEnd: 247300 });
+      expect(TAX_DATA[2025].qbiLimit.married_filing_jointly).toEqual({ threshold: 394600, phaseoutEnd: 494600 });
+      expect(TAX_DATA[2026].qbiLimit.single).toEqual({ threshold: 201750, phaseoutEnd: 276750 });
+      expect(TAX_DATA[2026].qbiLimit.married_filing_separately).toEqual({ threshold: 201775, phaseoutEnd: 276775 });
+      expect(TAX_DATA[2026].qbiLimit.married_filing_jointly).toEqual({ threshold: 403500, phaseoutEnd: 553500 });
+    });
+  });
+
   it("returns undefined for unsupported year", () => {
     expect(getTaxYearData(2020)).toBeUndefined();
   });

@@ -300,6 +300,91 @@ describe("calculateTax", () => {
       const result = calculateTax(base2024Single);
       expect(result.qbiDeduction).toBe(0);
     });
+    it("requires business classification above the QBI threshold", () => {
+      expect(() => calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+      })).toThrow("qualifiedBusinessIsSstb");
+    });
+
+    it("applies the full W-2 wage limit above the phase-in range", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 20000,
+        qualifiedBusinessPropertyBasis: 0,
+      });
+
+      expect(result.qbiDeduction).toBe(10000);
+      expect(result.qbiWagePropertyLimit).toBe(10000);
+      expect(result.qbiCalculationMethod).toBe("wage_property_limited");
+    });
+
+    it("uses the 2.5 percent UBIA alternative limit", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 0,
+        qualifiedBusinessPropertyBasis: 400000,
+      });
+
+      expect(result.qbiDeduction).toBe(10000);
+      expect(result.qbiWagePropertyLimit).toBe(10000);
+    });
+
+    it("phases in the wage and property limit above the threshold", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 220000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 20000,
+        qualifiedBusinessPropertyBasis: 0,
+      });
+
+      expect(result.qbiPhaseInPercentage).toBeCloseTo(0.269, 3);
+      expect(result.qbiDeduction).toBeCloseTo(17310, 0);
+      expect(result.qbiCalculationMethod).toBe("phase_in");
+    });
+
+    it("phases out an SSTB within the annual range", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 220000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: true,
+        qualifiedBusinessW2Wages: 20000,
+        qualifiedBusinessPropertyBasis: 0,
+      });
+
+      expect(result.qbiDeduction).toBeCloseTo(12654, 0);
+      expect(result.qbiCalculationMethod).toBe("sstb_phase_out");
+    });
+
+    it("disallows an SSTB above the phase-out range", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: true,
+        qualifiedBusinessW2Wages: 50000,
+        qualifiedBusinessPropertyBasis: 500000,
+      });
+
+      expect(result.qbiDeduction).toBe(0);
+      expect(result.qbiCalculationMethod).toBe("sstb_disallowed");
+    });
   });
 
   describe("Child Tax Credit", () => {
@@ -551,6 +636,9 @@ describe("calculateTax", () => {
         selfEmploymentIncome: 100000,
         dependents: 1,
         qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 50000,
+        qualifiedBusinessPropertyBasis: 0,
       });
       expect(result.totalFederalTax).toBeGreaterThan(0);
       expect(result.niit).toBeGreaterThan(0);

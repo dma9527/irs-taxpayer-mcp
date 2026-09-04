@@ -83,6 +83,33 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Long-Term Capital Loss Carryforward | $7,000");
     });
 
+    it("applies QBI wage and property limits above the threshold", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 20000,
+        qualifiedBusinessPropertyBasis: 0,
+      });
+
+      expect(text).toContain("QBI Deduction (§199A) | -$10,000");
+      expect(text).toContain("QBI Method | wage_property_limited");
+    });
+
+    it("fails closed when high-income QBI facts are missing", async () => {
+      const { text, isError } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 300000,
+        qualifiedBusinessIncome: 100000,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("qualifiedBusinessIsSstb");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,

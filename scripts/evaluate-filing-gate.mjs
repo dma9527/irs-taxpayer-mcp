@@ -1,26 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { z } from "zod";
-
-const ThresholdsSchema = z.object({
-  schemaVersion: z.literal(1),
-  thresholds: z.object({
-    paidDemandSignals: z.number().int().nonnegative(),
-    discoveryInterviews: z.number().int().nonnegative(),
-    domainPartners: z.number().int().nonnegative(),
-    maintainerFte: z.number().nonnegative(),
-    annualMaintenanceOwner: z.literal(true),
-  }),
-});
-
-const MetricsSchema = z.object({
-  paidDemandSignals: z.number().int().nonnegative(),
-  discoveryInterviews: z.number().int().nonnegative(),
-  domainPartners: z.number().int().nonnegative(),
-  maintainerFte: z.number().nonnegative(),
-  annualMaintenanceOwner: z.boolean(),
-});
+import { evaluateFilingEngineGate } from "./lib/filing-engine-gate.mjs";
 
 const metricsPath = process.argv[2];
 if (!metricsPath) {
@@ -29,31 +8,12 @@ if (!metricsPath) {
   );
 }
 
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const gatePath = join(
-  scriptDirectory,
-  "..",
-  "feedback",
-  "filing-engine-gate.json",
-);
-const gate = ThresholdsSchema.parse(
-  JSON.parse(readFileSync(gatePath, "utf8")),
-);
-const metrics = MetricsSchema.parse(
+const evaluation = evaluateFilingEngineGate(
   JSON.parse(readFileSync(metricsPath, "utf8")),
 );
-
-const unmet = [];
-for (const field of [
-  "paidDemandSignals",
-  "discoveryInterviews",
-  "domainPartners",
-  "maintainerFte",
-]) {
-  if (metrics[field] < gate.thresholds[field]) unmet.push(field);
-}
-if (!metrics.annualMaintenanceOwner) unmet.push("annualMaintenanceOwner");
-
-const decision = unmet.length === 0 ? "READY" : "BLOCKED";
-console.log(JSON.stringify({ decision, unmet }));
-if (decision === "BLOCKED") process.exitCode = 1;
+const result = {
+  decision: evaluation.decision,
+  unmet: evaluation.unmet,
+};
+console.log(JSON.stringify(result));
+if (evaluation.decision === "BLOCKED") process.exitCode = 1;

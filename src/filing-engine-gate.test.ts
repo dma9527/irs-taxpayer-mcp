@@ -41,6 +41,7 @@ describe("filing-engine investment gate", () => {
       domainPartners: 1,
       maintainerFte: 1,
       annualMaintenanceOwner: false,
+      privacyIncidents: 0,
     });
 
     expect(result.status).toBe(1);
@@ -57,6 +58,7 @@ describe("filing-engine investment gate", () => {
       domainPartners: 1,
       maintainerFte: 2,
       annualMaintenanceOwner: true,
+      privacyIncidents: 0,
     });
 
     expect(result).toEqual({

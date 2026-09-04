@@ -4,6 +4,15 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- Added a monthly and manually runnable Planner Feedback dashboard that updates a GitHub Issue from reviewed labels, public npm downloads, aggregate resource variables, quality timing, privacy incidents, and the filing-engine gate.
+- Added monthly aggregate JSON artifacts and idempotent per-month snapshot comments without reading or reproducing issue bodies.
+
+### Tests
+
+- Expanded the suite to 291 tests across 13 test files with privacy, aggregation, and workflow contract regressions.
+
 ## [1.0.1] - 2026-09-04
 
 ### Fixed

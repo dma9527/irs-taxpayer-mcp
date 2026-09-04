@@ -1,0 +1,50 @@
+name: Monthly planner feedback dashboard
+
+on:
+  schedule:
+    - cron: "0 14 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: planner-feedback-dashboard
+  cancel-in-progress: false
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build monthly dashboard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCOVERY_INTERVIEWS: ${{ vars.DISCOVERY_INTERVIEWS || '0' }}
+          MAINTAINER_FTE: ${{ vars.MAINTAINER_FTE || '0' }}
+          ANNUAL_MAINTENANCE_OWNER: ${{ vars.ANNUAL_MAINTENANCE_OWNER || 'false' }}
+          PRIVACY_INCIDENTS: ${{ vars.PRIVACY_INCIDENTS || '0' }}
+          DASHBOARD_SNAPSHOT_PATH: ${{ runner.temp }}/planner-feedback-snapshot.json
+        run: node scripts/build-feedback-dashboard.mjs
+
+      - name: Upload aggregate snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: planner-feedback-snapshot-${{ github.run_number }}
+          path: ${{ runner.temp }}/planner-feedback-snapshot.json
+          if-no-files-found: error
+          retention-days: 90

@@ -27,7 +27,7 @@ Version 1.0.1 is a privacy-first deterministic TY2024 through TY2026 estimation 
 - Added separate CTC and EITC child facts plus fail-closed retirement, QBI, state, and annual-source requirements.
 - Added an executable filing-engine investment gate and privacy-safe opt-in feedback intake.
 - Added tag-driven OIDC releases for npm, GitHub Releases, and the MCP Registry.
-- Expanded the suite to 288 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, and Streamable HTTP MCP initialization.
+- Expanded the suite to 291 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, monthly dashboard aggregation, and Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -124,7 +124,8 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] All 44 tools use `registerTool` with annotations, output schemas, and structured content.
 - [x] Tool contract snapshot and stable agent evaluation suite.
 - [x] Tag-driven release workflow with OIDC, exact-tarball smoke, and idempotent retry checks.
-- [ ] Configure the npm Trusted Publisher and verify OIDC publishing on the next release tag.
+- [x] Monthly privacy-safe feedback and filing-gate dashboard with manual rerun support.
+- [x] Configure the npm Trusted Publisher and verify OIDC publishing on a release tag.
 - [x] Stateless Streamable HTTP with loopback and Origin protections.
 - [x] IRS numeric regression tests for high-impact P0 defects.
 - [x] Zero known production dependency vulnerabilities at release time.

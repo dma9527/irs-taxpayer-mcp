@@ -49,9 +49,13 @@ jobs:
       - name: Pack release tarball
         id: pack
         run: |
-          TARBALL="$(npm pack --json | node --input-type=module -e 'import fs from "node:fs"; const result = JSON.parse(fs.readFileSync(0, "utf8")); console.log(result[0].filename);')"
+          PACK_RESULT="$(npm pack --json | node scripts/read-pack-result.mjs)"
+          TARBALL="$(node --input-type=module -e 'const result=JSON.parse(process.argv[1]); console.log(result.filename);' "$PACK_RESULT")"
+          REPORTED_SHA1="$(node --input-type=module -e 'const result=JSON.parse(process.argv[1]); console.log(result.shasum);' "$PACK_RESULT")"
+          LOCAL_SHA1="$(sha1sum "$TARBALL" | cut -d ' ' -f 1)"
+          test "$REPORTED_SHA1" = "$LOCAL_SHA1"
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
-          echo "sha1=$(sha1sum "$TARBALL" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          echo "sha1=$LOCAL_SHA1" >> "$GITHUB_OUTPUT"
 
       - name: Run clean-install release-smoke
         run: |

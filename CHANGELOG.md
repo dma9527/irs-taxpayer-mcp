@@ -4,6 +4,14 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated release automation to parse both npm 11 array and npm 12 keyed-object `npm pack --json` output.
+
+### Tests
+
+- Expanded the post-tag suite to 288 tests across 12 test files with npm 11 and npm 12 pack metadata fixtures.
+
 ## [1.0.0] - 2026-09-04
 
 ### Added

@@ -7,10 +7,10 @@ import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ITEMIZED_DEDUCTIONS, ABOVE_THE_LINE_DEDUCTIONS } from "../data/deductions.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 import { ERRORS } from "./error-handler.js";
-import { fmt } from "./shared.js";
+import { fmt, registerTaxTool } from "./shared.js";
 
 export function registerDeductionTools(server: McpServer): void {
-  server.tool(
+  registerTaxTool(server,
     "list_deductions",
     "List available tax deductions with eligibility rules and limits. Covers both above-the-line and itemized deductions.",
     {
@@ -53,7 +53,7 @@ export function registerDeductionTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "standard_vs_itemized",
     "Compare standard deduction vs itemized deductions to determine which is more beneficial.",
     {

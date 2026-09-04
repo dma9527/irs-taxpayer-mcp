@@ -9,11 +9,12 @@ import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateW4 } from "../calculators/w4-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
-import { fmt, FilingStatusEnum } from "./shared.js";
-import { ERRORS, wrapToolHandler } from "./error-handler.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
+import { TaxInputValidationError } from "../calculators/validation.js";
+import { ERRORS, toolError, wrapToolHandler } from "./error-handler.js";
 
 export function registerTaxCalculationTools(server: McpServer): void {
-  server.tool(
+  registerTaxTool(server,
     "calculate_federal_tax",
     "Calculate federal income tax for an individual taxpayer. Supports TY2024 through TY2026. " +
     "Includes bracket breakdown, effective/marginal rates, SE tax, NIIT, Additional Medicare Tax, " +
@@ -138,12 +139,31 @@ export function registerTaxCalculationTools(server: McpServer): void {
         return { content: [{ type: "text", text: lines.join("\n") }] };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        if (err instanceof TaxInputValidationError) {
+          const hasUnsupportedYear = err.errors.some(
+            (validationError) => validationError.code === "UNSUPPORTED_TAX_YEAR",
+          );
+          return toolError({
+            code: hasUnsupportedYear ? "UNSUPPORTED_TAX_YEAR" : "INVALID_INPUT",
+            message,
+            suggestion: hasUnsupportedYear
+              ? "Use taxYear 2024, 2025, or 2026."
+              : "Correct the invalid input fields and try again.",
+          });
+        }
+        if (!getTaxYearData(params.taxYear)) {
+          return ERRORS.unsupportedYear(params.taxYear);
+        }
+        return toolError({
+          code: "CALCULATION_ERROR",
+          message,
+          suggestion: "Check the supplied tax facts and required worksheet inputs.",
+        });
       }
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "get_tax_brackets",
     "Get federal income tax brackets and standard deduction for a given tax year and filing status.",
     {
@@ -186,7 +206,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "compare_filing_statuses",
     "Compare tax liability across different filing statuses for the same income. Helps determine the most advantageous filing status.",
     {
@@ -235,7 +255,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "estimate_quarterly_tax",
     "Calculate estimated quarterly tax payments (Form 1040-ES) for self-employed or other taxpayers who need to make estimated payments.",
     {
@@ -279,7 +299,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "calculate_total_tax",
     "Calculate combined federal + state tax for a complete picture of total tax liability. " +
     "Returns federal breakdown, state tax, and combined totals in one call.",
@@ -388,12 +408,31 @@ export function registerTaxCalculationTools(server: McpServer): void {
         return { content: [{ type: "text", text: lines.join("\n") }] };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        if (err instanceof TaxInputValidationError) {
+          const hasUnsupportedYear = err.errors.some(
+            (validationError) => validationError.code === "UNSUPPORTED_TAX_YEAR",
+          );
+          return toolError({
+            code: hasUnsupportedYear ? "UNSUPPORTED_TAX_YEAR" : "INVALID_INPUT",
+            message,
+            suggestion: hasUnsupportedYear
+              ? "Use taxYear 2024, 2025, or 2026."
+              : "Correct the invalid input fields and try again.",
+          });
+        }
+        if (!getTaxYearData(params.taxYear)) {
+          return ERRORS.unsupportedYear(params.taxYear);
+        }
+        return toolError({
+          code: "CALCULATION_ERROR",
+          message,
+          suggestion: "Check the supplied tax facts and required worksheet inputs.",
+        });
       }
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "calculate_w4_withholding",
     "Calculate recommended W-4 withholding settings. Estimates per-paycheck federal tax " +
     "and provides step-by-step W-4 form recommendations.",
@@ -434,7 +473,26 @@ export function registerTaxCalculationTools(server: McpServer): void {
         return { content: [{ type: "text", text: lines.join("\n") }] };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        if (err instanceof TaxInputValidationError) {
+          const hasUnsupportedYear = err.errors.some(
+            (validationError) => validationError.code === "UNSUPPORTED_TAX_YEAR",
+          );
+          return toolError({
+            code: hasUnsupportedYear ? "UNSUPPORTED_TAX_YEAR" : "INVALID_INPUT",
+            message,
+            suggestion: hasUnsupportedYear
+              ? "Use taxYear 2024, 2025, or 2026."
+              : "Correct the invalid input fields and try again.",
+          });
+        }
+        if (!getTaxYearData(params.taxYear)) {
+          return ERRORS.unsupportedYear(params.taxYear);
+        }
+        return toolError({
+          code: "CALCULATION_ERROR",
+          message,
+          suggestion: "Check the supplied tax facts and required worksheet inputs.",
+        });
       }
     }
   );

@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerTaxTool } from "./shared.js";
 import {
   STATE_TAX_CALCULATION_DATA,
   STATE_TAX_DATA,
@@ -18,7 +19,7 @@ import {
 import { ERRORS } from "./error-handler.js";
 
 export function registerStateTaxTools(server: McpServer): void {
-  server.tool(
+  registerTaxTool(server,
     "get_state_tax_info",
     "Get state income tax information — rates, brackets, and key details for any US state.",
     {
@@ -102,7 +103,7 @@ export function registerStateTaxTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "estimate_state_tax",
     "Estimate state income tax using an explicit tax-year calculation profile. Unsupported state-year paths fail closed.",
     {
@@ -194,7 +195,7 @@ export function registerStateTaxTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "compare_state_taxes",
     "Compare state income tax for one tax year only when every requested state has an explicit calculation profile.",
     {
@@ -292,7 +293,7 @@ export function registerStateTaxTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "list_no_income_tax_states",
     "List all US states with no state income tax.",
     {},

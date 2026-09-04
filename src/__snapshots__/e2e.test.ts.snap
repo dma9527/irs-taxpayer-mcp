@@ -1,0 +1,4621 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a tool > all tool contracts 1`] = `
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate federal income tax for an individual taxpayer. Supports TY2024 through TY2026. Includes bracket breakdown, effective/marginal rates, SE tax, NIIT, Additional Medicare Tax, QBI deduction, capital gains, and child tax credit. All calculations run locally — no data is sent to any server.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aboveTheLineDeductions": {
+          "description": "Above-the-line deductions (HSA, student loan interest, etc.)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "age65OrOlder": {
+          "description": "Taxpayer is 65 or older",
+          "type": "boolean",
+        },
+        "aotcRefundableAllowed": {
+          "description": "Whether refundable AOTC is allowed after under-age-24 support rules",
+          "type": "boolean",
+        },
+        "aotcStudentQualifiedExpenses": {
+          "description": "Qualified AOTC expenses per already-verified eligible student",
+          "items": {
+            "minimum": 0,
+            "type": "number",
+          },
+          "type": "array",
+        },
+        "blind": {
+          "description": "Taxpayer is blind",
+          "type": "boolean",
+        },
+        "capitalGains": {
+          "description": "Long-term capital gains (can be negative for losses)",
+          "type": "number",
+        },
+        "capitalGainsLongTerm": {
+          "description": "Whether capital gains are long-term (default: true)",
+          "type": "boolean",
+        },
+        "dependents": {
+          "description": "Legacy count of qualifying child dependents for nonrefundable CTC only",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "earlyRetirementDistributionSubjectToPenalty": {
+          "description": "Taxable early-distribution amount remaining after exceptions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "earnedIncome": {
+          "description": "Schedule 8812 earned income used for ACTC",
+          "minimum": 0,
+          "type": "number",
+        },
+        "earnedIncomeCredit": {
+          "description": "EITC used by the 3-or-more-child ACTC payroll-tax method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "description": "Filing status",
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossIncome": {
+          "description": "Total gross income including supplied capital gains, qualified dividends, Social Security benefits, and gross retirement distributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "hasForm2555": {
+          "description": "Whether Form 2555 is filed, which makes ACTC unavailable",
+          "type": "boolean",
+        },
+        "isoExerciseSpread": {
+          "description": "ISO stock option exercise spread (for AMT calculation)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "itemizedDeductions": {
+          "description": "Total itemized deductions (if greater than standard deduction)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "lifetimeLearningQualifiedExpenses": {
+          "description": "Qualified LLC expenses not used for AOTC or another benefit",
+          "minimum": 0,
+          "type": "number",
+        },
+        "longTermCapitalLossCarryover": {
+          "description": "Prior-year long-term capital loss carryover as a positive amount",
+          "minimum": 0,
+          "type": "number",
+        },
+        "marriedFilingSeparatelyLivedWithSpouse": {
+          "type": "boolean",
+        },
+        "netInvestmentIncome": {
+          "description": "Total net investment income for NIIT, including taxable interest, dividends, gains, rents, royalties, and passive income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherDependentsForOdc": {
+          "description": "Dependents already verified for the nonrefundable Credit for Other Dependents",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "qualifiedBusinessIncome": {
+          "description": "Qualified Business Income for Section 199A deduction",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIsSstb": {
+          "description": "Whether the business is a specified service trade or business",
+          "type": "boolean",
+        },
+        "qualifiedBusinessPropertyBasis": {
+          "description": "Unadjusted basis immediately after acquisition of qualified property; pass 0 when none",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessW2Wages": {
+          "description": "Section 199A W-2 wages; pass 0 when none",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedDividends": {
+          "description": "Qualified dividends included in gross income, taxed at preferential rates but not netted with capital losses",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifyingChildrenForCtc": {
+          "description": "Children already verified as CTC/ACTC qualifying children under age 17 with required SSNs",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "retirementDistributions": {
+          "description": "Gross Form 1099-R distributions included in grossIncome",
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "description": "Self-employment income (Schedule C)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "shortTermCapitalGains": {
+          "description": "Short-term capital gain or loss",
+          "type": "number",
+        },
+        "shortTermCapitalLossCarryover": {
+          "description": "Prior-year short-term capital loss carryover as a positive amount",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityBenefits": {
+          "description": "Net Social Security benefits included in grossIncome",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityTaxesPaid": {
+          "description": "Schedule 8812 payroll-tax amount for the 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateTaxDeducted": {
+          "description": "State/local taxes included in itemized deductions (for AMT)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxExemptInterest": {
+          "description": "Tax-exempt interest used by the Publication 915 worksheet",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+        "taxableRetirementDistributions": {
+          "description": "Taxable Form 1099-R amount",
+          "minimum": 0,
+          "type": "number",
+        },
+        "w2Income": {
+          "description": "W-2 wage income",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossIncome",
+      ],
+      "type": "object",
+    },
+    "name": "calculate_federal_tax",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get federal income tax brackets and standard deduction for a given tax year and filing status.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "description": "Filing status",
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+      ],
+      "type": "object",
+    },
+    "name": "get_tax_brackets",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare tax liability across different filing statuses for the same income. Helps determine the most advantageous filing status.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "dependents": {
+          "description": "Number of qualifying dependents",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "grossIncome": {
+          "description": "Total gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "itemizedDeductions": {
+          "description": "Itemized deductions if applicable",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "grossIncome",
+      ],
+      "type": "object",
+    },
+    "name": "compare_filing_statuses",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate estimated quarterly tax payments (Form 1040-ES) for self-employed or other taxpayers who need to make estimated payments.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "expectedAnnualIncome": {
+          "description": "Expected total annual income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "otherCredits": {
+          "description": "Expected other tax credits",
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "description": "Expected self-employment income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "w2Withholding": {
+          "description": "Expected total W-2 tax withholding for the year",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "expectedAnnualIncome",
+      ],
+      "type": "object",
+    },
+    "name": "estimate_quarterly_tax",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate combined federal + state tax for a complete picture of total tax liability. Returns federal breakdown, state tax, and combined totals in one call.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aboveTheLineDeductions": {
+          "description": "Above-the-line deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "aotcRefundableAllowed": {
+          "type": "boolean",
+        },
+        "aotcStudentQualifiedExpenses": {
+          "items": {
+            "minimum": 0,
+            "type": "number",
+          },
+          "type": "array",
+        },
+        "capitalGains": {
+          "description": "Long-term capital gains",
+          "type": "number",
+        },
+        "capitalGainsLongTerm": {
+          "description": "Whether capital gains are long-term (default: true)",
+          "type": "boolean",
+        },
+        "dependents": {
+          "description": "Legacy dependent count for nonrefundable CTC only",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "earlyRetirementDistributionSubjectToPenalty": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "earnedIncome": {
+          "description": "Schedule 8812 earned income for ACTC",
+          "minimum": 0,
+          "type": "number",
+        },
+        "earnedIncomeCredit": {
+          "description": "EITC used by 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "description": "Filing status",
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossIncome": {
+          "description": "Total gross income including supplied capital gains, qualified dividends, Social Security benefits, and gross retirement distributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "hasForm2555": {
+          "type": "boolean",
+        },
+        "itemizedDeductions": {
+          "description": "Total itemized deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "lifetimeLearningQualifiedExpenses": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "longTermCapitalLossCarryover": {
+          "description": "Prior-year long-term capital loss carryover",
+          "minimum": 0,
+          "type": "number",
+        },
+        "marriedFilingSeparatelyLivedWithSpouse": {
+          "type": "boolean",
+        },
+        "netInvestmentIncome": {
+          "description": "Total net investment income used for NIIT",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherDependentsForOdc": {
+          "description": "Verified dependents for ODC",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "qualifiedBusinessIncome": {
+          "description": "QBI for Section 199A deduction",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIsSstb": {
+          "type": "boolean",
+        },
+        "qualifiedBusinessPropertyBasis": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessW2Wages": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedDividends": {
+          "description": "Qualified dividends included in gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifyingChildrenForCtc": {
+          "description": "Verified CTC/ACTC qualifying children",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "retirementDistributions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "description": "Self-employment income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "shortTermCapitalGains": {
+          "description": "Short-term capital gain or loss",
+          "type": "number",
+        },
+        "shortTermCapitalLossCarryover": {
+          "description": "Prior-year short-term capital loss carryover",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityBenefits": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityTaxesPaid": {
+          "description": "Payroll-tax amount for 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateCode": {
+          "description": "Two-letter state code (e.g., 'CA', 'TX', 'NY')",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "taxExemptInterest": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+        "taxableRetirementDistributions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "w2Income": {
+          "description": "W-2 wage income",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossIncome",
+        "stateCode",
+      ],
+      "type": "object",
+    },
+    "name": "calculate_total_tax",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate recommended W-4 withholding settings. Estimates per-paycheck federal tax and provides step-by-step W-4 form recommendations.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "annualSalary": {
+          "description": "Annual salary from this job",
+          "minimum": 0,
+          "type": "number",
+        },
+        "deductions": {
+          "description": "Expected itemized deductions (if more than standard)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependents": {
+          "description": "Number of qualifying child dependents",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "description": "Filing status",
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "multipleJobs": {
+          "description": "Do you hold multiple jobs simultaneously?",
+          "type": "boolean",
+        },
+        "otherIncome": {
+          "description": "Other annual income (interest, dividends, side gigs)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "payFrequency": {
+          "description": "How often you get paid",
+          "enum": [
+            "weekly",
+            "biweekly",
+            "semimonthly",
+            "monthly",
+          ],
+          "type": "string",
+        },
+        "spouseWorks": {
+          "description": "Does your spouse also work?",
+          "type": "boolean",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "annualSalary",
+        "payFrequency",
+      ],
+      "type": "object",
+    },
+    "name": "calculate_w4_withholding",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "List available tax deductions with eligibility rules and limits. Covers both above-the-line and itemized deductions.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "description": "Filter by deduction category (default: all)",
+          "enum": [
+            "all",
+            "above_the_line",
+            "itemized",
+            "medical",
+            "taxes",
+            "interest",
+            "charity",
+            "other",
+          ],
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_deductions",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare standard deduction vs itemized deductions to determine which is more beneficial.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "age65OrOlder": {
+          "type": "boolean",
+        },
+        "agi": {
+          "description": "Adjusted Gross Income (needed for medical expense threshold)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "blind": {
+          "type": "boolean",
+        },
+        "charitableDonations": {
+          "description": "Charitable contributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "medicalExpenses": {
+          "description": "Unreimbursed medical expenses",
+          "minimum": 0,
+          "type": "number",
+        },
+        "mortgageInterest": {
+          "description": "Home mortgage interest paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherItemized": {
+          "description": "Other itemized deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateLocalTaxes": {
+          "description": "State/local income + property taxes paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "agi",
+      ],
+      "type": "object",
+    },
+    "name": "standard_vs_itemized",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get important IRS tax deadlines and due dates for a given tax year.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "taxYear": {
+          "description": "Tax year (default: 2026)",
+          "type": "number",
+        },
+      },
+      "type": "object",
+    },
+    "name": "get_tax_deadlines",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Provide instructions on how to check IRS refund status. This tool does NOT access your IRS account — it provides the official links and requirements.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filedElectronically": {
+          "description": "Whether the return was e-filed",
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "name": "check_refund_status",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get information about common IRS tax forms — what they are, who needs them, and where to find them.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "formNumber": {
+          "description": "IRS form number (e.g., '1040', 'W-2', '1099-NEC', 'Schedule C')",
+          "type": "string",
+        },
+      },
+      "required": [
+        "formNumber",
+      ],
+      "type": "object",
+    },
+    "name": "get_irs_form_info",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "List available federal tax credits with eligibility, amounts, and phase-out rules. Covers family, education, energy, retirement, healthcare, and income-based credits.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "description": "Filter by category (default: all)",
+          "enum": [
+            "all",
+            "family",
+            "education",
+            "energy",
+            "retirement",
+            "healthcare",
+            "income",
+            "other",
+          ],
+          "type": "string",
+        },
+        "refundableOnly": {
+          "description": "Only show refundable credits",
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "name": "list_tax_credits",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Check which tax credits you may be eligible for based on your situation.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "agi": {
+          "description": "Adjusted Gross Income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "boughtEV": {
+          "description": "Purchased an electric vehicle this year",
+          "type": "boolean",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "hasChildcare": {
+          "description": "Pay for childcare to work",
+          "type": "boolean",
+        },
+        "hasChildren": {
+          "description": "Have qualifying children under 17",
+          "type": "boolean",
+        },
+        "hasEarnedIncome": {
+          "description": "Has earned income from work",
+          "type": "boolean",
+        },
+        "hasMarketplaceInsurance": {
+          "description": "Bought health insurance through ACA marketplace",
+          "type": "boolean",
+        },
+        "hasRetirementContributions": {
+          "description": "Contributed to IRA/401k",
+          "type": "boolean",
+        },
+        "hasStudentLoans": {
+          "description": "Paying student loan interest",
+          "type": "boolean",
+        },
+        "installedSolar": {
+          "description": "Installed solar panels or renewable energy",
+          "type": "boolean",
+        },
+        "isStudent": {
+          "description": "Currently enrolled in post-secondary education",
+          "type": "boolean",
+        },
+        "madeHomeImprovements": {
+          "description": "Made energy-efficient home improvements",
+          "type": "boolean",
+        },
+        "numChildren": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "paidForeignTax": {
+          "description": "Paid income tax to a foreign country",
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "agi",
+        "filingStatus",
+      ],
+      "type": "object",
+    },
+    "name": "check_credit_eligibility",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get details on retirement account types — contribution limits, tax treatment, income limits, and tips.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "accountType": {
+          "description": "Specific account (e.g., 'roth_ira', '401k', 'hsa', 'sep_ira'). Leave empty for all",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "get_retirement_accounts",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get detailed info on tax-advantaged retirement strategies like Backdoor Roth, Mega Backdoor Roth, Roth Conversion Ladder, Tax Loss/Gain Harvesting.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "strategyId": {
+          "description": "Strategy ID (e.g., 'backdoor_roth', 'mega_backdoor_roth', 'roth_conversion_ladder', 'tax_loss_harvesting', 'tax_gain_harvesting'). Leave empty for all",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "get_retirement_strategy",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate the exact Earned Income Tax Credit (EITC) amount. The EITC is one of the largest refundable credits for low-to-moderate income workers.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "agi": {
+          "description": "Adjusted Gross Income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "earnedIncome": {
+          "description": "Earned income (wages, salary, self-employment)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "investmentIncome": {
+          "description": "Investment income (interest, dividends, capital gains)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifyingChildren": {
+          "description": "Number of qualifying children (0-3)",
+          "maximum": 3,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "earnedIncome",
+        "agi",
+        "qualifyingChildren",
+      ],
+      "type": "object",
+    },
+    "name": "calculate_eitc",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get state income tax information — rates, brackets, and key details for any US state.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "stateCode": {
+          "description": "Two-letter state code (e.g., 'CA', 'TX', 'NY')",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+      },
+      "required": [
+        "stateCode",
+      ],
+      "type": "object",
+    },
+    "name": "get_state_tax_info",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Estimate state income tax using an explicit tax-year calculation profile. Unsupported state-year paths fail closed.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "description": "Filing status (default: single)",
+          "enum": [
+            "single",
+            "married",
+          ],
+          "type": "string",
+        },
+        "incomeBeforeStateDeductions": {
+          "description": "State income before the modeled state standard deduction and personal exemption",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateCode": {
+          "description": "Two-letter state code",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year for the versioned state calculation profile",
+          "type": "integer",
+        },
+        "taxableIncome": {
+          "description": "Deprecated alias for incomeBeforeStateDeductions",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "stateCode",
+        "taxYear",
+      ],
+      "type": "object",
+    },
+    "name": "estimate_state_tax",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare state income tax for one tax year only when every requested state has an explicit calculation profile.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "description": "Filing status (default: single)",
+          "enum": [
+            "single",
+            "married",
+          ],
+          "type": "string",
+        },
+        "incomeBeforeStateDeductions": {
+          "description": "Annual income before modeled state deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "states": {
+          "description": "Array of state codes to compare (e.g., ['CA', 'TX', 'WA', 'NY'])",
+          "items": {
+            "maxLength": 2,
+            "minLength": 2,
+            "type": "string",
+          },
+          "maxItems": 10,
+          "minItems": 2,
+          "type": "array",
+        },
+        "taxYear": {
+          "description": "Tax year for all versioned state calculation profiles",
+          "type": "integer",
+        },
+        "taxableIncome": {
+          "description": "Deprecated alias for incomeBeforeStateDeductions",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "states",
+        "taxYear",
+      ],
+      "type": "object",
+    },
+    "name": "compare_state_taxes",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "List all US states with no state income tax.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "list_no_income_tax_states",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Get personalized year-end tax optimization strategies based on your income, deductions, and situation. Suggests actions to reduce tax liability before year-end.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "charitableGiving": {
+          "description": "YTD charitable donations",
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentHSAContributions": {
+          "description": "YTD HSA contributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentRetirementContributions": {
+          "description": "YTD retirement contributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentWithholding": {
+          "description": "Total tax already withheld/paid YTD",
+          "minimum": 0,
+          "type": "number",
+        },
+        "estimatedCapitalGains": {
+          "type": "number",
+        },
+        "estimatedIncome": {
+          "description": "Expected total income for the year",
+          "minimum": 0,
+          "type": "number",
+        },
+        "estimatedItemizedDeductions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "hasCapitalGains": {
+          "type": "boolean",
+        },
+        "hasCapitalLosses": {
+          "type": "boolean",
+        },
+        "hasHSA": {
+          "description": "Have HSA-eligible health plan",
+          "type": "boolean",
+        },
+        "hasMortgage": {
+          "type": "boolean",
+        },
+        "hasRetirementPlan": {
+          "description": "Have access to 401k/403b",
+          "type": "boolean",
+        },
+        "isSelfEmployed": {
+          "type": "boolean",
+        },
+        "taxYear": {
+          "description": "Tax year to plan for",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "estimatedIncome",
+      ],
+      "type": "object",
+    },
+    "name": "get_tax_planning_tips",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare tax liability across different tax years for the same income. Shows how bracket changes and inflation adjustments affect your tax.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "dependents": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossIncome": {
+          "description": "Gross income to compare across years",
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "filingStatus",
+        "grossIncome",
+      ],
+      "type": "object",
+    },
+    "name": "compare_tax_years",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Detailed self-employment tax breakdown including Schedule C profit, SE tax, QBI deduction, and recommended quarterly payments. Above the annual QBI threshold, provide SSTB classification, W-2 wages, and qualified-property basis, using 0 where none apply.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "businessExpenses": {
+          "description": "Total business expenses (Schedule C)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependents": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossRevenue": {
+          "description": "Total business revenue (Schedule C line 1)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "healthInsurancePremiums": {
+          "description": "Self-employed health insurance premiums",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherW2Income": {
+          "description": "W-2 income from other jobs",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIsSstb": {
+          "type": "boolean",
+        },
+        "qualifiedBusinessPropertyBasis": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessW2Wages": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "retirementContributions": {
+          "description": "SEP IRA or Solo 401k contributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossRevenue",
+        "businessExpenses",
+      ],
+      "type": "object",
+    },
+    "name": "estimate_self_employment_tax",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Analyze the tax benefit of mortgage interest deduction and property taxes. Compares itemizing with mortgage vs taking the standard deduction.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossIncome": {
+          "description": "Gross income, also used as MAGI because this tool does not collect MAGI adjustments",
+          "minimum": 0,
+          "type": "number",
+        },
+        "interestRate": {
+          "description": "Mortgage interest rate (e.g., 0.065 for 6.5%)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "mortgageBalance": {
+          "description": "Current mortgage balance",
+          "minimum": 0,
+          "type": "number",
+        },
+        "mortgageInterest": {
+          "description": "Annual mortgage interest paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherItemized": {
+          "description": "Other itemized deductions (charity, medical, etc.)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "propertyTaxes": {
+          "description": "Annual property taxes paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateIncomeTaxes": {
+          "description": "State/local income taxes paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossIncome",
+        "mortgageInterest",
+        "propertyTaxes",
+      ],
+      "type": "object",
+    },
+    "name": "analyze_mortgage_tax_benefit",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare education tax benefits: AOTC vs Lifetime Learning Credit, student loan interest deduction, and 529 plan advantages.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "agi": {
+          "description": "Adjusted Gross Income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "contribution529": {
+          "description": "529 plan contribution this year",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "has529Plan": {
+          "description": "Contributing to or using a 529 plan",
+          "type": "boolean",
+        },
+        "isUndergrad": {
+          "description": "Is the student in first 4 years of undergrad?",
+          "type": "boolean",
+        },
+        "studentLoanInterest": {
+          "description": "Student loan interest paid this year",
+          "minimum": 0,
+          "type": "number",
+        },
+        "tuitionPaid": {
+          "description": "Tuition and qualified expenses paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "yearsAOTCClaimed": {
+          "description": "Years AOTC already claimed (max 4)",
+          "maximum": 4,
+          "minimum": 0,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "filingStatus",
+        "agi",
+        "tuitionPaid",
+        "isUndergrad",
+      ],
+      "type": "object",
+    },
+    "name": "analyze_education_tax_benefits",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Compare Married Filing Jointly (MFJ) vs Married Filing Separately (MFS). Shows tax difference and lists all MFS restrictions that may affect your situation.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "dependents": {
+          "description": "Number of qualifying children (maximum 20)",
+          "maximum": 20,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "hasEITC": {
+          "description": "Either spouse would qualify for EITC",
+          "type": "boolean",
+        },
+        "hasEducationCredits": {
+          "description": "Either spouse claiming AOTC or LLC",
+          "type": "boolean",
+        },
+        "hasIRAContributions": {
+          "description": "Either spouse contributing to IRA",
+          "type": "boolean",
+        },
+        "itemizedDeductions": {
+          "description": "Total itemized deductions (combined for MFJ, split for MFS)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouse1Income": {
+          "description": "Spouse 1 gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouse2Income": {
+          "description": "Spouse 2 gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "studentLoanInterest": {
+          "description": "Either spouse paying student loan interest",
+          "type": "boolean",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "spouse1Income",
+        "spouse2Income",
+      ],
+      "type": "object",
+    },
+    "name": "compare_mfj_vs_mfs",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Calculate all OBBB (One Big Beautiful Bill) new deductions for TY2025+: tips income deduction, overtime pay deduction, senior bonus deduction, and auto loan interest deduction. Shows which deductions you qualify for and the total tax savings.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "description": "Taxpayer age (needed for senior bonus)",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "agi": {
+          "description": "Adjusted Gross Income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "autoLoanInterest": {
+          "description": "Interest paid on qualifying US-assembled new vehicle loan",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "marginalRate": {
+          "description": "Your marginal tax rate (for savings estimate, e.g. 0.22)",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number",
+        },
+        "overtimePay": {
+          "description": "Annual overtime premium pay",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseAge": {
+          "description": "Spouse age if MFJ",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "taxYear": {
+          "description": "Tax year (2025+)",
+          "type": "number",
+        },
+        "tipIncome": {
+          "description": "Annual tip income from qualifying occupation",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "agi",
+      ],
+      "type": "object",
+    },
+    "name": "calculate_obbb_deductions",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Show all differences between two tax years — bracket changes, deduction limits, credit amounts, SALT cap, CTC, and new OBBB provisions. Great for understanding how tax law changes affect you.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "description": "Filing status for specific comparisons (default: single)",
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "fromYear": {
+          "description": "Earlier tax year (e.g., 2024)",
+          "type": "number",
+        },
+        "toYear": {
+          "description": "Later tax year (e.g., 2025)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "fromYear",
+        "toYear",
+      ],
+      "type": "object",
+    },
+    "name": "what_changed_between_tax_years",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Generate a detailed tax estimate combining federal tax, supported state tax, FICA, modeled credits, deductions, take-home pay, and refund inputs.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aboveTheLineDeductions": {
+          "description": "HSA, student loan interest, educator expenses, etc.",
+          "minimum": 0,
+          "type": "number",
+        },
+        "aotcRefundableAllowed": {
+          "type": "boolean",
+        },
+        "aotcStudentQualifiedExpenses": {
+          "items": {
+            "minimum": 0,
+            "type": "number",
+          },
+          "type": "array",
+        },
+        "charitableDonations": {
+          "description": "Charitable contributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependents": {
+          "description": "Children already verified as CTC, ACTC, and EITC qualifying children",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "dividendIncome": {
+          "description": "1099-DIV ordinary dividends",
+          "minimum": 0,
+          "type": "number",
+        },
+        "earlyRetirementDistributionSubjectToPenalty": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "estimatedPaymentsMade": {
+          "description": "Estimated tax payments already made",
+          "minimum": 0,
+          "type": "number",
+        },
+        "federalWithheld": {
+          "description": "Federal tax already withheld YTD",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "hasForm2555": {
+          "description": "Whether Form 2555 is filed",
+          "type": "boolean",
+        },
+        "interestIncome": {
+          "description": "1099-INT interest income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "lifetimeLearningQualifiedExpenses": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "longTermCapitalGains": {
+          "description": "Long-term capital gains/losses",
+          "type": "number",
+        },
+        "longTermCapitalLossCarryover": {
+          "description": "Prior-year long-term capital loss carryover",
+          "minimum": 0,
+          "type": "number",
+        },
+        "marriedFilingSeparatelyLivedWithSpouse": {
+          "type": "boolean",
+        },
+        "medicalExpenses": {
+          "description": "Unreimbursed medical expenses",
+          "minimum": 0,
+          "type": "number",
+        },
+        "mortgageInterest": {
+          "description": "Mortgage interest",
+          "minimum": 0,
+          "type": "number",
+        },
+        "otherDependents": {
+          "description": "Dependents already verified for the nonrefundable ODC",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "otherIncome": {
+          "description": "Other income (rental, alimony, etc.)",
+          "type": "number",
+        },
+        "otherItemized": {
+          "description": "Other itemized deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIncome": {
+          "description": "QBI for Section 199A",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIsSstb": {
+          "type": "boolean",
+        },
+        "qualifiedBusinessPropertyBasis": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessW2Wages": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedDividends": {
+          "description": "Qualified dividends (subset of dividends, taxed at CG rates)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "retirementDistributions": {
+          "description": "Gross Form 1099-R distributions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "description": "Self-employment net profit",
+          "minimum": 0,
+          "type": "number",
+        },
+        "shortTermCapitalGains": {
+          "description": "Short-term capital gains/losses",
+          "type": "number",
+        },
+        "shortTermCapitalLossCarryover": {
+          "description": "Prior-year short-term capital loss carryover",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityBenefits": {
+          "description": "Net benefits from Form SSA-1099 or RRB-1099",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityTaxesPaid": {
+          "description": "Schedule 8812 payroll-tax amount for 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateCode": {
+          "description": "State code for state tax estimate",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "stateLocalTaxesPaid": {
+          "description": "State/local/property taxes paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateWithheld": {
+          "description": "State tax already withheld YTD",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxExemptInterest": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year (2024, 2025, or 2026)",
+          "type": "number",
+        },
+        "taxableRetirementDistributions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "w2Income": {
+          "description": "W-2 wages",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+      ],
+      "type": "object",
+    },
+    "name": "generate_full_tax_report",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Process multiple 1099 forms and calculate the tax impact of each income type. Handles 1099-NEC (freelance), 1099-INT (interest), 1099-DIV (dividends), 1099-B (investments), 1099-MISC.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "forms": {
+          "description": "Array of 1099 forms",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "amount": {
+                "description": "Total amount",
+                "type": "number",
+              },
+              "earlyDistributionSubjectToPenalty": {
+                "description": "For 1099-R: taxable early-distribution amount after exceptions",
+                "minimum": 0,
+                "type": "number",
+              },
+              "longTerm": {
+                "description": "For 1099-B: long-term gains",
+                "type": "boolean",
+              },
+              "payer": {
+                "description": "Payer name",
+                "type": "string",
+              },
+              "qualifiedDividends": {
+                "description": "For 1099-DIV: qualified dividends",
+                "type": "number",
+              },
+              "taxableAmount": {
+                "description": "For 1099-R: taxable amount in box 2a",
+                "minimum": 0,
+                "type": "number",
+              },
+              "type": {
+                "enum": [
+                  "1099-NEC",
+                  "1099-INT",
+                  "1099-DIV",
+                  "1099-B",
+                  "1099-MISC",
+                  "1099-R",
+                ],
+                "type": "string",
+              },
+            },
+            "required": [
+              "type",
+              "amount",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "longTermCapitalLossCarryover": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessIsSstb": {
+          "type": "boolean",
+        },
+        "qualifiedBusinessPropertyBasis": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedBusinessW2Wages": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "shortTermCapitalLossCarryover": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "w2Income": {
+          "description": "W-2 income (for context)",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "forms",
+      ],
+      "type": "object",
+    },
+    "name": "process_1099_income",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Generate a personalized tax calendar based on your situation. Shows deadlines for filing, estimated payments, extensions, and key actions.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filedExtension": {
+          "description": "Did you file an extension?",
+          "type": "boolean",
+        },
+        "hasEmployer": {
+          "description": "Do you have W-2 employment?",
+          "type": "boolean",
+        },
+        "hasInvestments": {
+          "description": "Do you have investment accounts?",
+          "type": "boolean",
+        },
+        "hasRentalIncome": {
+          "description": "Do you have rental property income?",
+          "type": "boolean",
+        },
+        "isSelfEmployed": {
+          "description": "Do you have self-employment income?",
+          "type": "boolean",
+        },
+        "taxYear": {
+          "description": "Tax year to get calendar for",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+      ],
+      "type": "object",
+    },
+    "name": "get_personalized_tax_calendar",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Analyze a paycheck to verify withholding accuracy. Input your pay stub numbers and see if your employer is withholding the right amount.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "federalWithheld": {
+          "description": "Federal tax withheld this period",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossPay": {
+          "description": "Gross pay this period",
+          "minimum": 0,
+          "type": "number",
+        },
+        "hsaContribution": {
+          "description": "HSA contribution this period",
+          "minimum": 0,
+          "type": "number",
+        },
+        "medicareWithheld": {
+          "description": "Medicare withheld",
+          "minimum": 0,
+          "type": "number",
+        },
+        "payFrequency": {
+          "enum": [
+            "weekly",
+            "biweekly",
+            "semimonthly",
+            "monthly",
+          ],
+          "type": "string",
+        },
+        "retirement401k": {
+          "description": "401k/403b pre-tax contribution this period",
+          "minimum": 0,
+          "type": "number",
+        },
+        "socialSecurityWithheld": {
+          "description": "Social Security withheld",
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateCode": {
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "stateWithheld": {
+          "description": "State tax withheld this period",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "payFrequency",
+        "grossPay",
+        "federalWithheld",
+      ],
+      "type": "object",
+    },
+    "name": "analyze_paycheck",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "What-if tax scenario simulator. Compare your current situation against a hypothetical change: income change, relocation, Roth conversion, filing status change, etc. Shows the exact tax impact of the change.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "currentCapitalGains": {
+          "type": "number",
+        },
+        "currentDependents": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "currentIncome": {
+          "description": "Current gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentItemizedDeductions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentSelfEmployment": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "currentState": {
+          "description": "Current state code",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "whatIfAdditional401k": {
+          "description": "Additional 401k contribution",
+          "minimum": 0,
+          "type": "number",
+        },
+        "whatIfFilingStatus": {
+          "$ref": "#/properties/filingStatus",
+          "description": "New filing status",
+        },
+        "whatIfIncomeChange": {
+          "description": "Income change amount (positive = more income, negative = less)",
+          "type": "number",
+        },
+        "whatIfItemizedChange": {
+          "description": "Change in itemized deductions",
+          "type": "number",
+        },
+        "whatIfNewDependents": {
+          "description": "New number of dependents",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "whatIfNewState": {
+          "description": "New state if relocating",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "whatIfRothConversion": {
+          "description": "Amount to convert from Traditional to Roth IRA",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "currentIncome",
+      ],
+      "type": "object",
+    },
+    "name": "simulate_tax_scenario",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Evaluate your IRS audit risk based on your tax return profile. Identifies red flags, scores your risk level, and provides tips to reduce audit exposure.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "businessMeals": {
+          "description": "Business meal deductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "cashBusiness": {
+          "description": "Is your business cash-intensive (restaurant, salon, etc.)?",
+          "type": "boolean",
+        },
+        "charitableDonations": {
+          "description": "Total charitable donations",
+          "minimum": 0,
+          "type": "number",
+        },
+        "charitableNonCash": {
+          "description": "Non-cash charitable donations (clothing, property)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "cryptoTransactions": {
+          "description": "Had cryptocurrency transactions?",
+          "type": "boolean",
+        },
+        "eitcClaimed": {
+          "description": "Claiming EITC?",
+          "type": "boolean",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "foreignAccounts": {
+          "description": "Have foreign bank accounts or assets?",
+          "type": "boolean",
+        },
+        "grossIncome": {
+          "description": "Total gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "homeOfficeDeduction": {
+          "description": "Claiming home office deduction?",
+          "type": "boolean",
+        },
+        "largeRefund": {
+          "description": "Expecting a very large refund?",
+          "type": "boolean",
+        },
+        "rentalLosses": {
+          "description": "Rental property losses claimed",
+          "minimum": 0,
+          "type": "number",
+        },
+        "roundNumbers": {
+          "description": "Are most deductions round numbers ($5,000, $10,000)?",
+          "type": "boolean",
+        },
+        "selfEmploymentIncome": {
+          "description": "Self-employment income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "vehicleDeduction": {
+          "description": "Vehicle/mileage deduction",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "filingStatus",
+        "grossIncome",
+      ],
+      "type": "object",
+    },
+    "name": "assess_audit_risk",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Generate a personalized checklist of tax documents you need to gather for filing. Based on your income sources, deductions, and life events.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "boughtEV": {
+          "description": "Bought an electric vehicle",
+          "type": "boolean",
+        },
+        "gotDivorced": {
+          "description": "Got divorced this year",
+          "type": "boolean",
+        },
+        "gotMarried": {
+          "description": "Got married this year",
+          "type": "boolean",
+        },
+        "hadBaby": {
+          "description": "Had a baby this year",
+          "type": "boolean",
+        },
+        "hasCharitableDonations": {
+          "description": "Made charitable donations",
+          "type": "boolean",
+        },
+        "hasChildcare": {
+          "description": "Pay for childcare",
+          "type": "boolean",
+        },
+        "hasChildren": {
+          "description": "Have dependent children",
+          "type": "boolean",
+        },
+        "hasEducationExpenses": {
+          "description": "Paying tuition or student expenses",
+          "type": "boolean",
+        },
+        "hasForeignAccounts": {
+          "description": "Have foreign bank accounts or income",
+          "type": "boolean",
+        },
+        "hasHSA": {
+          "description": "Have HSA account",
+          "type": "boolean",
+        },
+        "hasHealthInsurance": {
+          "description": "Have health insurance (marketplace or employer)",
+          "type": "boolean",
+        },
+        "hasInvestments": {
+          "description": "Have investment accounts (stocks, bonds, crypto)",
+          "type": "boolean",
+        },
+        "hasMortgage": {
+          "description": "Have a mortgage",
+          "type": "boolean",
+        },
+        "hasRentalProperty": {
+          "description": "Own rental property",
+          "type": "boolean",
+        },
+        "hasRetirementContributions": {
+          "description": "Contributed to IRA/401k",
+          "type": "boolean",
+        },
+        "hasSelfEmployment": {
+          "description": "Have self-employment/freelance income",
+          "type": "boolean",
+        },
+        "hasStudentLoans": {
+          "description": "Paying student loans",
+          "type": "boolean",
+        },
+        "hasW2": {
+          "description": "Have W-2 employment",
+          "type": "boolean",
+        },
+        "installedSolar": {
+          "description": "Installed solar panels",
+          "type": "boolean",
+        },
+        "soldHome": {
+          "description": "Sold a home this year",
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "name": "get_tax_document_checklist",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Analyze investment lots and suggest which to sell to minimize tax. Considers long-term vs short-term, 0% bracket space, loss harvesting, and wash sale rules.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "lots": {
+          "description": "Investment lots to analyze",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "costBasis": {
+                "description": "Total cost basis",
+                "type": "number",
+              },
+              "currentValue": {
+                "description": "Current market value",
+                "type": "number",
+              },
+              "holdingMonths": {
+                "description": "Months held",
+                "minimum": 0,
+                "type": "integer",
+              },
+              "name": {
+                "description": "Investment name (e.g., 'AAPL', 'VTI')",
+                "type": "string",
+              },
+              "shares": {
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "name",
+              "shares",
+              "costBasis",
+              "currentValue",
+              "holdingMonths",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "ordinaryIncome": {
+          "description": "Ordinary income (W-2, SE, interest, etc.) before investment sales",
+          "minimum": 0,
+          "type": "number",
+        },
+        "targetGainOrLoss": {
+          "description": "Target net gain/loss to realize (negative for harvesting losses)",
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "ordinaryIncome",
+        "lots",
+      ],
+      "type": "object",
+    },
+    "name": "optimize_capital_gains",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Plan tax-efficient retirement withdrawals. Determines optimal order to draw from Traditional IRA, Roth IRA, and taxable accounts to minimize lifetime tax.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "description": "Your current age",
+          "minimum": 0,
+          "type": "integer",
+        },
+        "annualSpending": {
+          "description": "Annual spending need (pre-tax)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "pensionIncome": {
+          "description": "Annual pension income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "rothBalance": {
+          "description": "Roth IRA/401k balance",
+          "minimum": 0,
+          "type": "number",
+        },
+        "rothConversionInterest": {
+          "description": "Interested in Roth conversion strategy?",
+          "type": "boolean",
+        },
+        "socialSecurityIncome": {
+          "description": "Annual Social Security income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "taxableBalance": {
+          "description": "Taxable brokerage account balance",
+          "minimum": 0,
+          "type": "number",
+        },
+        "traditionalBalance": {
+          "description": "Traditional IRA/401k balance",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "age",
+        "traditionalBalance",
+        "rothBalance",
+        "taxableBalance",
+        "annualSpending",
+      ],
+      "type": "object",
+    },
+    "name": "plan_retirement_withdrawals",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Create a 3-5 year tax projection and strategy. Models income changes, Roth conversions, retirement contributions, and bracket management across multiple years.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "currentAge": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "years": {
+          "description": "Year-by-year projections",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "dependents": {
+                "minimum": 0,
+                "type": "integer",
+              },
+              "expectedIncome": {
+                "description": "Expected gross income",
+                "minimum": 0,
+                "type": "number",
+              },
+              "planned401k": {
+                "description": "Planned 401k contribution",
+                "minimum": 0,
+                "type": "number",
+              },
+              "plannedIRA": {
+                "description": "Planned IRA contribution",
+                "minimum": 0,
+                "type": "number",
+              },
+              "plannedRothConversion": {
+                "description": "Planned Roth conversion amount",
+                "minimum": 0,
+                "type": "number",
+              },
+              "selfEmploymentIncome": {
+                "minimum": 0,
+                "type": "number",
+              },
+              "stateCode": {
+                "maxLength": 2,
+                "minLength": 2,
+                "type": "string",
+              },
+              "year": {
+                "description": "Tax year (2024, 2025, or 2026)",
+                "type": "number",
+              },
+            },
+            "required": [
+              "year",
+              "expectedIncome",
+            ],
+            "type": "object",
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "filingStatus",
+        "currentAge",
+        "years",
+      ],
+      "type": "object",
+    },
+    "name": "plan_multi_year_taxes",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "In-depth relocation tax analysis using exact-year state profiles. Additional projection years require explicit annual federal and state data.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "capitalGains": {
+          "type": "number",
+        },
+        "dependents": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "fromState": {
+          "description": "Current state code",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "grossIncome": {
+          "description": "Annual gross income",
+          "minimum": 0,
+          "type": "number",
+        },
+        "incomeGrowthRate": {
+          "description": "Annual income growth rate (e.g., 0.03 for 3%)",
+          "maximum": 0.5,
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "toState": {
+          "description": "Target state code",
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "yearsToProject": {
+          "description": "Years to project with explicit annual profiles (default: 1)",
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossIncome",
+        "fromState",
+        "toState",
+      ],
+      "type": "object",
+    },
+    "name": "analyze_relocation_taxes",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "One-click tax health check. Analyzes your full financial picture and outputs a report with actionable findings: missed credits, withholding accuracy, deduction optimization, audit risk, retirement savings gaps, and year-end planning tips.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "boughtEV": {
+          "type": "boolean",
+        },
+        "capitalGains": {
+          "type": "number",
+        },
+        "charitableDonations": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependents": {
+          "minimum": 0,
+          "type": "integer",
+        },
+        "federalWithheld": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "grossIncome": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "hasHealthInsurance": {
+          "type": "boolean",
+        },
+        "hsaContributions": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "installedSolar": {
+          "type": "boolean",
+        },
+        "isStudent": {
+          "type": "boolean",
+        },
+        "mortgageInterest": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "retirement401k": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "retirementIRA": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "selfEmploymentIncome": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "stateCode": {
+          "maxLength": 2,
+          "minLength": 2,
+          "type": "string",
+        },
+        "stateLocalTaxes": {
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "w2Income": {
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "grossIncome",
+      ],
+      "type": "object",
+    },
+    "name": "run_tax_health_check",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Look up IRS tax rules, definitions, and common questions. Covers filing rules, income types, deduction rules, credit eligibility, stock options, wash sales, and more.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "description": "Tax topic to look up (e.g., 'wash sale rule', 'ISO vs NSO', 'AOTC and LLC same year', 'gift tax', 'estimated tax penalty')",
+          "type": "string",
+        },
+      },
+      "required": [
+        "topic",
+      ],
+      "type": "object",
+    },
+    "name": "lookup_tax_rule",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Step-by-step guide for filling out a specific IRS form or schedule. Explains each section, what data you need, and common mistakes to avoid.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "formNumber": {
+          "description": "IRS form (e.g., '1040', 'Schedule C', 'Schedule D', 'Form 8949', 'W-4')",
+          "type": "string",
+        },
+      },
+      "required": [
+        "formNumber",
+      ],
+      "type": "object",
+    },
+    "name": "get_form_filing_guide",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. No data is sent — the user clicks the link to submit. Use this after verifying the user's inputs.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "actual": {
+          "description": "What the tool returned",
+          "type": "string",
+        },
+        "description": {
+          "description": "Brief description of the issue",
+          "type": "string",
+        },
+        "expected": {
+          "description": "What the user expected",
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year",
+          "type": "number",
+        },
+        "toolName": {
+          "description": "Which tool produced the issue (e.g., calculate_federal_tax)",
+          "type": "string",
+        },
+      },
+      "required": [
+        "toolName",
+        "description",
+      ],
+      "type": "object",
+    },
+    "name": "submit_feedback",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+]
+`;

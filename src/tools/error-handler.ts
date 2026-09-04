@@ -4,6 +4,7 @@
  */
 
 import { UnsupportedStateTaxCalculationError } from "../calculators/state-tax-calculator.js";
+import { TaxInputValidationError } from "../calculators/validation.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export type ErrorCode =
@@ -36,7 +37,7 @@ const ERROR_TEMPLATES: Record<ErrorCode, { emoji: string; title: string }> = {
 /**
  * Format a structured error response for MCP tools.
  */
-export function toolError(error: ToolError): { content: Array<{ type: "text"; text: string }>; isError: true } {
+export function toolError(error: ToolError): CallToolResult {
   const template = ERROR_TEMPLATES[error.code];
   const lines = [
     `${template.emoji} **${template.title}**`,
@@ -45,8 +46,18 @@ export function toolError(error: ToolError): { content: Array<{ type: "text"; te
     "",
     `💡 **What to do**: ${error.suggestion}`,
   ];
+  const text = lines.join("\n");
   return {
-    content: [{ type: "text" as const, text: lines.join("\n") }],
+    content: [{ type: "text" as const, text }],
+    structuredContent: {
+      text,
+      isError: true,
+      error: {
+        code: error.code,
+        message: error.message,
+        suggestion: error.suggestion,
+      },
+    },
     isError: true,
   };
 }
@@ -72,20 +83,18 @@ export function wrapToolHandler<T>(
         });
       }
 
-      // Detect common error patterns and give specific suggestions
-      if (message.includes("not supported")) {
+      if (err instanceof TaxInputValidationError) {
+        const code = err.errors.some(
+          (validationError) => validationError.code === "UNSUPPORTED_TAX_YEAR",
+        )
+          ? "UNSUPPORTED_TAX_YEAR"
+          : "INVALID_INPUT";
         return toolError({
-          code: "UNSUPPORTED_TAX_YEAR",
+          code,
           message,
-          suggestion: "Use taxYear 2024, 2025, or 2026. These are the currently supported tax years.",
-        });
-      }
-
-      if (message.includes("Validation")) {
-        return toolError({
-          code: "INVALID_INPUT",
-          message,
-          suggestion: "Check your input values. Income should be positive, tax year should be 2024, 2025, or 2026.",
+          suggestion: code === "UNSUPPORTED_TAX_YEAR"
+            ? "Use taxYear 2024, 2025, or 2026."
+            : "Correct the invalid input fields and try again.",
         });
       }
 

@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { fmt, FilingStatusEnum } from "./shared.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
@@ -17,7 +17,7 @@ import { ERRORS, wrapToolHandler } from "./error-handler.js";
 export function registerComprehensiveTools(server: McpServer): void {
 
   // --- Tool 1: Full Tax Report ---
-  server.tool(
+  registerTaxTool(server,
     "generate_full_tax_report",
     "Generate a detailed tax estimate combining federal tax, supported state tax, FICA, " +
     "modeled credits, deductions, take-home pay, and refund inputs.",
@@ -375,7 +375,7 @@ export function registerComprehensiveTools(server: McpServer): void {
   );
 
   // --- Tool 2: 1099 Income Processor ---
-  server.tool(
+  registerTaxTool(server,
     "process_1099_income",
     "Process multiple 1099 forms and calculate the tax impact of each income type. " +
     "Handles 1099-NEC (freelance), 1099-INT (interest), 1099-DIV (dividends), 1099-B (investments), 1099-MISC.",
@@ -553,7 +553,7 @@ export function registerComprehensiveTools(server: McpServer): void {
   );
 
   // --- Tool 3: Personalized Tax Calendar ---
-  server.tool(
+  registerTaxTool(server,
     "get_personalized_tax_calendar",
     "Generate a personalized tax calendar based on your situation. " +
     "Shows deadlines for filing, estimated payments, extensions, and key actions.",
@@ -631,7 +631,7 @@ export function registerComprehensiveTools(server: McpServer): void {
   );
 
   // --- Tool 4: Paycheck Analyzer ---
-  server.tool(
+  registerTaxTool(server,
     "analyze_paycheck",
     "Analyze a paycheck to verify withholding accuracy. " +
     "Input your pay stub numbers and see if your employer is withholding the right amount.",
@@ -735,7 +735,7 @@ export function registerComprehensiveTools(server: McpServer): void {
   );
 
   // --- Tool 5: Tax Scenario Simulator ---
-  server.tool(
+  registerTaxTool(server,
     "simulate_tax_scenario",
     "What-if tax scenario simulator. Compare your current situation against a hypothetical change: " +
     "income change, relocation, Roth conversion, filing status change, etc. " +
@@ -895,7 +895,7 @@ export function registerComprehensiveTools(server: McpServer): void {
   );
 
   // --- Tool 6: Audit Risk Assessment ---
-  server.tool(
+  registerTaxTool(server,
     "assess_audit_risk",
     "Evaluate your IRS audit risk based on your tax return profile. " +
     "Identifies red flags, scores your risk level, and provides tips to reduce audit exposure.",

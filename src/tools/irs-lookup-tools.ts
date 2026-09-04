@@ -4,12 +4,13 @@
  */
 
 import { z } from "zod";
+import { registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TAX_DEADLINES } from "../data/deadlines.js";
 import { SUPPORTED_TAX_YEARS, LATEST_TAX_YEAR } from "../data/tax-brackets.js";
 
 export function registerIrsLookupTools(server: McpServer): void {
-  server.tool(
+  registerTaxTool(server,
     "get_tax_deadlines",
     "Get important IRS tax deadlines and due dates for a given tax year.",
     {
@@ -48,7 +49,7 @@ export function registerIrsLookupTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "check_refund_status",
     "Provide instructions on how to check IRS refund status. " +
     "This tool does NOT access your IRS account — it provides the official links and requirements.",
@@ -94,7 +95,7 @@ export function registerIrsLookupTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "get_irs_form_info",
     "Get information about common IRS tax forms — what they are, who needs them, and where to find them.",
     {

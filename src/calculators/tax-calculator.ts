@@ -9,7 +9,12 @@ import {
   type TaxYearData,
   getTaxYearData,
 } from "../data/tax-brackets.js";
-import { validate, validateIncome, validateTaxYear, formatValidationErrors } from "./validation.js";
+import {
+  validate,
+  validateIncome,
+  validateTaxYear,
+  TaxInputValidationError,
+} from "./validation.js";
 
 export interface TaxInput {
   taxYear: number;
@@ -547,7 +552,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     validateIncome(input.grossIncome, "grossIncome"),
   );
   if (errors.length > 0) {
-    throw new Error(formatValidationErrors(errors));
+    throw new TaxInputValidationError(errors);
   }
 
   const taxData = getTaxYearData(input.taxYear);

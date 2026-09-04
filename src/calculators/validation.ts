@@ -4,37 +4,48 @@
  */
 
 export interface ValidationError {
+  code: "UNSUPPORTED_TAX_YEAR" | "INVALID_INPUT";
   field: string;
   message: string;
 }
 
+export class TaxInputValidationError extends Error {
+  readonly errors: ValidationError[];
+
+  constructor(errors: ValidationError[]) {
+    super(formatValidationErrors(errors));
+    this.name = "TaxInputValidationError";
+    this.errors = errors;
+  }
+}
+
 export function validateIncome(value: number, field: string): ValidationError | null {
-  if (value < 0) return { field, message: `${field} cannot be negative` };
-  if (value > 100_000_000) return { field, message: `${field} exceeds $100M — please verify` };
-  if (!Number.isFinite(value)) return { field, message: `${field} must be a finite number` };
+  if (value < 0) return { code: "INVALID_INPUT", field, message: `${field} cannot be negative` };
+  if (value > 100_000_000) return { code: "INVALID_INPUT", field, message: `${field} exceeds $100M; please verify` };
+  if (!Number.isFinite(value)) return { code: "INVALID_INPUT", field, message: `${field} must be a finite number` };
   return null;
 }
 
 export function validateTaxYear(year: number): ValidationError | null {
-  if (!Number.isInteger(year)) return { field: "taxYear", message: "Tax year must be an integer" };
-  if (year < 2024 || year > 2026) return { field: "taxYear", message: `Tax year ${year} not supported. Use 2024, 2025, or 2026` };
+  if (!Number.isInteger(year)) return { code: "INVALID_INPUT", field: "taxYear", message: "Tax year must be an integer" };
+  if (year < 2024 || year > 2026) return { code: "UNSUPPORTED_TAX_YEAR", field: "taxYear", message: `Tax year ${year} not supported. Use 2024, 2025, or 2026` };
   return null;
 }
 
 export function validateAge(age: number): ValidationError | null {
-  if (!Number.isInteger(age)) return { field: "age", message: "Age must be an integer" };
-  if (age < 0 || age > 120) return { field: "age", message: "Age must be between 0 and 120" };
+  if (!Number.isInteger(age)) return { code: "INVALID_INPUT", field: "age", message: "Age must be an integer" };
+  if (age < 0 || age > 120) return { code: "INVALID_INPUT", field: "age", message: "Age must be between 0 and 120" };
   return null;
 }
 
 export function validateRate(rate: number, field: string): ValidationError | null {
-  if (rate < 0 || rate > 1) return { field, message: `${field} must be between 0 and 1 (e.g., 0.065 for 6.5%)` };
+  if (rate < 0 || rate > 1) return { code: "INVALID_INPUT", field, message: `${field} must be between 0 and 1 (e.g., 0.065 for 6.5%)` };
   return null;
 }
 
 export function validateStateCode(code: string): ValidationError | null {
-  if (code.length !== 2) return { field: "stateCode", message: "State code must be exactly 2 characters" };
-  if (!/^[A-Za-z]{2}$/.test(code)) return { field: "stateCode", message: "State code must be letters only" };
+  if (code.length !== 2) return { code: "INVALID_INPUT", field: "stateCode", message: "State code must be exactly 2 characters" };
+  if (!/^[A-Za-z]{2}$/.test(code)) return { code: "INVALID_INPUT", field: "stateCode", message: "State code must be letters only" };
   return null;
 }
 

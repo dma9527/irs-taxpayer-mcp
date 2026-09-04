@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { fmt, FilingStatusEnum } from "./shared.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ERRORS } from "./error-handler.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
@@ -16,7 +16,7 @@ import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 export function registerSmartTools(server: McpServer): void {
 
   // --- Tool 1: Tax Health Check ---
-  server.tool(
+  registerTaxTool(server,
     "run_tax_health_check",
     "One-click tax health check. Analyzes your full financial picture and outputs a report " +
     "with actionable findings: missed credits, withholding accuracy, deduction optimization, " +
@@ -229,7 +229,7 @@ export function registerSmartTools(server: McpServer): void {
   );
 
   // --- Tool 2: Tax Knowledge Base ---
-  server.tool(
+  registerTaxTool(server,
     "lookup_tax_rule",
     "Look up IRS tax rules, definitions, and common questions. " +
     "Covers filing rules, income types, deduction rules, credit eligibility, " +
@@ -340,7 +340,7 @@ export function registerSmartTools(server: McpServer): void {
   );
 
   // --- Tool 3: Form Filing Guide ---
-  server.tool(
+  registerTaxTool(server,
     "get_form_filing_guide",
     "Step-by-step guide for filling out a specific IRS form or schedule. " +
     "Explains each section, what data you need, and common mistakes to avoid.",
@@ -516,7 +516,7 @@ export function registerSmartTools(server: McpServer): void {
   );
 
   // --- Tool 4: Submit Feedback ---
-  server.tool(
+  registerTaxTool(server,
     "submit_feedback",
     "Generate a pre-filled GitHub Issue URL for reporting calculation errors or data issues. " +
     "No data is sent — the user clicks the link to submit. Use this after verifying the user's inputs.",

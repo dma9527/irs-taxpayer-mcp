@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { fmt, FilingStatusEnum } from "./shared.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
@@ -15,7 +15,7 @@ import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 export function registerAdvancedTools(server: McpServer): void {
   // --- Tool 7: Tax Document Checklist ---
-  server.tool(
+  registerTaxTool(server,
     "get_tax_document_checklist",
     "Generate a personalized checklist of tax documents you need to gather for filing. " +
     "Based on your income sources, deductions, and life events.",
@@ -175,7 +175,7 @@ export function registerAdvancedTools(server: McpServer): void {
   );
 
   // --- Tool 8: Capital Gains Optimizer ---
-  server.tool(
+  registerTaxTool(server,
     "optimize_capital_gains",
     "Analyze investment lots and suggest which to sell to minimize tax. " +
     "Considers long-term vs short-term, 0% bracket space, loss harvesting, and wash sale rules.",
@@ -308,7 +308,7 @@ export function registerAdvancedTools(server: McpServer): void {
   );
 
   // --- Tool 9: Retirement Withdrawal Strategy ---
-  server.tool(
+  registerTaxTool(server,
     "plan_retirement_withdrawals",
     "Plan tax-efficient retirement withdrawals. Determines optimal order to draw from " +
     "Traditional IRA, Roth IRA, and taxable accounts to minimize lifetime tax.",
@@ -469,7 +469,7 @@ export function registerAdvancedTools(server: McpServer): void {
   );
 
   // --- Tool 10: Multi-Year Tax Planner ---
-  server.tool(
+  registerTaxTool(server,
     "plan_multi_year_taxes",
     "Create a 3-5 year tax projection and strategy. Models income changes, Roth conversions, " +
     "retirement contributions, and bracket management across multiple years.",
@@ -606,7 +606,7 @@ export function registerAdvancedTools(server: McpServer): void {
   );
 
   // --- Tool 11: Relocation Deep Analysis ---
-  server.tool(
+  registerTaxTool(server,
     "analyze_relocation_taxes",
     "In-depth relocation tax analysis using exact-year state profiles. " +
     "Additional projection years require explicit annual federal and state data.",

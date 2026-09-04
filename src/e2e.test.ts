@@ -83,8 +83,19 @@ describe("E2E Smoke Test", () => {
       });
 
       expect(toolsResponse.result).toBeDefined();
-      const toolsResult = toolsResponse.result as { tools: Array<{ name: string }> };
-      const toolNames = toolsResult.tools.map((t) => t.name);
+      const toolsResult = toolsResponse.result as {
+        tools: Array<{
+          name: string;
+          outputSchema?: Record<string, unknown>;
+          annotations?: {
+            readOnlyHint?: boolean;
+            destructiveHint?: boolean;
+            idempotentHint?: boolean;
+            openWorldHint?: boolean;
+          };
+        }>;
+      };
+      const toolNames = toolsResult.tools.map((tool) => tool.name);
 
       // Verify key tools exist
       expect(toolNames).toContain("calculate_federal_tax");
@@ -92,6 +103,16 @@ describe("E2E Smoke Test", () => {
       expect(toolNames).toContain("simulate_tax_scenario");
       expect(toolNames).toContain("assess_audit_risk");
       expect(toolNames.length).toBe(43);
+      for (const tool of toolsResult.tools) {
+        expect(tool.outputSchema).toBeDefined();
+        expect(tool.annotations).toEqual({
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        });
+      }
+      expect(toolsResult.tools).toMatchSnapshot("all tool contracts");
 
       // Step 4: Call a tool
       const callResponse = await sendMcpMessage(proc, {
@@ -105,12 +126,64 @@ describe("E2E Smoke Test", () => {
       });
 
       expect(callResponse.result).toBeDefined();
-      const callResult = callResponse.result as { content: Array<{ type: string; text: string }> };
+      const callResult = callResponse.result as {
+        content: Array<{ type: string; text: string }>;
+        structuredContent?: { text?: string; isError?: boolean };
+      };
       expect(callResult.content).toBeDefined();
       expect(callResult.content[0].type).toBe("text");
       expect(callResult.content[0].text).toContain("Tax Brackets");
       expect(callResult.content[0].text).toContain("10%");
       expect(callResult.content[0].text).toContain("37%");
+      expect(callResult.structuredContent).toEqual({
+        text: callResult.content[0].text,
+        isError: false,
+      });
+
+      const errorResponse = await sendMcpMessage(proc, {
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "calculate_federal_tax",
+          arguments: {
+            taxYear: 2020,
+            filingStatus: "single",
+            grossIncome: 50000,
+          },
+        },
+      });
+      const errorResult = errorResponse.result as {
+        isError?: boolean;
+        structuredContent?: {
+          isError?: boolean;
+          error?: { code?: string };
+        };
+      };
+      expect(errorResult.isError).toBe(true);
+      expect(errorResult.structuredContent?.isError).toBe(true);
+      expect(errorResult.structuredContent?.error?.code).toBe("UNSUPPORTED_TAX_YEAR");
+
+      const unavailableWorksheetResponse = await sendMcpMessage(proc, {
+        jsonrpc: "2.0",
+        id: 5,
+        method: "tools/call",
+        params: {
+          name: "calculate_federal_tax",
+          arguments: {
+            taxYear: 2025,
+            filingStatus: "single",
+            grossIncome: 40000,
+            socialSecurityBenefits: 10000,
+            hasForm2555: true,
+          },
+        },
+      });
+      const unavailableWorksheetResult = unavailableWorksheetResponse.result as {
+        structuredContent?: { error?: { code?: string } };
+      };
+      expect(unavailableWorksheetResult.structuredContent?.error?.code)
+        .toBe("CALCULATION_ERROR");
 
     } finally {
       proc.kill();

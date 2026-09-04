@@ -5,11 +5,12 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TAX_CREDITS } from "../data/credits.js";
+import { registerTaxTool } from "./shared.js";
 import { RETIREMENT_ACCOUNTS, RETIREMENT_STRATEGIES } from "../data/retirement-strategies.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 
 export function registerCreditTools(server: McpServer): void {
-  server.tool(
+  registerTaxTool(server,
     "list_tax_credits",
     "List available federal tax credits with eligibility, amounts, and phase-out rules. " +
     "Covers family, education, energy, retirement, healthcare, and income-based credits.",
@@ -55,7 +56,7 @@ export function registerCreditTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "check_credit_eligibility",
     "Check which tax credits you may be eligible for based on your situation.",
     {
@@ -179,7 +180,7 @@ export function registerCreditTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "get_retirement_accounts",
     "Get details on retirement account types — contribution limits, tax treatment, income limits, and tips.",
     {
@@ -215,7 +216,7 @@ export function registerCreditTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "get_retirement_strategy",
     "Get detailed info on tax-advantaged retirement strategies like Backdoor Roth, Mega Backdoor Roth, Roth Conversion Ladder, Tax Loss/Gain Harvesting.",
     {
@@ -252,7 +253,7 @@ export function registerCreditTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "calculate_eitc",
     "Calculate the exact Earned Income Tax Credit (EITC) amount. " +
     "The EITC is one of the largest refundable credits for low-to-moderate income workers.",

@@ -119,6 +119,8 @@ The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` 
 
 ## 🛠️ Tools (43)
 
+All tools use the current MCP `registerTool` API. Each advertises read-only annotations and an output schema, and returns both human-readable text and `structuredContent`. Error results include a stable error code, message, and recovery suggestion.
+
 ### Federal Tax Calculations
 
 | Tool                       | What it does                                                                                                                         |

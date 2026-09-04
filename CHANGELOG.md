@@ -4,6 +4,15 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- Added structured tool output contracts, typed error metadata, a 43-tool schema snapshot, and 10 stable agent evaluations.
+
+### Changed
+
+- Migrated all 43 tools from deprecated `server.tool` registration to SDK `registerTool` through a shared read-only contract wrapper.
+- Every tool now advertises read-only, non-destructive, idempotent, closed-world annotations and returns both text content and structured content.
+
 ### Fixed
 
 - Corrected the TY2025 SALT enhanced-cap phase-down to 30% of excess MAGI, including MFS thresholds and floors.
@@ -28,7 +37,7 @@ All notable changes to irs-taxpayer-mcp.
 ### Tests
 
 - Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
-- Expanded the suite to 272 tests across 9 test files.
+- Expanded the suite to 273 tests across 10 test files.
 
 ## [0.6.0] - 2026-09-04
 

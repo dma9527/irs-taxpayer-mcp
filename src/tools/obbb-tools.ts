@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { fmt, FilingStatusEnum } from "./shared.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS, type FilingStatus } from "../data/tax-brackets.js";
 import { ERRORS } from "./error-handler.js";
@@ -13,7 +13,7 @@ import { ERRORS } from "./error-handler.js";
 
 export function registerObbbTools(server: McpServer): void {
 
-  server.tool(
+  registerTaxTool(server,
     "calculate_obbb_deductions",
     "Calculate all OBBB (One Big Beautiful Bill) new deductions for TY2025+: " +
     "tips income deduction, overtime pay deduction, senior bonus deduction, and auto loan interest deduction. " +
@@ -187,7 +187,7 @@ export function registerObbbTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  registerTaxTool(server,
     "what_changed_between_tax_years",
     "Show all differences between two tax years — bracket changes, deduction limits, credit amounts, " +
     "SALT cap, CTC, and new OBBB provisions. Great for understanding how tax law changes affect you.",

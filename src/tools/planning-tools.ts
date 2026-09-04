@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { fmt, FilingStatusEnum } from "./shared.js";
+import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
@@ -15,7 +15,7 @@ import { getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
 export function registerPlanningTools(server: McpServer): void {
 
   // --- Tool 1: Year-end tax planning ---
-  server.tool(
+  registerTaxTool(server,
     "get_tax_planning_tips",
     "Get personalized year-end tax optimization strategies based on your income, deductions, and situation. " +
     "Suggests actions to reduce tax liability before year-end.",
@@ -174,7 +174,7 @@ export function registerPlanningTools(server: McpServer): void {
   );
 
   // --- Tool 2: Multi-year tax comparison ---
-  server.tool(
+  registerTaxTool(server,
     "compare_tax_years",
     "Compare tax liability across different tax years for the same income. " +
     "Shows how bracket changes and inflation adjustments affect your tax.",
@@ -235,7 +235,7 @@ export function registerPlanningTools(server: McpServer): void {
   );
 
   // --- Tool 3: Self-employment tax estimator ---
-  server.tool(
+  registerTaxTool(server,
     "estimate_self_employment_tax",
     "Detailed self-employment tax breakdown including Schedule C profit, SE tax, " +
     "QBI deduction, and recommended quarterly payments. Above the annual QBI threshold, " +
@@ -331,7 +331,7 @@ export function registerPlanningTools(server: McpServer): void {
   );
 
   // --- Tool 4: Real estate / mortgage tax tool ---
-  server.tool(
+  registerTaxTool(server,
     "analyze_mortgage_tax_benefit",
     "Analyze the tax benefit of mortgage interest deduction and property taxes. " +
     "Compares itemizing with mortgage vs taking the standard deduction.",
@@ -421,7 +421,7 @@ export function registerPlanningTools(server: McpServer): void {
   );
 
   // --- Tool 5: Education tax benefits ---
-  server.tool(
+  registerTaxTool(server,
     "analyze_education_tax_benefits",
     "Compare education tax benefits: AOTC vs Lifetime Learning Credit, " +
     "student loan interest deduction, and 529 plan advantages.",
@@ -554,7 +554,7 @@ export function registerPlanningTools(server: McpServer): void {
   );
 
   // --- Tool 6: MFJ vs MFS comparison ---
-  server.tool(
+  registerTaxTool(server,
     "compare_mfj_vs_mfs",
     "Compare Married Filing Jointly (MFJ) vs Married Filing Separately (MFS). " +
     "Shows tax difference and lists all MFS restrictions that may affect your situation.",

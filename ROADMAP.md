@@ -23,7 +23,7 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 236 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
+- Expanded the suite to 243 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -52,7 +52,7 @@ The project does not currently generate, sign, or transmit a tax return. It does
 - [ ] Separate source documents, tax elections, derived values, worksheets, and final form outputs.
 - [ ] Add taxpayer, spouse, dependent, residency, age, and filing-status eligibility validation.
 - [ ] Model refundable and nonrefundable credits independently, including ACTC ordering and limits.
-- [ ] Implement capital-loss limitations and carryovers.
+- [x] Implement planning-grade short-term and long-term capital-loss netting, annual limits, and carryovers.
 - [ ] Implement qualified-dividend and capital-gain tax worksheets as first-class deterministic calculators.
 - [ ] Implement full QBI limitations, SSTB phase-outs, wage limits, and qualified-property limits.
 - [ ] Implement AMT preferential capital-gain treatment and Form 6251 worksheet ordering.

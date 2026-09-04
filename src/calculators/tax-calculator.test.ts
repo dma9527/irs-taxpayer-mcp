@@ -415,6 +415,84 @@ describe("calculateTax", () => {
     });
   });
 
+  describe("capital loss limitation and carryover", () => {
+    it("limits a net capital loss to $3,000 for a single filer", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 90000,
+        w2Income: 100000,
+        capitalGains: -10000,
+      });
+
+      expect(result.capitalLossDeduction).toBe(3000);
+      expect(result.adjustedGrossIncome).toBe(97000);
+      expect(result.shortTermCapitalLossCarryforward).toBe(0);
+      expect(result.longTermCapitalLossCarryforward).toBe(7000);
+    });
+
+    it("uses the $1,500 MFS capital-loss limit", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "married_filing_separately",
+        grossIncome: 90000,
+        w2Income: 100000,
+        capitalGains: -10000,
+      });
+
+      expect(result.capitalLossDeduction).toBe(1500);
+      expect(result.adjustedGrossIncome).toBe(98500);
+      expect(result.longTermCapitalLossCarryforward).toBe(8500);
+    });
+
+    it("nets prior short and long carryovers before applying the annual limit", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 90000,
+        w2Income: 100000,
+        capitalGains: -6000,
+        shortTermCapitalGains: -4000,
+        shortTermCapitalLossCarryover: 2000,
+        longTermCapitalLossCarryover: 3000,
+      });
+
+      expect(result.capitalLossDeduction).toBe(3000);
+      expect(result.shortTermCapitalLossCarryforward).toBe(3000);
+      expect(result.longTermCapitalLossCarryforward).toBe(9000);
+    });
+
+    it("nets a short-term loss against a long-term gain before preferential tax", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 106000,
+        w2Income: 100000,
+        capitalGains: 10000,
+        shortTermCapitalGains: -4000,
+      });
+
+      expect(result.capitalLossDeduction).toBe(0);
+      expect(result.capitalGainsTax).toBe(900);
+      expect(result.shortTermCapitalLossCarryforward).toBe(0);
+      expect(result.longTermCapitalLossCarryforward).toBe(0);
+    });
+    it("does not net capital losses against qualified dividends", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 110000,
+        w2Income: 100000,
+        capitalGains: -10000,
+        qualifiedDividends: 20000,
+      });
+
+      expect(result.capitalLossDeduction).toBe(3000);
+      expect(result.longTermCapitalLossCarryforward).toBe(7000);
+      expect(result.capitalGainsTax).toBe(3000);
+    });
+  });
+
   describe("estimated quarterly payment", () => {
     it("divides total tax by 4", () => {
       const result = calculateTax(base2024Single);

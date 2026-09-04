@@ -32,6 +32,8 @@ export function registerComprehensiveTools(server: McpServer): void {
       qualifiedDividends: z.number().min(0).optional().describe("Qualified dividends (subset of dividends, taxed at CG rates)"),
       longTermCapitalGains: z.number().optional().describe("Long-term capital gains/losses"),
       shortTermCapitalGains: z.number().optional().describe("Short-term capital gains/losses"),
+      shortTermCapitalLossCarryover: z.number().min(0).optional().describe("Prior-year short-term capital loss carryover"),
+      longTermCapitalLossCarryover: z.number().min(0).optional().describe("Prior-year long-term capital loss carryover"),
       otherIncome: z.number().optional().describe("Other income (rental, alimony, etc.)"),
       // Deductions
       aboveTheLineDeductions: z.number().min(0).optional().describe("HSA, student loan interest, educator expenses, etc."),
@@ -87,6 +89,11 @@ export function registerComprehensiveTools(server: McpServer): void {
         grossIncome,
         w2Income: w2,
         selfEmploymentIncome: se,
+        capitalGains: ltcg,
+        qualifiedDividends: qualDiv,
+        shortTermCapitalGains: stcg,
+        shortTermCapitalLossCarryover: params.shortTermCapitalLossCarryover,
+        longTermCapitalLossCarryover: params.longTermCapitalLossCarryover,
         aboveTheLineDeductions: params.aboveTheLineDeductions,
       });
 
@@ -115,10 +122,19 @@ export function registerComprehensiveTools(server: McpServer): void {
         grossIncome,
         w2Income: w2,
         selfEmploymentIncome: se,
-        capitalGains: Math.max(0, ltcg) + qualDiv > 0 ? Math.max(0, ltcg) + qualDiv : undefined,
+        capitalGains: ltcg,
+        qualifiedDividends: qualDiv,
         capitalGainsLongTerm: true,
-        shortTermCapitalGains: stcg > 0 ? stcg : undefined,
-        netInvestmentIncome: interest + dividends + Math.max(0, ltcg) + Math.max(0, stcg),
+        shortTermCapitalGains: stcg,
+        shortTermCapitalLossCarryover: params.shortTermCapitalLossCarryover,
+        longTermCapitalLossCarryover: params.longTermCapitalLossCarryover,
+        netInvestmentIncome: interest + dividends + Math.max(
+          0,
+          ltcg
+            + stcg
+            - (params.shortTermCapitalLossCarryover ?? 0)
+            - (params.longTermCapitalLossCarryover ?? 0),
+        ),
         aboveTheLineDeductions: params.aboveTheLineDeductions,
         itemizedDeductions: totalItemized > 0 ? totalItemized : undefined,
         dependents: params.dependents,
@@ -144,7 +160,13 @@ export function registerComprehensiveTools(server: McpServer): void {
         earnedIncome,
         agi: federalResult.adjustedGrossIncome,
         qualifyingChildren: params.dependents ?? 0,
-        investmentIncome: interest + dividends + Math.max(0, ltcg) + Math.max(0, stcg),
+        investmentIncome: interest + dividends + Math.max(
+          0,
+          ltcg
+            + stcg
+            - (params.shortTermCapitalLossCarryover ?? 0)
+            - (params.longTermCapitalLossCarryover ?? 0),
+        ),
       });
 
       // State tax
@@ -206,6 +228,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         charity > 0 ? `| ↳ Charitable | $${fmt(charity)} |` : "",
         medical > 0 ? `| ↳ Medical (above 7.5% AGI) | $${fmt(medical)} |` : "",
         federalResult.qbiDeduction > 0 ? `| QBI Deduction (§199A) | $${fmt(federalResult.qbiDeduction)} |` : "",
+        federalResult.capitalLossDeduction > 0 ? `| Capital Loss Deduction | $${fmt(federalResult.capitalLossDeduction)} |` : "",
         `| **Taxable Income** | **$${fmt(federalResult.taxableIncome)}** |`,
         "",
         `## 3. Federal Tax`,
@@ -213,6 +236,8 @@ export function registerComprehensiveTools(server: McpServer): void {
         `|-----------|--------|`,
         `| Income Tax | $${fmt(federalResult.ordinaryIncomeTax)} |`,
         federalResult.capitalGainsTax > 0 ? `| Capital Gains Tax | $${fmt(federalResult.capitalGainsTax)} |` : "",
+        federalResult.shortTermCapitalLossCarryforward > 0 ? `| Short-Term Capital Loss Carryforward | $${fmt(federalResult.shortTermCapitalLossCarryforward)} |` : "",
+        federalResult.longTermCapitalLossCarryforward > 0 ? `| Long-Term Capital Loss Carryforward | $${fmt(federalResult.longTermCapitalLossCarryforward)} |` : "",
         federalResult.selfEmploymentTax > 0 ? `| Self-Employment Tax | $${fmt(federalResult.selfEmploymentTax)} |` : "",
         federalResult.niit > 0 ? `| NIIT (3.8%) | $${fmt(federalResult.niit)} |` : "",
         federalResult.additionalMedicareTax > 0 ? `| Additional Medicare (0.9%) | $${fmt(federalResult.additionalMedicareTax)} |` : "",
@@ -304,6 +329,8 @@ export function registerComprehensiveTools(server: McpServer): void {
       taxYear: z.number().describe("Tax year"),
       filingStatus: FilingStatusEnum,
       w2Income: z.number().min(0).optional().describe("W-2 income (for context)"),
+      shortTermCapitalLossCarryover: z.number().min(0).optional(),
+      longTermCapitalLossCarryover: z.number().min(0).optional(),
       forms: z.array(z.object({
         type: z.enum(["1099-NEC", "1099-INT", "1099-DIV", "1099-B", "1099-MISC"]),
         payer: z.string().optional().describe("Payer name"),
@@ -312,7 +339,14 @@ export function registerComprehensiveTools(server: McpServer): void {
         longTerm: z.boolean().optional().describe("For 1099-B: long-term gains"),
       })).describe("Array of 1099 forms"),
     },
-    async ({ taxYear, filingStatus, w2Income, forms }) => {
+    async ({
+      taxYear,
+      filingStatus,
+      w2Income,
+      shortTermCapitalLossCarryover,
+      longTermCapitalLossCarryover,
+      forms,
+    }) => {
       const w2 = w2Income ?? 0;
       let necTotal = 0;
       let intTotal = 0;
@@ -341,6 +375,13 @@ export function registerComprehensiveTools(server: McpServer): void {
         }
       }
 
+      if (qualDivTotal > divTotal) {
+        return {
+          content: [{ type: "text", text: "Qualified dividends cannot exceed total 1099-DIV income." }],
+          isError: true,
+        };
+      }
+
       const grossIncome = w2 + necTotal + intTotal + divTotal + ltcgTotal + stcgTotal + miscTotal;
 
       const result = calculateTax({
@@ -349,10 +390,19 @@ export function registerComprehensiveTools(server: McpServer): void {
         grossIncome,
         w2Income: w2,
         selfEmploymentIncome: necTotal,
-        capitalGains: ltcgTotal > 0 ? ltcgTotal : undefined,
+        capitalGains: ltcgTotal,
+        qualifiedDividends: qualDivTotal,
         capitalGainsLongTerm: true,
-        shortTermCapitalGains: stcgTotal > 0 ? stcgTotal : undefined,
-        netInvestmentIncome: intTotal + divTotal + Math.max(0, ltcgTotal) + Math.max(0, stcgTotal),
+        shortTermCapitalGains: stcgTotal,
+        shortTermCapitalLossCarryover,
+        longTermCapitalLossCarryover,
+        netInvestmentIncome: intTotal + divTotal + Math.max(
+          0,
+          ltcgTotal
+            + stcgTotal
+            - (shortTermCapitalLossCarryover ?? 0)
+            - (longTermCapitalLossCarryover ?? 0),
+        ),
         qualifiedBusinessIncome: necTotal > 0 ? necTotal : undefined,
       });
 
@@ -384,6 +434,9 @@ export function registerComprehensiveTools(server: McpServer): void {
         `| Federal Tax | $${fmt(result.totalFederalTax)} |`,
         result.selfEmploymentTax > 0 ? `| ↳ Self-Employment Tax | $${fmt(result.selfEmploymentTax)} |` : "",
         result.capitalGainsTax > 0 ? `| ↳ Capital Gains Tax | $${fmt(result.capitalGainsTax)} |` : "",
+        result.capitalLossDeduction > 0 ? `| ↳ Capital Loss Deduction | -$${fmt(result.capitalLossDeduction)} |` : "",
+        result.shortTermCapitalLossCarryforward > 0 ? `| ↳ Short-Term Loss Carryforward | $${fmt(result.shortTermCapitalLossCarryforward)} |` : "",
+        result.longTermCapitalLossCarryforward > 0 ? `| ↳ Long-Term Loss Carryforward | $${fmt(result.longTermCapitalLossCarryforward)} |` : "",
         result.niit > 0 ? `| ↳ NIIT (3.8%) | $${fmt(result.niit)} |` : "",
         `| Effective Rate | ${(result.effectiveRate * 100).toFixed(2)}% |`,
         "",

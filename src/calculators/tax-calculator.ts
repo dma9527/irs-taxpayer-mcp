@@ -18,8 +18,11 @@ export interface TaxInput {
   w2Income?: number;
   selfEmploymentIncome?: number;
   capitalGains?: number;
+  qualifiedDividends?: number;
   capitalGainsLongTerm?: boolean;
   shortTermCapitalGains?: number;
+  shortTermCapitalLossCarryover?: number;
+  longTermCapitalLossCarryover?: number;
   netInvestmentIncome?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
@@ -51,6 +54,9 @@ export interface TaxBreakdown {
   bracketBreakdown: { rate: number; taxableAmount: number; tax: number }[];
   ordinaryIncomeTax: number;
   capitalGainsTax: number;
+  capitalLossDeduction: number;
+  shortTermCapitalLossCarryforward: number;
+  longTermCapitalLossCarryforward: number;
   selfEmploymentTax: number;
   niit: number;
   additionalMedicareTax: number;
@@ -117,6 +123,53 @@ function calculateCapitalGainsTax(
   }
 
   return tax;
+}
+
+interface CapitalNettingResult {
+  longTermGain: number;
+  shortTermGain: number;
+  capitalLossDeduction: number;
+  shortTermCapitalLossCarryforward: number;
+  longTermCapitalLossCarryforward: number;
+}
+
+function calculateCapitalNetting(
+  currentLongTermGainOrLoss: number,
+  currentShortTermGainOrLoss: number,
+  longTermLossCarryover: number,
+  shortTermLossCarryover: number,
+  filingStatus: FilingStatus,
+): CapitalNettingResult {
+  let netLongTerm = currentLongTermGainOrLoss - longTermLossCarryover;
+  let netShortTerm = currentShortTermGainOrLoss - shortTermLossCarryover;
+
+  if (netLongTerm > 0 && netShortTerm < 0) {
+    const offset = Math.min(netLongTerm, -netShortTerm);
+    netLongTerm -= offset;
+    netShortTerm += offset;
+  } else if (netShortTerm > 0 && netLongTerm < 0) {
+    const offset = Math.min(netShortTerm, -netLongTerm);
+    netShortTerm -= offset;
+    netLongTerm += offset;
+  }
+
+  const shortTermLoss = Math.max(0, -netShortTerm);
+  const longTermLoss = Math.max(0, -netLongTerm);
+  const annualLossLimit = filingStatus === "married_filing_separately" ? 1500 : 3000;
+  const capitalLossDeduction = Math.min(
+    annualLossLimit,
+    shortTermLoss + longTermLoss,
+  );
+  const shortTermLossUsed = Math.min(shortTermLoss, capitalLossDeduction);
+  const remainingDeduction = capitalLossDeduction - shortTermLossUsed;
+
+  return {
+    longTermGain: Math.max(0, netLongTerm),
+    shortTermGain: Math.max(0, netShortTerm),
+    capitalLossDeduction,
+    shortTermCapitalLossCarryforward: shortTermLoss - shortTermLossUsed,
+    longTermCapitalLossCarryforward: Math.max(0, longTermLoss - remainingDeduction),
+  };
 }
 
 function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData, w2Income: number = 0): number {
@@ -239,13 +292,44 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     throw new Error(`Tax year ${input.taxYear} is not supported. Supported years: 2024, 2025, 2026`);
   }
 
-  // Step 1: Calculate AGI
+  // Step 1: Net capital gains and losses, then calculate AGI.
+  const currentLongTermGainOrLoss = input.capitalGainsLongTerm !== false
+    ? (input.capitalGains ?? 0)
+    : 0;
+  const currentShortTermGainOrLoss = input.shortTermCapitalGains
+    ?? (input.capitalGainsLongTerm === false ? (input.capitalGains ?? 0) : 0);
+  const shortTermLossCarryover = input.shortTermCapitalLossCarryover ?? 0;
+  const longTermLossCarryover = input.longTermCapitalLossCarryover ?? 0;
+  if (shortTermLossCarryover < 0 || longTermLossCarryover < 0) {
+    throw new Error("Capital loss carryovers must be nonnegative loss amounts.");
+  }
+  const capitalNetting = calculateCapitalNetting(
+    currentLongTermGainOrLoss,
+    currentShortTermGainOrLoss,
+    longTermLossCarryover,
+    shortTermLossCarryover,
+    input.filingStatus,
+  );
+  const qualifiedDividends = input.qualifiedDividends ?? 0;
+  if (qualifiedDividends < 0) {
+    throw new Error("Qualified dividends must be nonnegative.");
+  }
+  const nonCapitalGrossIncome = input.grossIncome
+    - currentLongTermGainOrLoss
+    - currentShortTermGainOrLoss
+    - qualifiedDividends;
   const aboveTheLine = input.aboveTheLineDeductions ?? 0;
   const w2 = input.w2Income ?? 0;
   const seDeduction = input.selfEmploymentIncome
     ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2) * 0.5
     : 0;
-  const agi = input.grossIncome - aboveTheLine - seDeduction;
+  const agi = nonCapitalGrossIncome
+    + capitalNetting.longTermGain
+    + capitalNetting.shortTermGain
+    + qualifiedDividends
+    - capitalNetting.capitalLossDeduction
+    - aboveTheLine
+    - seDeduction;
 
   // Step 2: Determine deduction (standard vs itemized)
   let standardDeduction = taxData.standardDeduction[input.filingStatus];
@@ -261,14 +345,19 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const useItemized = input.forceItemizedDeductions === true || itemized > standardDeduction;
   const deductionAmount = useItemized ? itemized : standardDeduction;
 
-  // Step 3: Calculate taxable income
-  const longTermGains = (input.capitalGainsLongTerm !== false ? (input.capitalGains ?? 0) : 0);
-  const shortTermGains = input.shortTermCapitalGains ?? (input.capitalGainsLongTerm === false ? (input.capitalGains ?? 0) : 0);
-  const ordinaryIncome = input.grossIncome - longTermGains;
+  // Step 3: Calculate taxable income after Schedule D netting.
+  const longTermGains = capitalNetting.longTermGain;
+  const shortTermGains = capitalNetting.shortTermGain;
+  const ordinaryIncome = nonCapitalGrossIncome
+    + shortTermGains
+    - capitalNetting.capitalLossDeduction;
   const totalDeductions = aboveTheLine + seDeduction + deductionAmount;
   const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - totalDeductions);
   const unusedDeductions = Math.max(0, totalDeductions - Math.max(0, ordinaryIncome));
-  const taxableLongTermGains = Math.max(0, longTermGains - unusedDeductions);
+  const taxablePreferentialIncome = Math.max(
+    0,
+    longTermGains + qualifiedDividends - unusedDeductions,
+  );
 
   // Step 4: QBI deduction
   const qbi = input.qualifiedBusinessIncome ?? 0;
@@ -283,8 +372,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   );
 
   // Step 6: Capital gains tax (long-term only)
-  const cgTax = taxableLongTermGains > 0
-    ? calculateCapitalGainsTax(taxableLongTermGains, adjustedTaxableOrdinary, input.filingStatus, taxData)
+  const cgTax = taxablePreferentialIncome > 0
+    ? calculateCapitalGainsTax(taxablePreferentialIncome, adjustedTaxableOrdinary, input.filingStatus, taxData)
     : 0;
 
   // Step 7: Self-employment tax
@@ -294,7 +383,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Step 8: NIIT (3.8% on the lesser of NII or excess MAGI)
   const netInvestmentIncome = input.netInvestmentIncome
-    ?? Math.max(0, longTermGains + shortTermGains);
+    ?? Math.max(0, longTermGains + shortTermGains + qualifiedDividends);
   const niit = calculateNIIT(agi, netInvestmentIncome, input.filingStatus);
 
   // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
@@ -326,7 +415,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const isoSpread = input.isoExerciseSpread ?? 0;
   const saltDeducted = useItemized ? (input.stateTaxDeducted ?? 0) : 0;
   const regularIncomeTax = ordinaryTax + cgTax;
-  const taxableIncomeBeforeQBI = taxableOrdinaryIncome + taxableLongTermGains;
+  const taxableIncomeBeforeQBI = taxableOrdinaryIncome + taxablePreferentialIncome;
   const amt = calculateAMT(regularIncomeTax, taxableIncomeBeforeQBI, input.filingStatus, taxData, isoSpread, saltDeducted);
 
   // Nonrefundable CTC and ODC offset income tax and AMT, not SE tax or surtaxes.
@@ -397,7 +486,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     + niit
     + additionalMedicareTax
     - additionalChildTaxCredit;
-  const taxableIncome = adjustedTaxableOrdinary + taxableLongTermGains;
+  const taxableIncome = adjustedTaxableOrdinary + taxablePreferentialIncome;
 
   return {
     taxYear: input.taxYear,
@@ -410,6 +499,11 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     bracketBreakdown: breakdown,
     ordinaryIncomeTax: ordinaryTax,
     capitalGainsTax: cgTax,
+    capitalLossDeduction: capitalNetting.capitalLossDeduction,
+    shortTermCapitalLossCarryforward:
+      capitalNetting.shortTermCapitalLossCarryforward,
+    longTermCapitalLossCarryforward:
+      capitalNetting.longTermCapitalLossCarryforward,
     selfEmploymentTax: seTax,
     niit,
     additionalMedicareTax,

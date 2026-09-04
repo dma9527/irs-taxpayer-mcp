@@ -70,6 +70,19 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("$13,170");
     });
 
+    it("reports limited capital loss and carryforward", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 90000,
+        w2Income: 100000,
+        capitalGains: -10000,
+      });
+
+      expect(text).toContain("Capital Loss Deduction | -$3,000");
+      expect(text).toContain("Long-Term Capital Loss Carryforward | $7,000");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,
@@ -721,6 +734,18 @@ describe("MCP Tools Integration", () => {
       });
 
       expect(text).toContain("SALT (capped at $40,000) | $40,000");
+    });
+
+    it("uses AGI for the medical-expense deduction floor", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2025,
+        filingStatus: "single",
+        w2Income: 100000,
+        aboveTheLineDeductions: 20000,
+        medicalExpenses: 10000,
+      });
+
+      expect(text).toContain("Medical (above 7.5% AGI) | $4,000");
     });
   });
 

@@ -23,6 +23,12 @@ export interface TaxInput {
   shortTermCapitalGains?: number;
   shortTermCapitalLossCarryover?: number;
   longTermCapitalLossCarryover?: number;
+  socialSecurityBenefits?: number;
+  taxExemptInterest?: number;
+  marriedFilingSeparatelyLivedWithSpouse?: boolean;
+  retirementDistributions?: number;
+  taxableRetirementDistributions?: number;
+  earlyRetirementDistributionSubjectToPenalty?: number;
   netInvestmentIncome?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
@@ -60,6 +66,9 @@ export interface TaxBreakdown {
   capitalLossDeduction: number;
   shortTermCapitalLossCarryforward: number;
   longTermCapitalLossCarryforward: number;
+  taxableSocialSecurityBenefits: number;
+  taxableRetirementDistributions: number;
+  earlyRetirementDistributionAdditionalTax: number;
   selfEmploymentTax: number;
   niit: number;
   additionalMedicareTax: number;
@@ -232,6 +241,64 @@ function calculateAdditionalMedicareTax(
   const threshold = taxData.medicare.additionalTaxThreshold[filingStatus];
   if (earnedIncome <= threshold) return 0;
   return (earnedIncome - threshold) * taxData.medicare.additionalTaxRate;
+}
+
+function calculateTaxableSocialSecurityBenefits(
+  benefits: number,
+  otherAdjustedGrossIncome: number,
+  taxExemptInterest: number,
+  filingStatus: FilingStatus,
+  marriedFilingSeparatelyLivedWithSpouse: boolean | undefined,
+): number {
+  if (benefits <= 0) return 0;
+  if (benefits < 0 || taxExemptInterest < 0) {
+    throw new Error("Social Security benefits and tax-exempt interest must be nonnegative.");
+  }
+
+  let baseAmount: number;
+  let adjustedBaseAmount: number;
+  if (filingStatus === "married_filing_jointly") {
+    baseAmount = 32000;
+    adjustedBaseAmount = 44000;
+  } else if (filingStatus === "married_filing_separately") {
+    if (marriedFilingSeparatelyLivedWithSpouse === undefined) {
+      throw new Error(
+        "marriedFilingSeparatelyLivedWithSpouse is required when MFS Social Security benefits are provided.",
+      );
+    }
+    if (marriedFilingSeparatelyLivedWithSpouse) {
+      const worksheetIncome = Math.max(
+        0,
+        benefits * 0.50 + otherAdjustedGrossIncome + taxExemptInterest,
+      );
+      return Math.min(benefits * 0.85, worksheetIncome * 0.85);
+    }
+    baseAmount = 25000;
+    adjustedBaseAmount = 34000;
+  } else {
+    baseAmount = 25000;
+    adjustedBaseAmount = 34000;
+  }
+
+  const provisionalIncome = benefits * 0.50
+    + otherAdjustedGrossIncome
+    + taxExemptInterest;
+  if (provisionalIncome <= baseAmount) return 0;
+  if (provisionalIncome <= adjustedBaseAmount) {
+    return Math.min(
+      benefits * 0.50,
+      (provisionalIncome - baseAmount) * 0.50,
+    );
+  }
+
+  const firstTierTaxable = Math.min(
+    benefits * 0.50,
+    (adjustedBaseAmount - baseAmount) * 0.50,
+  );
+  return Math.min(
+    benefits * 0.85,
+    firstTierTaxable + (provisionalIncome - adjustedBaseAmount) * 0.85,
+  );
 }
 
 interface QBIResult {
@@ -417,25 +484,59 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     input.filingStatus,
   );
   const qualifiedDividends = input.qualifiedDividends ?? 0;
-  if (qualifiedDividends < 0) {
-    throw new Error("Qualified dividends must be nonnegative.");
+  const socialSecurityBenefits = input.socialSecurityBenefits ?? 0;
+  const taxExemptInterest = input.taxExemptInterest ?? 0;
+  const retirementDistributions = input.retirementDistributions ?? 0;
+  const taxableRetirementDistributions = input.taxableRetirementDistributions;
+  if (qualifiedDividends < 0 || socialSecurityBenefits < 0 || taxExemptInterest < 0) {
+    throw new Error("Qualified dividends, Social Security benefits, and tax-exempt interest must be nonnegative.");
   }
-  const nonCapitalGrossIncome = input.grossIncome
+  if ((input.retirementDistributions === undefined)
+    !== (taxableRetirementDistributions === undefined)) {
+    throw new Error(
+      "retirementDistributions and taxableRetirementDistributions must be provided together from Form 1099-R.",
+    );
+  }
+  if ((taxableRetirementDistributions ?? 0) < 0
+    || (taxableRetirementDistributions ?? 0) > retirementDistributions) {
+    throw new Error(
+      "taxableRetirementDistributions must be between 0 and retirementDistributions.",
+    );
+  }
+  if (socialSecurityBenefits > 0 && input.hasForm2555) {
+    throw new Error(
+      "Social Security benefit taxation with Form 2555 requires the Publication 915 special worksheet and is not supported.",
+    );
+  }
+
+  const ordinaryIncomeBeforeSocialSecurity = input.grossIncome
     - currentLongTermGainOrLoss
     - currentShortTermGainOrLoss
-    - qualifiedDividends;
+    - qualifiedDividends
+    - socialSecurityBenefits
+    - retirementDistributions
+    + (taxableRetirementDistributions ?? 0);
   const aboveTheLine = input.aboveTheLineDeductions ?? 0;
   const w2 = input.w2Income ?? 0;
   const seDeduction = input.selfEmploymentIncome
     ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2) * 0.5
     : 0;
-  const agi = nonCapitalGrossIncome
+  const adjustedGrossIncomeBeforeSocialSecurity = ordinaryIncomeBeforeSocialSecurity
     + capitalNetting.longTermGain
     + capitalNetting.shortTermGain
     + qualifiedDividends
     - capitalNetting.capitalLossDeduction
     - aboveTheLine
     - seDeduction;
+  const taxableSocialSecurityBenefits = calculateTaxableSocialSecurityBenefits(
+    socialSecurityBenefits,
+    adjustedGrossIncomeBeforeSocialSecurity,
+    taxExemptInterest,
+    input.filingStatus,
+    input.marriedFilingSeparatelyLivedWithSpouse,
+  );
+  const agi = adjustedGrossIncomeBeforeSocialSecurity
+    + taxableSocialSecurityBenefits;
 
   // Step 2: Determine deduction (standard vs itemized)
   let standardDeduction = taxData.standardDeduction[input.filingStatus];
@@ -454,7 +555,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   // Step 3: Calculate taxable income after Schedule D netting.
   const longTermGains = capitalNetting.longTermGain;
   const shortTermGains = capitalNetting.shortTermGain;
-  const ordinaryIncome = nonCapitalGrossIncome
+  const ordinaryIncome = ordinaryIncomeBeforeSocialSecurity
+    + taxableSocialSecurityBenefits
     + shortTermGains
     - capitalNetting.capitalLossDeduction;
   const totalDeductions = aboveTheLine + seDeduction + deductionAmount;
@@ -505,6 +607,17 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
   const medicareEarnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
   const additionalMedicareTax = calculateAdditionalMedicareTax(medicareEarnedIncome, input.filingStatus, taxData);
+  const earlyRetirementDistributionSubjectToPenalty =
+    input.earlyRetirementDistributionSubjectToPenalty ?? 0;
+  if (earlyRetirementDistributionSubjectToPenalty < 0
+    || earlyRetirementDistributionSubjectToPenalty
+      > (taxableRetirementDistributions ?? 0)) {
+    throw new Error(
+      "earlyRetirementDistributionSubjectToPenalty must be between 0 and taxableRetirementDistributions after exceptions.",
+    );
+  }
+  const earlyRetirementDistributionAdditionalTax =
+    earlyRetirementDistributionSubjectToPenalty * 0.10;
 
   // Step 10: CTC and ODC after the combined MAGI phase-out.
   // Legacy dependents remain nonrefundable-only unless qualifying children are explicit.
@@ -609,6 +722,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     + seTax
     + niit
     + additionalMedicareTax
+    + earlyRetirementDistributionAdditionalTax
     - additionalChildTaxCredit;
   const taxableIncome = adjustedTaxableOrdinary + taxablePreferentialIncome;
 
@@ -628,6 +742,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
       capitalNetting.shortTermCapitalLossCarryforward,
     longTermCapitalLossCarryforward:
       capitalNetting.longTermCapitalLossCarryforward,
+    taxableSocialSecurityBenefits,
+    taxableRetirementDistributions: taxableRetirementDistributions ?? 0,
+    earlyRetirementDistributionAdditionalTax,
     selfEmploymentTax: seTax,
     niit,
     additionalMedicareTax,

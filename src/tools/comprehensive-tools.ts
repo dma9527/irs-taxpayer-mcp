@@ -35,6 +35,12 @@ export function registerComprehensiveTools(server: McpServer): void {
       shortTermCapitalLossCarryover: z.number().min(0).optional().describe("Prior-year short-term capital loss carryover"),
       longTermCapitalLossCarryover: z.number().min(0).optional().describe("Prior-year long-term capital loss carryover"),
       otherIncome: z.number().optional().describe("Other income (rental, alimony, etc.)"),
+      socialSecurityBenefits: z.number().min(0).optional().describe("Net benefits from Form SSA-1099 or RRB-1099"),
+      taxExemptInterest: z.number().min(0).optional(),
+      marriedFilingSeparatelyLivedWithSpouse: z.boolean().optional(),
+      retirementDistributions: z.number().min(0).optional().describe("Gross Form 1099-R distributions"),
+      taxableRetirementDistributions: z.number().min(0).optional(),
+      earlyRetirementDistributionSubjectToPenalty: z.number().min(0).optional(),
       // Deductions
       aboveTheLineDeductions: z.number().min(0).optional().describe("HSA, student loan interest, educator expenses, etc."),
       mortgageInterest: z.number().min(0).optional().describe("Mortgage interest"),
@@ -73,7 +79,17 @@ export function registerComprehensiveTools(server: McpServer): void {
       const ltcg = params.longTermCapitalGains ?? 0;
       const stcg = params.shortTermCapitalGains ?? 0;
       const other = params.otherIncome ?? 0;
-      const grossIncome = w2 + se + interest + dividends + ltcg + stcg + other;
+      const socialSecurity = params.socialSecurityBenefits ?? 0;
+      const retirementDistributions = params.retirementDistributions ?? 0;
+      const grossIncome = w2
+        + se
+        + interest
+        + dividends
+        + ltcg
+        + stcg
+        + other
+        + socialSecurity
+        + retirementDistributions;
 
       if (qualDiv > dividends) {
         return {
@@ -97,6 +113,14 @@ export function registerComprehensiveTools(server: McpServer): void {
         shortTermCapitalGains: stcg,
         shortTermCapitalLossCarryover: params.shortTermCapitalLossCarryover,
         longTermCapitalLossCarryover: params.longTermCapitalLossCarryover,
+        socialSecurityBenefits: params.socialSecurityBenefits,
+        taxExemptInterest: params.taxExemptInterest,
+        marriedFilingSeparatelyLivedWithSpouse:
+          params.marriedFilingSeparatelyLivedWithSpouse,
+        retirementDistributions: params.retirementDistributions,
+        taxableRetirementDistributions: params.taxableRetirementDistributions,
+        earlyRetirementDistributionSubjectToPenalty:
+          params.earlyRetirementDistributionSubjectToPenalty,
         aboveTheLineDeductions: params.aboveTheLineDeductions,
       });
 
@@ -131,6 +155,14 @@ export function registerComprehensiveTools(server: McpServer): void {
         shortTermCapitalGains: stcg,
         shortTermCapitalLossCarryover: params.shortTermCapitalLossCarryover,
         longTermCapitalLossCarryover: params.longTermCapitalLossCarryover,
+        socialSecurityBenefits: params.socialSecurityBenefits,
+        taxExemptInterest: params.taxExemptInterest,
+        marriedFilingSeparatelyLivedWithSpouse:
+          params.marriedFilingSeparatelyLivedWithSpouse,
+        retirementDistributions: params.retirementDistributions,
+        taxableRetirementDistributions: params.taxableRetirementDistributions,
+        earlyRetirementDistributionSubjectToPenalty:
+          params.earlyRetirementDistributionSubjectToPenalty,
         netInvestmentIncome: interest + dividends + Math.max(
           0,
           ltcg
@@ -221,8 +253,12 @@ export function registerComprehensiveTools(server: McpServer): void {
         ltcg !== 0 ? `| Long-Term Capital Gains | $${fmt(ltcg)} |` : "",
         stcg !== 0 ? `| Short-Term Capital Gains | $${fmt(stcg)} |` : "",
         other !== 0 ? `| Other Income | $${fmt(other)} |` : "",
+        socialSecurity > 0 ? `| Social Security Benefits | $${fmt(socialSecurity)} |` : "",
+        retirementDistributions > 0 ? `| Retirement Distributions | $${fmt(retirementDistributions)} |` : "",
         `| **Gross Income** | **$${fmt(grossIncome)}** |`,
         `| Adjusted Gross Income | $${fmt(federalResult.adjustedGrossIncome)} |`,
+        socialSecurity > 0 ? `| Taxable Social Security Benefits | $${fmt(federalResult.taxableSocialSecurityBenefits)} |` : "",
+        retirementDistributions > 0 ? `| Taxable Retirement Distributions | $${fmt(federalResult.taxableRetirementDistributions)} |` : "",
         "",
         `## 2. Deductions`,
         `| Item | Amount |`,
@@ -248,6 +284,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         federalResult.selfEmploymentTax > 0 ? `| Self-Employment Tax | $${fmt(federalResult.selfEmploymentTax)} |` : "",
         federalResult.niit > 0 ? `| NIIT (3.8%) | $${fmt(federalResult.niit)} |` : "",
         federalResult.additionalMedicareTax > 0 ? `| Additional Medicare (0.9%) | $${fmt(federalResult.additionalMedicareTax)} |` : "",
+        federalResult.earlyRetirementDistributionAdditionalTax > 0 ? `| Early Retirement Distribution Additional Tax | $${fmt(federalResult.earlyRetirementDistributionAdditionalTax)} |` : "",
         federalResult.amt > 0 ? `| AMT | $${fmt(federalResult.amt)} |` : "",
         federalResult.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(federalResult.childTaxCredit)} |` : "",
         federalResult.creditForOtherDependents > 0 ? `| Credit for Other Dependents | -$${fmt(federalResult.creditForOtherDependents)} |` : "",
@@ -342,9 +379,11 @@ export function registerComprehensiveTools(server: McpServer): void {
       qualifiedBusinessW2Wages: z.number().min(0).optional(),
       qualifiedBusinessPropertyBasis: z.number().min(0).optional(),
       forms: z.array(z.object({
-        type: z.enum(["1099-NEC", "1099-INT", "1099-DIV", "1099-B", "1099-MISC"]),
+        type: z.enum(["1099-NEC", "1099-INT", "1099-DIV", "1099-B", "1099-MISC", "1099-R"]),
         payer: z.string().optional().describe("Payer name"),
         amount: z.number().describe("Total amount"),
+        taxableAmount: z.number().min(0).optional().describe("For 1099-R: taxable amount in box 2a"),
+        earlyDistributionSubjectToPenalty: z.number().min(0).optional().describe("For 1099-R: taxable early-distribution amount after exceptions"),
         qualifiedDividends: z.number().optional().describe("For 1099-DIV: qualified dividends"),
         longTerm: z.boolean().optional().describe("For 1099-B: long-term gains"),
       })).describe("Array of 1099 forms"),
@@ -368,6 +407,9 @@ export function registerComprehensiveTools(server: McpServer): void {
       let ltcgTotal = 0;
       let stcgTotal = 0;
       let miscTotal = 0;
+      let retirementDistributionTotal = 0;
+      let taxableRetirementDistributionTotal = 0;
+      let earlyDistributionPenaltyBase = 0;
 
       const formLines: string[] = [];
       for (const f of forms) {
@@ -385,6 +427,17 @@ export function registerComprehensiveTools(server: McpServer): void {
             else stcgTotal += f.amount;
             break;
           case "1099-MISC": miscTotal += f.amount; break;
+          case "1099-R":
+            if (f.taxableAmount === undefined || f.taxableAmount > f.amount) {
+              return {
+                content: [{ type: "text", text: "Each 1099-R requires taxableAmount between 0 and amount." }],
+                isError: true,
+              };
+            }
+            retirementDistributionTotal += f.amount;
+            taxableRetirementDistributionTotal += f.taxableAmount;
+            earlyDistributionPenaltyBase += f.earlyDistributionSubjectToPenalty ?? 0;
+            break;
         }
       }
 
@@ -395,7 +448,14 @@ export function registerComprehensiveTools(server: McpServer): void {
         };
       }
 
-      const grossIncome = w2 + necTotal + intTotal + divTotal + ltcgTotal + stcgTotal + miscTotal;
+      const grossIncome = w2
+        + necTotal
+        + intTotal
+        + divTotal
+        + ltcgTotal
+        + stcgTotal
+        + miscTotal
+        + retirementDistributionTotal;
 
       const result = calculateTax({
         taxYear,
@@ -409,6 +469,9 @@ export function registerComprehensiveTools(server: McpServer): void {
         shortTermCapitalGains: stcgTotal,
         shortTermCapitalLossCarryover,
         longTermCapitalLossCarryover,
+        retirementDistributions: retirementDistributionTotal,
+        taxableRetirementDistributions: taxableRetirementDistributionTotal,
+        earlyRetirementDistributionSubjectToPenalty: earlyDistributionPenaltyBase,
         netInvestmentIncome: intTotal + divTotal + Math.max(
           0,
           ltcgTotal
@@ -442,6 +505,8 @@ export function registerComprehensiveTools(server: McpServer): void {
         stcgTotal > 0 ? `| 1099-B (Short-Term Gains) | $${fmt(stcgTotal)} | Ordinary income rates |` : "",
         ltcgTotal < 0 ? `| 1099-B (Capital Losses) | $${fmt(ltcgTotal)} | Offset gains, then $3K/yr ordinary |` : "",
         miscTotal > 0 ? `| 1099-MISC | $${fmt(miscTotal)} | Ordinary income |` : "",
+        retirementDistributionTotal > 0 ? `| 1099-R Gross Distributions | $${fmt(retirementDistributionTotal)} | See taxable amount below |` : "",
+        retirementDistributionTotal > 0 ? `| 1099-R Taxable Distributions | $${fmt(taxableRetirementDistributionTotal)} | Ordinary income |` : "",
         `| **Total Income** | **$${fmt(grossIncome)}** | |`,
         "",
         `### Tax Impact`,
@@ -454,6 +519,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         result.shortTermCapitalLossCarryforward > 0 ? `| ↳ Short-Term Loss Carryforward | $${fmt(result.shortTermCapitalLossCarryforward)} |` : "",
         result.longTermCapitalLossCarryforward > 0 ? `| ↳ Long-Term Loss Carryforward | $${fmt(result.longTermCapitalLossCarryforward)} |` : "",
         result.niit > 0 ? `| ↳ NIIT (3.8%) | $${fmt(result.niit)} |` : "",
+        result.earlyRetirementDistributionAdditionalTax > 0 ? `| ↳ Early Distribution Additional Tax | $${fmt(result.earlyRetirementDistributionAdditionalTax)} |` : "",
         `| Effective Rate | ${(result.effectiveRate * 100).toFixed(2)}% |`,
         "",
       ];

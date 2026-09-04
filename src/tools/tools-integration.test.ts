@@ -122,6 +122,32 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Alternative Minimum Tax (AMT) | $8,363");
     });
 
+    it("calculates taxable Social Security benefits", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 34970,
+        socialSecurityBenefits: 5980,
+      });
+
+      expect(text).toContain("Taxable Social Security Benefits | $2,990");
+    });
+
+    it("calculates taxable retirement distributions and early tax", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 80000,
+        w2Income: 50000,
+        retirementDistributions: 30000,
+        taxableRetirementDistributions: 20000,
+        earlyRetirementDistributionSubjectToPenalty: 10000,
+      });
+
+      expect(text).toContain("Taxable Retirement Distributions | $20,000");
+      expect(text).toContain("Early Retirement Distribution Additional Tax | $1,000");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,
@@ -491,6 +517,24 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("1099 Income Summary");
       expect(text).toContain("Client A");
       expect(text).toContain("Self-Employment");
+    });
+
+    it("processes Form 1099-R taxable and early-distribution amounts", async () => {
+      const { text } = await callTool(server, "process_1099_income", {
+        taxYear: 2025,
+        filingStatus: "single",
+        w2Income: 50000,
+        forms: [{
+          type: "1099-R",
+          payer: "Test Retirement Plan",
+          amount: 30000,
+          taxableAmount: 20000,
+          earlyDistributionSubjectToPenalty: 10000,
+        }],
+      });
+
+      expect(text).toContain("1099-R Taxable Distributions | $20,000");
+      expect(text).toContain("Early Distribution Additional Tax | $1,000");
     });
   });
 

@@ -578,6 +578,97 @@ describe("calculateTax", () => {
     });
   });
 
+  describe("Social Security and retirement income", () => {
+    it("matches Publication 915 single-filer taxable-benefit example", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 34970,
+        socialSecurityBenefits: 5980,
+      });
+
+      expect(result.taxableSocialSecurityBenefits).toBe(2990);
+      expect(result.adjustedGrossIncome).toBe(31980);
+    });
+
+    it("matches Publication 915 MFJ taxable-benefit example", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "married_filing_jointly",
+        grossIncome: 50500,
+        socialSecurityBenefits: 10000,
+      });
+
+      expect(result.taxableSocialSecurityBenefits).toBe(6275);
+      expect(result.adjustedGrossIncome).toBe(46775);
+    });
+
+    it("uses the MFS lived-with-spouse worksheet rule", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "married_filing_separately",
+        grossIncome: 12000,
+        socialSecurityBenefits: 4000,
+        marriedFilingSeparatelyLivedWithSpouse: true,
+      });
+
+      expect(result.taxableSocialSecurityBenefits).toBe(3400);
+    });
+
+    it("requires the MFS living-arrangement fact", () => {
+      expect(() => calculateTax({
+        taxYear: 2025,
+        filingStatus: "married_filing_separately",
+        grossIncome: 12000,
+        socialSecurityBenefits: 4000,
+      })).toThrow("marriedFilingSeparatelyLivedWithSpouse");
+    });
+
+    it("replaces gross retirement distributions with the taxable amount", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 80000,
+        w2Income: 50000,
+        retirementDistributions: 30000,
+        taxableRetirementDistributions: 20000,
+      });
+
+      expect(result.taxableRetirementDistributions).toBe(20000);
+      expect(result.adjustedGrossIncome).toBe(70000);
+    });
+
+    it("requires the taxable 1099-R amount", () => {
+      expect(() => calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 80000,
+        retirementDistributions: 30000,
+      })).toThrow("taxableRetirementDistributions");
+    });
+
+    it("adds 10 percent tax for the supplied early-distribution amount", () => {
+      const withoutPenalty = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 80000,
+        retirementDistributions: 30000,
+        taxableRetirementDistributions: 20000,
+      });
+      const withPenalty = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 80000,
+        retirementDistributions: 30000,
+        taxableRetirementDistributions: 20000,
+        earlyRetirementDistributionSubjectToPenalty: 10000,
+      });
+
+      expect(withPenalty.earlyRetirementDistributionAdditionalTax).toBe(1000);
+      expect(withPenalty.totalFederalTax - withoutPenalty.totalFederalTax).toBe(1000);
+    });
+  });
+
   describe("estimated quarterly payment", () => {
     it("divides total tax by 4", () => {
       const result = calculateTax(base2024Single);

@@ -258,6 +258,8 @@ See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federa
 | Federal income tax (7 brackets × 4 statuses) | ✅     |
 | Long-term capital gains (0%/15%/20%)         | ✅     |
 | Capital-loss netting, annual limit, carryovers | Planning-grade |
+| Social Security benefit taxation              | Publication 915 planning model |
+| Retirement distributions and early tax        | Planning-grade from supplied 1099-R facts |
 | Self-employment tax (SS + Medicare)          | ✅     |
 | Net Investment Income Tax (3.8% NIIT)        | ✅     |
 | Additional Medicare Tax (0.9%)               | ✅     |

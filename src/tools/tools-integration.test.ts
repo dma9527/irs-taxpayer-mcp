@@ -307,7 +307,7 @@ describe("MCP Tools Integration", () => {
   describe("compare_state_taxes", () => {
     it("compares multiple states", async () => {
       const { text } = await callTool(server, "compare_state_taxes", {
-        states: ["CA", "TX", "NY"], taxYear: 2024, taxableIncome: 150000,
+        states: ["CA", "TX", "FL"], taxYear: 2024, taxableIncome: 150000,
       });
       expect(text).toContain("State Tax Comparison");
       expect(text).toContain("California");
@@ -583,12 +583,26 @@ describe("MCP Tools Integration", () => {
     it("analyzes relocation from CA to TX", async () => {
       const { text } = await callTool(server, "analyze_relocation_taxes", {
         taxYear: 2024, filingStatus: "single", grossIncome: 200000,
-        fromState: "CA", toState: "TX", yearsToProject: 1,
+        fromState: "CA", toState: "TX",
       });
       expect(text).toContain("Relocation Tax Analysis");
       expect(text).toContain("California");
       expect(text).toContain("Texas");
       expect(text).toContain("saves");
+    });
+
+    it("fails closed when relocation projection reaches an unversioned year", async () => {
+      const { text, isError } = await callTool(server, "analyze_relocation_taxes", {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 200000,
+        fromState: "CA",
+        toState: "TX",
+        yearsToProject: 2,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("California TY2025 calculation data are not available");
     });
   });
 
@@ -695,6 +709,18 @@ describe("MCP Tools Integration", () => {
       });
 
       expect(text).toContain("| NIIT (3.8%) | $1,900 |");
+    });
+
+    it("uses MAGI rather than gross income for the SALT phase-down", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2025,
+        filingStatus: "single",
+        w2Income: 510000,
+        aboveTheLineDeductions: 20000,
+        stateLocalTaxesPaid: 40000,
+      });
+
+      expect(text).toContain("SALT (capped at $40,000) | $40,000");
     });
   });
 
@@ -817,7 +843,7 @@ describe("MCP Tools Integration", () => {
         filingStatus: "married",
       });
 
-      expect(text).toContain("| **Estimated State Tax** | **$2,581** |");
+      expect(text).toContain("| **Estimated State Tax** | **$2,490** |");
     });
 
     it("keeps taxableIncome as a deprecated compatibility alias", async () => {
@@ -829,7 +855,7 @@ describe("MCP Tools Integration", () => {
       });
 
       expect(text).toContain("taxableIncome is deprecated");
-      expect(text).toContain("| **Estimated State Tax** | **$5,438** |");
+      expect(text).toContain("| **Estimated State Tax** | **$5,327** |");
     });
 
     it("rejects conflicting state income fields", async () => {
@@ -897,11 +923,11 @@ describe("MCP Tools Integration", () => {
         fromState: "TX",
         toState: "NY",
       }],
-    ] as const)("returns an MCP error from %s when married state brackets are unavailable", async (toolName, args) => {
+    ] as const)("returns an MCP error from %s when the state-year profile is unavailable", async (toolName, args) => {
       const { text, isError } = await callTool(server, toolName, args);
 
       expect(isError).toBe(true);
-      expect(text).toContain("New York married filing-status brackets are not available");
+      expect(text).toContain("New York TY2024 calculation data are not available");
     });
   });
 });

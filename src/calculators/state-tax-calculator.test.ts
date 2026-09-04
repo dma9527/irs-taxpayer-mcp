@@ -27,8 +27,8 @@ describe("calculateStateTax accuracy safeguards", () => {
       filingStatus: "married",
     });
 
-    expect(single?.tax).toBe(5438);
-    expect(married?.tax).toBe(2581);
+    expect(single?.tax).toBe(5327);
+    expect(married?.tax).toBe(2490);
   });
 
   it("keeps the legacy taxableIncome alias equivalent", () => {
@@ -57,7 +57,7 @@ describe("calculateStateTax accuracy safeguards", () => {
     });
 
     expect(result?.adjustedIncome).toBe(1188920);
-    expect(result?.tax).toBe(114181);
+    expect(result?.tax).toBe(113453);
   });
 
   it("fails closed when the state has no profile for the requested year", () => {
@@ -71,7 +71,7 @@ describe("calculateStateTax accuracy safeguards", () => {
     ).toThrow("California TY2025 calculation data are not available");
   });
 
-  it("fails closed for married filers when only single brackets are available", () => {
+  it("fails closed when an unverified state profile is unavailable", () => {
     expect(() =>
       calculateStateTax({
         stateCode: "NY",
@@ -79,6 +79,6 @@ describe("calculateStateTax accuracy safeguards", () => {
         taxableIncome: 100000,
         filingStatus: "married",
       }),
-    ).toThrow("New York married filing-status brackets are not available");
+    ).toThrow("New York TY2024 calculation data are not available");
   });
 });

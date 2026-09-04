@@ -55,13 +55,24 @@ describe("state tax data integrity", () => {
     expect(getStateInfo("XX")).toBeUndefined();
   });
 
-  it("versions numeric calculation profiles by tax year", () => {
+  it("versions audited numeric calculation profiles by tax year", () => {
     expect(getStateCalculationInfo("CA", 2024)?.taxYear).toBe(2024);
     expect(getStateCalculationInfo("CA", 2025)).toBeUndefined();
-    expect(getStateCalculationInfo("IN", 2025)?.taxYear).toBe(2025);
-    expect(getStateCalculationInfo("IN", 2024)).toBeUndefined();
-    expect(getStateCalculationInfo("IA", 2025)?.taxYear).toBe(2025);
-    expect(getStateCalculationInfo("MS", 2026)?.taxYear).toBe(2026);
+    expect(getStateCalculationInfo("IN", 2025)).toBeUndefined();
+    expect(getStateCalculationInfo("IA", 2025)).toBeUndefined();
+    expect(getStateCalculationInfo("MS", 2026)).toBeUndefined();
+    expect(getStateCalculationInfo("MN", 2024)).toBeUndefined();
+  });
+
+  it("uses official California TY2024 FTB thresholds", () => {
+    const california = getStateCalculationInfo("CA", 2024);
+
+    expect(california?.brackets?.map(({ max }) => max)).toEqual([
+      10756, 25499, 40245, 55866, 70606, 360659, 432787, 721314, 1000000, null,
+    ]);
+    expect(california?.marriedBrackets?.map(({ max }) => max)).toEqual([
+      21512, 50998, 80490, 111732, 141212, 721318, 865574, 1000000, 1442628, null,
+    ]);
   });
 
   it("supports no-broad-income-tax profiles for applicable years", () => {

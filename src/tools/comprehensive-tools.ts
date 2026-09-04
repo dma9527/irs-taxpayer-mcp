@@ -81,13 +81,30 @@ export function registerComprehensiveTools(server: McpServer): void {
         return ERRORS.zeroIncome();
       }
 
+      const preliminaryFederalResult = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: params.filingStatus,
+        grossIncome,
+        w2Income: w2,
+        selfEmploymentIncome: se,
+        aboveTheLineDeductions: params.aboveTheLineDeductions,
+      });
+
       // Itemized deductions
       const mortgage = params.mortgageInterest ?? 0;
       const saltPaid = params.stateLocalTaxesPaid ?? 0;
-      const saltCap = getSaltCap(params.taxYear, params.filingStatus, grossIncome);
+      const saltCap = getSaltCap(
+        params.taxYear,
+        params.filingStatus,
+        preliminaryFederalResult.adjustedGrossIncome,
+      );
       const saltDeductible = Math.min(saltPaid, saltCap);
       const charity = params.charitableDonations ?? 0;
-      const medical = Math.max(0, (params.medicalExpenses ?? 0) - grossIncome * 0.075);
+      const medical = Math.max(
+        0,
+        (params.medicalExpenses ?? 0)
+          - preliminaryFederalResult.adjustedGrossIncome * 0.075,
+      );
       const otherItemized = params.otherItemized ?? 0;
       const totalItemized = mortgage + saltDeductible + charity + medical + otherItemized;
 

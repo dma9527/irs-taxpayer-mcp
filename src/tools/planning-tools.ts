@@ -330,7 +330,7 @@ export function registerPlanningTools(server: McpServer): void {
     {
       taxYear: z.number().describe("Tax year"),
       filingStatus: FilingStatusEnum,
-      grossIncome: z.number().min(0),
+      grossIncome: z.number().min(0).describe("Gross income, also used as MAGI because this tool does not collect MAGI adjustments"),
       mortgageInterest: z.number().min(0).describe("Annual mortgage interest paid"),
       propertyTaxes: z.number().min(0).describe("Annual property taxes paid"),
       stateIncomeTaxes: z.number().min(0).optional().describe("State/local income taxes paid"),

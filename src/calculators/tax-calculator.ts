@@ -342,7 +342,13 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   // Refundable ACTC uses the Schedule 8812 earned-income method. For 3+ children,
   // the payroll-tax method is used only when the required values are supplied.
   const limitations: string[] = [];
-  const unusedChildCredit = Math.max(0, childCreditAfterPhaseout - childCredit);
+  const unusedCombinedDependentCredit = Math.max(
+    0,
+    childCreditAfterPhaseout
+      + otherDependentCreditAfterPhaseout
+      - childCredit
+      - creditForOtherDependents,
+  );
   const actcEarnedIncome = input.earnedIncome
     ?? ((input.w2Income ?? 0) + Math.max(0, (input.selfEmploymentIncome ?? 0) - seDeduction));
   const earnedIncomeMethod = Math.max(
@@ -352,7 +358,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   let actcMethodAmount = earnedIncomeMethod;
   let actcCalculationMethod: TaxBreakdown["actcCalculationMethod"] = "none";
 
-  if (explicitActcChildren > 0 && unusedChildCredit > 0 && !input.hasForm2555) {
+  if (explicitActcChildren > 0 && unusedCombinedDependentCredit > 0 && !input.hasForm2555) {
     actcCalculationMethod = "earned_income";
     if (explicitActcChildren >= 3) {
       if (input.socialSecurityTaxesPaid !== undefined) {
@@ -381,11 +387,11 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   const additionalChildTaxCredit = input.hasForm2555
     ? 0
-    : Math.min(
-        unusedChildCredit,
+    : Math.round(Math.min(
+        unusedCombinedDependentCredit,
         explicitActcChildren * taxData.childTaxCredit.refundableAmount,
         actcMethodAmount,
-      );
+      ));
   const totalTax = incomeTaxAfterCredits
     + seTax
     + niit

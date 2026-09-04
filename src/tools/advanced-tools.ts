@@ -608,8 +608,8 @@ export function registerAdvancedTools(server: McpServer): void {
   // --- Tool 11: Relocation Deep Analysis ---
   server.tool(
     "analyze_relocation_taxes",
-    "In-depth relocation tax analysis comparing two states. Includes state income tax, " +
-    "effective combined rate, local taxes, and multi-year savings projection.",
+    "In-depth relocation tax analysis using exact-year state profiles. " +
+    "Additional projection years require explicit annual federal and state data.",
     {
       taxYear: z.number().describe("Tax year"),
       filingStatus: FilingStatusEnum,
@@ -619,11 +619,11 @@ export function registerAdvancedTools(server: McpServer): void {
       selfEmploymentIncome: z.number().min(0).optional(),
       capitalGains: z.number().optional(),
       dependents: z.number().int().min(0).optional(),
-      yearsToProject: z.number().int().min(1).max(10).optional().describe("Years to project savings (default: 5)"),
+      yearsToProject: z.number().int().min(1).max(10).optional().describe("Years to project with explicit annual profiles (default: 1)"),
       incomeGrowthRate: z.number().min(0).max(0.5).optional().describe("Annual income growth rate (e.g., 0.03 for 3%)"),
     },
     wrapToolHandler(async (params) => {
-      const projYears = params.yearsToProject ?? 5;
+      const projYears = params.yearsToProject ?? 1;
       const growth = params.incomeGrowthRate ?? 0;
 
       // Federal tax (same regardless of state)
@@ -722,7 +722,11 @@ export function registerAdvancedTools(server: McpServer): void {
       );
 
       // SALT deduction impact
-      const saltCap = getSaltCap(params.taxYear, params.filingStatus, params.grossIncome);
+      const saltCap = getSaltCap(
+        params.taxYear,
+        params.filingStatus,
+        federal.adjustedGrossIncome,
+      );
       if (fromResult.tax > saltCap) {
         lines.push(
           "",

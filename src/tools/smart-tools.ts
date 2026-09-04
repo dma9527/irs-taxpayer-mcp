@@ -8,7 +8,6 @@ import { fmt, FilingStatusEnum } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ERRORS } from "./error-handler.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
-import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 
@@ -52,9 +51,20 @@ export function registerSmartTools(server: McpServer): void {
       const findings: Array<{ emoji: string; title: string; detail: string; savings?: number }> = [];
 
       // Run core calculation
+      const preliminaryResult = calculateTax({
+        taxYear: params.taxYear,
+        filingStatus: params.filingStatus,
+        grossIncome: params.grossIncome,
+        w2Income: params.w2Income,
+        selfEmploymentIncome: params.selfEmploymentIncome,
+      });
       const mortgage = params.mortgageInterest ?? 0;
       const saltPaid = params.stateLocalTaxes ?? 0;
-      const saltCap = getSaltCap(params.taxYear, params.filingStatus, params.grossIncome);
+      const saltCap = getSaltCap(
+        params.taxYear,
+        params.filingStatus,
+        preliminaryResult.adjustedGrossIncome,
+      );
       const charity = params.charitableDonations ?? 0;
       const totalItemized = mortgage + Math.min(saltPaid, saltCap) + charity;
 

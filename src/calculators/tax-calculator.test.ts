@@ -367,6 +367,22 @@ describe("calculateTax", () => {
       expect(result.totalFederalTax).toBe(0);
     });
 
+    it("uses combined unused CTC and ODC liability for the ACTC cap", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 34867,
+        w2Income: 34867,
+        qualifyingChildrenForCtc: 1,
+        otherDependentsForOdc: 1,
+        earnedIncome: 34867,
+      });
+
+      expect(result.childTaxCredit).toBe(2000);
+      expect(result.creditForOtherDependents).toBeCloseTo(200, 0);
+      expect(result.additionalChildTaxCredit).toBe(300);
+    });
+
     it("uses the three-child payroll-tax method when it is larger", () => {
       const result = calculateTax({
         taxYear: 2024,

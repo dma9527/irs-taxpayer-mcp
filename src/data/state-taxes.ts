@@ -81,7 +81,7 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
       { name: "Other MI cities (24 total)", rate: 0.01, nonResidentRate: 0.005, notes: "Standard rate for most MI cities" },
     ]
   },
-  MS: { code: "MS", name: "Mississippi", taxType: "flat", topRate: 0.047, saltDeductionOnFederal: true, notes: "Flat tax as of 2026, currently graduated" },
+  MS: { code: "MS", name: "Mississippi", taxType: "flat", topRate: 0.04, saltDeductionOnFederal: true, notes: "TY2026 rate is 4% on taxable income above $10,000; numeric profile is unavailable until exemptions and deductions are modeled." },
   NC: { code: "NC", name: "North Carolina", taxType: "flat", topRate: 0.045, saltDeductionOnFederal: true, standardDeduction: { single: 12750, married: 25500 } },
   ND: { code: "ND", name: "North Dakota", taxType: "flat", topRate: 0.0195, saltDeductionOnFederal: true },
   PA: {
@@ -101,16 +101,16 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
   AR: { code: "AR", name: "Arkansas", taxType: "graduated", topRate: 0.039, saltDeductionOnFederal: true },
   CA: {
     code: "CA", name: "California", taxType: "graduated", topRate: 0.133, saltDeductionOnFederal: true, brackets: [
-      { min: 0, max: 10412, rate: 0.01 }, { min: 10412, max: 24684, rate: 0.02 }, { min: 24684, max: 38959, rate: 0.04 },
-      { min: 38959, max: 54081, rate: 0.06 }, { min: 54081, max: 68350, rate: 0.08 }, { min: 68350, max: 349137, rate: 0.093 },
-      { min: 349137, max: 418961, rate: 0.103 }, { min: 418961, max: 698271, rate: 0.113 }, { min: 698271, max: 1000000, rate: 0.123 },
+      { min: 0, max: 10756, rate: 0.01 }, { min: 10756, max: 25499, rate: 0.02 }, { min: 25499, max: 40245, rate: 0.04 },
+      { min: 40245, max: 55866, rate: 0.06 }, { min: 55866, max: 70606, rate: 0.08 }, { min: 70606, max: 360659, rate: 0.093 },
+      { min: 360659, max: 432787, rate: 0.103 }, { min: 432787, max: 721314, rate: 0.113 }, { min: 721314, max: 1000000, rate: 0.123 },
       { min: 1000000, max: null, rate: 0.133 },
     ], marriedBrackets: [
-      { min: 0, max: 20824, rate: 0.01 }, { min: 20824, max: 49368, rate: 0.02 }, { min: 49368, max: 77918, rate: 0.04 },
-      { min: 77918, max: 108162, rate: 0.06 }, { min: 108162, max: 136700, rate: 0.08 }, { min: 136700, max: 698274, rate: 0.093 },
-      { min: 698274, max: 837922, rate: 0.103 }, { min: 837922, max: 1000000, rate: 0.113 }, { min: 1000000, max: 1396542, rate: 0.123 },
-      { min: 1396542, max: null, rate: 0.133 },
-    ], standardDeduction: { single: 5540, married: 11080 }, notes: "Highest state income tax rate in the US. Additional 1% mental health surcharge on income over $1M"
+      { min: 0, max: 21512, rate: 0.01 }, { min: 21512, max: 50998, rate: 0.02 }, { min: 50998, max: 80490, rate: 0.04 },
+      { min: 80490, max: 111732, rate: 0.06 }, { min: 111732, max: 141212, rate: 0.08 }, { min: 141212, max: 721318, rate: 0.093 },
+      { min: 721318, max: 865574, rate: 0.103 }, { min: 865574, max: 1000000, rate: 0.113 }, { min: 1000000, max: 1442628, rate: 0.123 },
+      { min: 1442628, max: null, rate: 0.133 },
+    ], standardDeduction: { single: 5540, married: 11080 }, notes: "TY2024 FTB rate schedules. The 1% mental-health tax starts at $1M for every filing status."
   },
   CT: {
     code: "CT", name: "Connecticut", taxType: "graduated", topRate: 0.0699, saltDeductionOnFederal: true, brackets: [
@@ -204,9 +204,6 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
 };
 
 const NO_BROAD_INCOME_TAX_CODES = ["AK", "FL", "NV", "SD", "TN", "TX", "WY"] as const;
-const TY2024_GRADUATED_PROFILE_CODES = [
-  "AL", "CA", "CT", "DE", "HI", "MN", "MO", "NJ", "NY", "OR",
-] as const;
 
 function createCalculationProfile(
   stateCode: string,
@@ -233,30 +230,12 @@ function createNoTaxProfiles(taxYear: number): Partial<Record<string, StateCalcu
   );
 }
 
-function createProfiles(
-  stateCodes: readonly string[],
-  taxYear: number,
-  source: string,
-): Partial<Record<string, StateCalculationInfo>> {
-  return Object.fromEntries(
-    stateCodes.map((stateCode) => [
-      stateCode,
-      createCalculationProfile(stateCode, taxYear, source),
-    ]),
-  );
-}
-
 export const STATE_TAX_CALCULATION_DATA: Record<
   number,
   Partial<Record<string, StateCalculationInfo>>
 > = {
   2024: {
     ...createNoTaxProfiles(2024),
-    ...createProfiles(
-      TY2024_GRADUATED_PROFILE_CODES,
-      2024,
-      "TY2024 state revenue authority rate schedules",
-    ),
     CA: createCalculationProfile(
       "CA",
       2024,
@@ -270,16 +249,6 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       2025,
       "New Hampshire Department of Revenue Administration, interest and dividends tax repeal effective TY2025",
     ),
-    IN: createCalculationProfile(
-      "IN",
-      2025,
-      "Indiana Department of Revenue TY2025 individual income tax rate",
-    ),
-    IA: createCalculationProfile(
-      "IA",
-      2025,
-      "Iowa Department of Revenue TY2025 flat individual income tax rate",
-    ),
   },
   2026: {
     ...createNoTaxProfiles(2026),
@@ -287,11 +256,6 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       "NH",
       2026,
       "New Hampshire Department of Revenue Administration, no broad individual income tax",
-    ),
-    MS: createCalculationProfile(
-      "MS",
-      2026,
-      "Mississippi Department of Revenue TY2026 flat individual income tax rate",
     ),
   },
 };

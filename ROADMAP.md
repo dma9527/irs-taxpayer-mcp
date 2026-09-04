@@ -23,7 +23,7 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Expanded the suite to 232 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
+- Expanded the suite to 236 tests, including IRS numeric regressions and real Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -38,11 +38,8 @@ Version 0.6.0 is a deterministic TY2024 through TY2026 estimation and planning e
 ### State estimates
 
 - Reference metadata for all 50 states and DC.
-- Exact-year numeric profiles for selected TY2024, TY2025, and TY2026 state paths.
-- TY2024 graduated single profiles for AL, CA, CT, DE, HI, MN, MO, NJ, NY, and OR.
-- California TY2024 married brackets.
-- TY2025 flat profiles for IA and IN, and a TY2026 flat profile for MS.
-- No-broad-income-tax profiles by applicable tax year.
+- Exact-year no-broad-income-tax profiles for applicable TY2024 through TY2026 paths.
+- Audited California TY2024 single and married brackets from official FTB schedules.
 - Unsupported state-year and filing-status combinations return an error.
 
 ### Explicit boundary

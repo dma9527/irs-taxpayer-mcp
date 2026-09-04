@@ -238,7 +238,8 @@ export function registerPlanningTools(server: McpServer): void {
   server.tool(
     "estimate_self_employment_tax",
     "Detailed self-employment tax breakdown including Schedule C profit, SE tax, " +
-    "QBI deduction, and recommended quarterly payments.",
+    "QBI deduction, and recommended quarterly payments. Above the annual QBI threshold, " +
+    "provide SSTB classification, W-2 wages, and qualified-property basis, using 0 where none apply.",
     {
       taxYear: z.number().describe("Tax year"),
       filingStatus: FilingStatusEnum,

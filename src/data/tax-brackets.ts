@@ -424,6 +424,7 @@ export const TAX_DATA: Record<number, TaxYearData> = {
     qbiLimit: {
       single: { threshold: 201750, phaseoutEnd: 276750 },
       married_filing_jointly: { threshold: 403500, phaseoutEnd: 553500 },
+      // Rev. Proc. 2025-32 lists MFS separately at $201,775 and $276,775.
       married_filing_separately: { threshold: 201775, phaseoutEnd: 276775 },
       head_of_household: { threshold: 201750, phaseoutEnd: 276750 },
     },

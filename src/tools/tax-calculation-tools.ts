@@ -22,7 +22,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     {
       taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
-      grossIncome: z.number().min(0).describe("Total gross income in USD"),
+      grossIncome: z.number().min(0).describe("Total gross income including supplied capital gains, qualified dividends, Social Security benefits, and gross retirement distributions"),
       w2Income: z.number().min(0).optional().describe("W-2 wage income"),
       selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment income (Schedule C)"),
       capitalGains: z.number().optional().describe("Long-term capital gains (can be negative for losses)"),
@@ -286,7 +286,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
     {
       taxYear: z.number().describe("Tax year (2024, 2025, or 2026)"),
       filingStatus: FilingStatusEnum.describe("Filing status"),
-      grossIncome: z.number().min(0).describe("Total gross income in USD"),
+      grossIncome: z.number().min(0).describe("Total gross income including supplied capital gains, qualified dividends, Social Security benefits, and gross retirement distributions"),
       stateCode: z.string().length(2).describe("Two-letter state code (e.g., 'CA', 'TX', 'NY')"),
       w2Income: z.number().min(0).optional().describe("W-2 wage income"),
       selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment income"),

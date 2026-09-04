@@ -356,6 +356,21 @@ describe("calculateTax", () => {
       expect(result.qbiCalculationMethod).toBe("phase_in");
     });
 
+    it("applies the overall taxable-income limit after wage phase-in", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 220000,
+        capitalGains: 100000,
+        qualifiedBusinessIncome: 120000,
+        qualifiedBusinessIsSstb: false,
+        qualifiedBusinessW2Wages: 0,
+        qualifiedBusinessPropertyBasis: 0,
+      });
+
+      expect(result.qbiDeduction).toBeCloseTo(17544, 0);
+    });
+
     it("phases out an SSTB within the annual range", () => {
       const result = calculateTax({
         taxYear: 2024,

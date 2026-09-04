@@ -14,6 +14,7 @@ All notable changes to irs-taxpayer-mcp.
 - Applied AMT preferential rates to qualified dividends and net capital gains while preserving the QBI deduction in AMTI.
 - Added Publication 915 taxable Social Security benefit calculations, MFS living-arrangement handling, taxable 1099-R distributions, and user-supplied early-distribution penalty bases.
 - Added Form 8863 AOTC and Lifetime Learning Credit calculations, MAGI phase-outs, refundable AOTC eligibility, MFS rejection, and credit ordering before CTC/ACTC limits.
+- Corrected Section 199A ordering so the overall taxable-income limit applies after wage, property, and SSTB phase-in reductions.
 - Added an explicit full net-investment-income input so NIIT includes taxable interest, dividends, gains, rents, royalties, and passive income without double-counting gains.
 - Added Schedule 8812 planning support for qualifying-child CTC, nonrefundable ODC, refundable ACTC, the three-child payroll-tax method, and Form 2555 exclusion with explicit limitations.
 - Corrected the ACTC cap to use combined unused CTC and ODC liability, while keeping ODC nonrefundable.
@@ -27,7 +28,7 @@ All notable changes to irs-taxpayer-mcp.
 ### Tests
 
 - Added federal, Schedule A, full-report, TY2026 annual-data, EITC, and MCP regressions for the planning-grade corrections.
-- Expanded the suite to 271 tests across 9 test files.
+- Expanded the suite to 272 tests across 9 test files.
 
 ## [0.6.0] - 2026-09-04
 

@@ -463,7 +463,7 @@ function calculateQBIDeduction(
   const applicableQbi = qbi * applicablePercentage;
   const applicableWages = w2Wages * applicablePercentage;
   const applicablePropertyBasis = qualifiedPropertyBasis * applicablePercentage;
-  const tentativeDeduction = Math.min(applicableQbi * rate, taxableIncomeLimit);
+  const tentativeDeduction = applicableQbi * rate;
   const wagePropertyLimit = Math.max(
     applicableWages * 0.50,
     applicableWages * 0.25 + applicablePropertyBasis * 0.025,
@@ -474,7 +474,10 @@ function calculateQBIDeduction(
   ) * phaseInPercentage;
 
   return {
-    deduction: Math.max(0, tentativeDeduction - wagePropertyReduction),
+    deduction: Math.min(
+      taxableIncomeLimit,
+      Math.max(0, tentativeDeduction - wagePropertyReduction),
+    ),
     wagePropertyLimit,
     phaseInPercentage,
     method: isSstb
@@ -524,6 +527,7 @@ function calculateAMT(
   const ordinaryTentativeTax = amtOrdinaryIncome <= threshold
     ? amtOrdinaryIncome * 0.26
     : threshold * 0.26 + (amtOrdinaryIncome - threshold) * 0.28;
+  // The AMT capital-gain worksheet stacks eligible preferential income above ordinary AMT taxable income.
   const preferentialTentativeTax = calculateCapitalGainsTax(
     amtPreferentialIncome,
     amtOrdinaryIncome,

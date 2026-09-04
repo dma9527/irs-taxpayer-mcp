@@ -110,6 +110,18 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("qualifiedBusinessIsSstb");
     });
 
+    it("applies preferential capital-gain rates under AMT", async () => {
+      const { text } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 1000000,
+        w2Income: 100000,
+        capitalGains: 900000,
+      });
+
+      expect(text).toContain("Alternative Minimum Tax (AMT) | $8,363");
+    });
+
     it("returns error for unsupported year", async () => {
       const { text, isError } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2020, filingStatus: "single", grossIncome: 50000,

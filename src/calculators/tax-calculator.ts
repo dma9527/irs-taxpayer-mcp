@@ -341,6 +341,7 @@ function calculateQBIDeduction(
 function calculateAMT(
   regularTax: number,
   taxableIncome: number,
+  preferentialIncome: number,
   filingStatus: FilingStatus,
   taxData: TaxYearData,
   isoSpread: number,
@@ -359,14 +360,24 @@ function calculateAMT(
 
   const amtBase = Math.max(0, amtIncome - exemption);
 
-  // 26% on first portion, 28% on remainder
+  const amtPreferentialIncome = Math.min(
+    Math.max(0, preferentialIncome),
+    amtBase,
+  );
+  const amtOrdinaryIncome = amtBase - amtPreferentialIncome;
+
+  // Apply 26% and 28% AMT rates only to ordinary AMTI.
   const threshold = taxData.amt.rate28Threshold[filingStatus];
-  let tentativeAMT: number;
-  if (amtBase <= threshold) {
-    tentativeAMT = amtBase * 0.26;
-  } else {
-    tentativeAMT = threshold * 0.26 + (amtBase - threshold) * 0.28;
-  }
+  const ordinaryTentativeTax = amtOrdinaryIncome <= threshold
+    ? amtOrdinaryIncome * 0.26
+    : threshold * 0.26 + (amtOrdinaryIncome - threshold) * 0.28;
+  const preferentialTentativeTax = calculateCapitalGainsTax(
+    amtPreferentialIncome,
+    amtOrdinaryIncome,
+    filingStatus,
+    taxData,
+  );
+  const tentativeAMT = ordinaryTentativeTax + preferentialTentativeTax;
 
   // AMT is the excess over regular tax
   return Math.max(0, tentativeAMT - regularTax);
@@ -520,8 +531,16 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const isoSpread = input.isoExerciseSpread ?? 0;
   const saltDeducted = useItemized ? (input.stateTaxDeducted ?? 0) : 0;
   const regularIncomeTax = ordinaryTax + cgTax;
-  const taxableIncomeBeforeQBI = taxableOrdinaryIncome + taxablePreferentialIncome;
-  const amt = calculateAMT(regularIncomeTax, taxableIncomeBeforeQBI, input.filingStatus, taxData, isoSpread, saltDeducted);
+  const taxableIncomeForAMT = adjustedTaxableOrdinary + taxablePreferentialIncome;
+  const amt = calculateAMT(
+    regularIncomeTax,
+    taxableIncomeForAMT,
+    taxablePreferentialIncome,
+    input.filingStatus,
+    taxData,
+    isoSpread,
+    saltDeducted,
+  );
 
   // Nonrefundable CTC and ODC offset income tax and AMT, not SE tax or surtaxes.
   const incomeTaxBeforeCredits = regularIncomeTax + amt;

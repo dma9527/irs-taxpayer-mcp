@@ -261,7 +261,7 @@ See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federa
 | Self-employment tax (SS + Medicare)          | ✅     |
 | Net Investment Income Tax (3.8% NIIT)        | ✅     |
 | Additional Medicare Tax (0.9%)               | ✅     |
-| Alternative Minimum Tax (AMT)                | Modeled with stated limitations |
+| Alternative Minimum Tax (AMT)                | Modeled with preferential rates and stated preference-item limits |
 | QBI Deduction (Section 199A)                 | Planning-grade with wage, UBIA, and SSTB limits |
 | Child Tax Credit with phase-out              | ✅     |
 | EITC TY2024/TY2025/TY2026 calculation               | ✅     |

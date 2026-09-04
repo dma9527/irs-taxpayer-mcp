@@ -611,6 +611,19 @@ describe("calculateTax", () => {
       expect(result.amt).toBe(0);
     });
 
+    it("uses preferential rates for capital gains under AMT", () => {
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 1000000,
+        w2Income: 100000,
+        capitalGains: 900000,
+      });
+
+      expect(result.capitalGainsTax).toBe(158325);
+      expect(result.amt).toBeCloseTo(8363, 0);
+    });
+
     it("AMT considers SALT add-back for itemizers", () => {
       const result = calculateTax({
         taxYear: 2024,

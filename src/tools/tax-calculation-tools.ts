@@ -110,7 +110,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `**Estimated Quarterly Payment**: $${fmt(result.estimatedQuarterlyPayment)}`,
           "",
           result.qbiDeduction > 0 ? `> ℹ️ QBI method: ${result.qbiCalculationMethod}; wage/property limit: $${fmt(result.qbiWagePropertyLimit)}; phase-in: ${(result.qbiPhaseInPercentage * 100).toFixed(1)}%.` : "",
-          result.amt > 0 ? `> ℹ️ AMT uses simplified calculation (ISO spread + SALT add-back). Does not apply preferential capital gains rates under AMT.` : "",
+          result.amt > 0 ? `> ℹ️ AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains. Other Form 6251 preference items remain outside the modeled inputs.` : "",
           ...result.limitations.map((limitation) => `> ⚠️ ${limitation}`),
           "",
           `> ⚠️ This is an estimate for educational purposes only. It does not constitute tax advice. Consult a qualified tax professional for your specific situation.`,

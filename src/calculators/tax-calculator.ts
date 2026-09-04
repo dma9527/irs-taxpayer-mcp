@@ -22,6 +22,7 @@ export interface TaxInput {
   shortTermCapitalGains?: number;
   aboveTheLineDeductions?: number;
   itemizedDeductions?: number;
+  forceItemizedDeductions?: boolean;
   dependents?: number;
   age65OrOlder?: boolean;
   blind?: boolean;
@@ -246,19 +247,21 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   if (input.spouseBlind) standardDeduction += additionalAmount;
 
   const itemized = input.itemizedDeductions ?? 0;
-  const useItemized = itemized > standardDeduction;
+  const useItemized = input.forceItemizedDeductions === true || itemized > standardDeduction;
   const deductionAmount = useItemized ? itemized : standardDeduction;
 
   // Step 3: Calculate taxable income
   const longTermGains = (input.capitalGainsLongTerm !== false ? (input.capitalGains ?? 0) : 0);
   const shortTermGains = input.shortTermCapitalGains ?? (input.capitalGainsLongTerm === false ? (input.capitalGains ?? 0) : 0);
   const ordinaryIncome = input.grossIncome - longTermGains;
-  const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - aboveTheLine - seDeduction - deductionAmount);
+  const totalDeductions = aboveTheLine + seDeduction + deductionAmount;
+  const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - totalDeductions);
+  const unusedDeductions = Math.max(0, totalDeductions - Math.max(0, ordinaryIncome));
+  const taxableLongTermGains = Math.max(0, longTermGains - unusedDeductions);
 
   // Step 4: QBI deduction
   const qbi = input.qualifiedBusinessIncome ?? 0;
-  const taxableBeforeQBI = taxableOrdinaryIncome + longTermGains;
-  const qbiDeduction = calculateQBIDeduction(qbi, taxableBeforeQBI, taxData);
+  const qbiDeduction = calculateQBIDeduction(qbi, taxableOrdinaryIncome, taxData);
 
   const adjustedTaxableOrdinary = Math.max(0, taxableOrdinaryIncome - qbiDeduction);
 
@@ -269,8 +272,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   );
 
   // Step 6: Capital gains tax (long-term only)
-  const cgTax = longTermGains > 0
-    ? calculateCapitalGainsTax(longTermGains, adjustedTaxableOrdinary, input.filingStatus, taxData)
+  const cgTax = taxableLongTermGains > 0
+    ? calculateCapitalGainsTax(taxableLongTermGains, adjustedTaxableOrdinary, input.filingStatus, taxData)
     : 0;
 
   // Step 7: Self-employment tax
@@ -286,25 +289,28 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   const earnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
   const additionalMedicareTax = calculateAdditionalMedicareTax(earnedIncome, input.filingStatus, taxData);
 
-  // Step 10: Child Tax Credit
+  // Step 10: Potential Child Tax Credit after AGI phase-out
   const dependents = input.dependents ?? 0;
-  let childCredit = dependents * taxData.childTaxCredit.amount;
+  let potentialChildCredit = dependents * taxData.childTaxCredit.amount;
   const phaseoutStart = taxData.childTaxCredit.phaseoutStart[input.filingStatus];
   if (agi > phaseoutStart) {
     const excess = Math.ceil((agi - phaseoutStart) / 1000) * taxData.childTaxCredit.phaseoutRate;
-    childCredit = Math.max(0, childCredit - excess);
+    potentialChildCredit = Math.max(0, potentialChildCredit - excess);
   }
-
-  const totalTaxBeforeAMT = Math.max(0, ordinaryTax + cgTax + seTax + niit + additionalMedicareTax - childCredit);
 
   // Step 11: AMT
   const isoSpread = input.isoExerciseSpread ?? 0;
   const saltDeducted = useItemized ? (input.stateTaxDeducted ?? 0) : 0;
   const regularIncomeTax = ordinaryTax + cgTax;
-  const amt = calculateAMT(regularIncomeTax, taxableOrdinaryIncome + longTermGains, input.filingStatus, taxData, isoSpread, saltDeducted);
+  const taxableIncomeBeforeQBI = taxableOrdinaryIncome + taxableLongTermGains;
+  const amt = calculateAMT(regularIncomeTax, taxableIncomeBeforeQBI, input.filingStatus, taxData, isoSpread, saltDeducted);
 
-  const totalTax = totalTaxBeforeAMT + amt;
-  const taxableIncome = adjustedTaxableOrdinary + longTermGains;
+  // Nonrefundable CTC offsets income tax and AMT, not SE tax or surtaxes.
+  const incomeTaxBeforeCredits = regularIncomeTax + amt;
+  const childCredit = Math.min(potentialChildCredit, incomeTaxBeforeCredits);
+  const incomeTaxAfterCredits = incomeTaxBeforeCredits - childCredit;
+  const totalTax = incomeTaxAfterCredits + seTax + niit + additionalMedicareTax;
+  const taxableIncome = adjustedTaxableOrdinary + taxableLongTermGains;
 
   return {
     taxYear: input.taxYear,

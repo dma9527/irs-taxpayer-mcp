@@ -9,7 +9,7 @@ import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { getTaxYearData, getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
-import { ERRORS } from "./error-handler.js";
+import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 
 
@@ -487,7 +487,7 @@ export function registerAdvancedTools(server: McpServer): void {
         stateCode: z.string().length(2).optional(),
       })).min(1).max(5).describe("Year-by-year projections"),
     },
-    async (params) => {
+    wrapToolHandler(async (params) => {
       const results = params.years.map((yr) => {
         const retirement = (yr.planned401k ?? 0) + (yr.plannedIRA ?? 0);
         const totalIncome = yr.expectedIncome + (yr.plannedRothConversion ?? 0);
@@ -601,7 +601,7 @@ export function registerAdvancedTools(server: McpServer): void {
       lines.push(`> ⚠️ Uses TY2024/2025 tax law for all years. Future tax law changes may affect projections.`);
 
       return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+    })
   );
 
   // --- Tool 11: Relocation Deep Analysis ---
@@ -621,7 +621,7 @@ export function registerAdvancedTools(server: McpServer): void {
       yearsToProject: z.number().int().min(1).max(10).optional().describe("Years to project savings (default: 5)"),
       incomeGrowthRate: z.number().min(0).max(0.5).optional().describe("Annual income growth rate (e.g., 0.03 for 3%)"),
     },
-    async (params) => {
+    wrapToolHandler(async (params) => {
       const projYears = params.yearsToProject ?? 5;
       const growth = params.incomeGrowthRate ?? 0;
 
@@ -737,6 +737,6 @@ export function registerAdvancedTools(server: McpServer): void {
       );
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
-    }
+    })
   );
 }

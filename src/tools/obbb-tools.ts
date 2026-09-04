@@ -49,20 +49,36 @@ export function registerObbbTools(server: McpServer): void {
       const rate = params.marginalRate ?? 0.22;
       const deductions: Array<{ name: string; amount: number; max: number; eligible: boolean; reason?: string }> = [];
 
+      const isMFS = params.filingStatus === "married_filing_separately";
+
       // Senior bonus
       const age = params.age ?? 0;
       const spouseAge = params.spouseAge ?? 0;
       const seniorCount = (age >= 65 ? 1 : 0) + (isMFJ && spouseAge >= 65 ? 1 : 0);
       if (seniorCount > 0) {
         const maxSenior = seniorCount * obbb.seniorBonus.amount;
-        const phaseout = isMFJ ? obbb.seniorBonus.phaseoutMFJ : obbb.seniorBonus.phaseoutSingle;
-        let seniorAmount = maxSenior;
-        if (params.agi > phaseout) {
-          // Phases out $100 per $1,000 over threshold
-          const reduction = Math.floor((params.agi - phaseout) / 1000) * 100 * seniorCount;
-          seniorAmount = Math.max(0, maxSenior - reduction);
+        if (isMFS) {
+          deductions.push({
+            name: "Senior Bonus Deduction (65+)",
+            amount: 0,
+            max: maxSenior,
+            eligible: false,
+            reason: "Married taxpayers must file jointly",
+          });
+        } else {
+          const phaseout = isMFJ ? obbb.seniorBonus.phaseoutMFJ : obbb.seniorBonus.phaseoutSingle;
+          const reduction = Math.round(
+            Math.max(0, params.agi - phaseout) * 0.06 * seniorCount,
+          );
+          const seniorAmount = Math.max(0, maxSenior - reduction);
+          deductions.push({
+            name: "Senior Bonus Deduction (65+)",
+            amount: seniorAmount,
+            max: maxSenior,
+            eligible: seniorAmount > 0,
+            reason: seniorAmount === 0 ? "Fully phased out by MAGI" : undefined,
+          });
         }
-        deductions.push({ name: "Senior Bonus Deduction (65+)", amount: seniorAmount, max: maxSenior, eligible: true });
       } else if (age > 0) {
         deductions.push({ name: "Senior Bonus Deduction (65+)", amount: 0, max: obbb.seniorBonus.amount, eligible: false, reason: "Must be age 65 or older" });
       }
@@ -71,24 +87,52 @@ export function registerObbbTools(server: McpServer): void {
       const tips = params.tipIncome ?? 0;
       if (tips > 0) {
         const tipsLimit = isMFJ ? obbb.tipsDeduction.agiLimitMFJ : obbb.tipsDeduction.agiLimitSingle;
-        if (params.agi <= tipsLimit) {
-          const tipsDeduction = Math.min(tips, obbb.tipsDeduction.max);
-          deductions.push({ name: "Tips Income Deduction", amount: tipsDeduction, max: obbb.tipsDeduction.max, eligible: true });
+        const tipsBase = Math.min(tips, obbb.tipsDeduction.max);
+        if (isMFS) {
+          deductions.push({
+            name: "Tips Income Deduction",
+            amount: 0,
+            max: obbb.tipsDeduction.max,
+            eligible: false,
+            reason: "Married taxpayers must file jointly",
+          });
         } else {
-          deductions.push({ name: "Tips Income Deduction", amount: 0, max: obbb.tipsDeduction.max, eligible: false, reason: `AGI exceeds $${fmt(tipsLimit)} limit` });
+          const reduction = Math.round(Math.max(0, params.agi - tipsLimit) * 0.1);
+          const tipsDeduction = Math.max(0, tipsBase - reduction);
+          deductions.push({
+            name: "Tips Income Deduction",
+            amount: tipsDeduction,
+            max: obbb.tipsDeduction.max,
+            eligible: tipsDeduction > 0,
+            reason: tipsDeduction === 0 ? "Fully phased out by MAGI" : undefined,
+          });
         }
       }
 
       // Overtime deduction
       const overtime = params.overtimePay ?? 0;
       if (overtime > 0) {
-        const otLimit = isMFJ ? obbb.overtimeDeduction.agiLimitMFJ : obbb.overtimeDeduction.agiLimitSingle;
-        if (params.agi <= otLimit) {
-          const otMax = isMFJ ? obbb.overtimeDeduction.maxMFJ : obbb.overtimeDeduction.maxSingle;
-          const otDeduction = Math.min(overtime, otMax);
-          deductions.push({ name: "Overtime Pay Deduction", amount: otDeduction, max: otMax, eligible: true });
+        const overtimeLimit = isMFJ ? obbb.overtimeDeduction.agiLimitMFJ : obbb.overtimeDeduction.agiLimitSingle;
+        const overtimeMax = isMFJ ? obbb.overtimeDeduction.maxMFJ : obbb.overtimeDeduction.maxSingle;
+        const overtimeBase = Math.min(overtime, overtimeMax);
+        if (isMFS) {
+          deductions.push({
+            name: "Overtime Pay Deduction",
+            amount: 0,
+            max: overtimeMax,
+            eligible: false,
+            reason: "Married taxpayers must file jointly",
+          });
         } else {
-          deductions.push({ name: "Overtime Pay Deduction", amount: 0, max: isMFJ ? obbb.overtimeDeduction.maxMFJ : obbb.overtimeDeduction.maxSingle, eligible: false, reason: `AGI exceeds $${fmt(otLimit)} limit` });
+          const reduction = Math.round(Math.max(0, params.agi - overtimeLimit) * 0.1);
+          const overtimeDeduction = Math.max(0, overtimeBase - reduction);
+          deductions.push({
+            name: "Overtime Pay Deduction",
+            amount: overtimeDeduction,
+            max: overtimeMax,
+            eligible: overtimeDeduction > 0,
+            reason: overtimeDeduction === 0 ? "Fully phased out by MAGI" : undefined,
+          });
         }
       }
 
@@ -96,12 +140,18 @@ export function registerObbbTools(server: McpServer): void {
       const autoInterest = params.autoLoanInterest ?? 0;
       if (autoInterest > 0) {
         const autoLimit = isMFJ ? obbb.autoLoanInterest.agiLimitMFJ : obbb.autoLoanInterest.agiLimitSingle;
-        if (params.agi <= autoLimit) {
-          const autoDeduction = Math.min(autoInterest, obbb.autoLoanInterest.max);
-          deductions.push({ name: "Auto Loan Interest Deduction", amount: autoDeduction, max: obbb.autoLoanInterest.max, eligible: true });
-        } else {
-          deductions.push({ name: "Auto Loan Interest Deduction", amount: 0, max: obbb.autoLoanInterest.max, eligible: false, reason: `AGI exceeds $${fmt(autoLimit)} limit` });
-        }
+        const autoBase = Math.min(autoInterest, obbb.autoLoanInterest.max);
+        const reduction = params.agi > autoLimit
+          ? Math.ceil((params.agi - autoLimit) / 1000) * 200
+          : 0;
+        const autoDeduction = Math.max(0, autoBase - reduction);
+        deductions.push({
+          name: "Auto Loan Interest Deduction",
+          amount: autoDeduction,
+          max: obbb.autoLoanInterest.max,
+          eligible: autoDeduction > 0,
+          reason: autoDeduction === 0 ? "Fully phased out by MAGI" : undefined,
+        });
       }
 
       const totalDeduction = deductions.reduce((sum, d) => sum + d.amount, 0);

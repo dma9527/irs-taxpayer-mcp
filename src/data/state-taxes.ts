@@ -30,6 +30,7 @@ export interface StateInfo {
   taxType: StateTaxType;
   topRate: number;
   brackets?: StateBracket[];
+  marriedBrackets?: StateBracket[];
   standardDeduction?: { single: number; married: number };
   personalExemption?: { single: number; married: number };
   notes?: string;
@@ -98,6 +99,11 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
       { min: 38959, max: 54081, rate: 0.06 }, { min: 54081, max: 68350, rate: 0.08 }, { min: 68350, max: 349137, rate: 0.093 },
       { min: 349137, max: 418961, rate: 0.103 }, { min: 418961, max: 698271, rate: 0.113 }, { min: 698271, max: 1000000, rate: 0.123 },
       { min: 1000000, max: null, rate: 0.133 },
+    ], marriedBrackets: [
+      { min: 0, max: 20824, rate: 0.01 }, { min: 20824, max: 49368, rate: 0.02 }, { min: 49368, max: 77918, rate: 0.04 },
+      { min: 77918, max: 108162, rate: 0.06 }, { min: 108162, max: 136700, rate: 0.08 }, { min: 136700, max: 698274, rate: 0.093 },
+      { min: 698274, max: 837922, rate: 0.103 }, { min: 837922, max: 1000000, rate: 0.113 }, { min: 1000000, max: 1396542, rate: 0.123 },
+      { min: 1396542, max: null, rate: 0.133 },
     ], standardDeduction: { single: 5540, married: 11080 }, notes: "Highest state income tax rate in the US. Additional 1% mental health surcharge on income over $1M"
   },
   CT: {

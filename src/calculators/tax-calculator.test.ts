@@ -404,3 +404,46 @@ describe("IRS Tax Table verification", () => {
     expect(r.ordinaryIncomeTax).toBeCloseTo(13449, 0);
   });
 });
+
+
+describe("P0 federal accuracy regressions", () => {
+  it("applies unused standard deduction to long-term capital gains", () => {
+    const result = calculateTax({
+      taxYear: 2024,
+      filingStatus: "single",
+      grossIncome: 100000,
+      capitalGains: 100000,
+      capitalGainsLongTerm: true,
+    });
+
+    expect(result.taxableIncome).toBe(85400);
+    expect(result.capitalGainsTax).toBeCloseTo(5756.25, 2);
+  });
+
+  it("excludes net capital gain from the QBI taxable-income limit", () => {
+    const result = calculateTax({
+      taxYear: 2024,
+      filingStatus: "single",
+      grossIncome: 135000,
+      capitalGains: 100000,
+      capitalGainsLongTerm: true,
+      qualifiedBusinessIncome: 50000,
+    });
+
+    expect(result.qbiDeduction).toBe(4080);
+    expect(result.taxableIncome).toBe(116320);
+  });
+
+  it("does not allow the Child Tax Credit to offset self-employment tax", () => {
+    const result = calculateTax({
+      taxYear: 2024,
+      filingStatus: "single",
+      grossIncome: 15000,
+      selfEmploymentIncome: 15000,
+      dependents: 1,
+    });
+
+    expect(result.ordinaryIncomeTax).toBe(0);
+    expect(result.totalFederalTax).toBeCloseTo(result.selfEmploymentTax, 2);
+  });
+});

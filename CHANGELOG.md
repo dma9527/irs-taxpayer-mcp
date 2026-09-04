@@ -2,6 +2,44 @@
 
 All notable changes to irs-taxpayer-mcp.
 
+## [Unreleased]
+
+### Fixed
+
+- Corrected TY2024 and TY2025 EITC parameters using IRS Revenue Procedures 2023-34 and 2024-40.
+- Applied unused deductions before taxing long-term capital gains.
+- Excluded net capital gain from the QBI overall taxable-income limit.
+- Prevented nonrefundable CTC from offsetting self-employment tax, NIIT, or Additional Medicare Tax.
+- Treated qualified dividends as preferential-rate income in the full tax report.
+- Preserved refundable EITC and signed federal tax values in refund estimates.
+- Selected Social Security wage bases and FICA rates from the requested tax year.
+- Improved MFJ versus MFS dependent allocation and mandatory itemization behavior.
+- Corrected OBBB tips, overtime, senior, and auto-loan phase-outs.
+- Removed graduated-state top-rate fallback calculations, added California TY2024 married brackets, and applied its $1M mental-health surcharge threshold.
+- Returned typed MCP errors from high-level reports and planning tools when state bracket data is unavailable.
+- Limited MFJ versus MFS dependent-allocation search to 20 dependents to prevent unbounded synchronous work.
+
+### Security
+
+- Replaced shared legacy SSE state with a stateless Streamable HTTP server at `POST /mcp`.
+- Restricted HTTP binding to loopback hosts and enabled SDK Host validation.
+- Added exact browser Origin allowlists and rejected malformed Origin configuration.
+- Pinned MCP SDK, Zod, TypeScript, Vitest, tsx, and type packages to exact versions.
+
+### Changed
+
+- Updated `@modelcontextprotocol/sdk` to 1.30.0.
+- Kept `--sse` only as a deprecated alias for `--http`; removed the old `/sse` and `/messages` routes.
+- Corrected CLI, health, and documentation tool counts to 43.
+- Clarified that the project is an estimation and planning engine, not tax filing software.
+- Documented supported state-calculation paths and fail-closed behavior.
+
+### Tests
+
+- Added IRS numeric regressions for EITC, capital gains, QBI, CTC ordering, refundable credits, OBBB deductions, and state brackets.
+- Added HTTP security, health, initialization, and real `tools/list` coverage.
+- Expanded the suite to 197 tests across 9 test files.
+
 ## [0.5.2] - 2026-02-23
 
 ### Fixed
@@ -20,20 +58,20 @@ All notable changes to irs-taxpayer-mcp.
 
 ### Added
 
-- `get_tax_document_checklist` — personalized filing document checklist based on income sources and life events
-- `optimize_capital_gains` — investment lot analysis with 0% bracket harvesting, tax-loss harvesting, wash sale warnings
-- `plan_retirement_withdrawals` — optimal withdrawal order (Traditional/Roth/Taxable), RMD calculation, Roth conversion opportunity
-- `plan_multi_year_taxes` — 3-5 year tax projection with bracket management, Roth conversion strategy, age milestones
-- `analyze_relocation_taxes` — in-depth state relocation analysis with multi-year savings projection and SALT impact
-- `simulate_tax_scenario` — what-if modeling for income changes, relocation, Roth conversion, 401k, filing status
-- `assess_audit_risk` — IRS audit risk scoring (0-100) with 15+ red flag checks and mitigation tips
-- `compare_mfj_vs_mfs` — MFJ vs MFS comparison with all MFS restriction warnings
-- `calculate_obbb_deductions` — OBBB Act new deductions calculator (tips, overtime, senior bonus, auto loan)
-- `what_changed_between_tax_years` — full year-over-year diff (brackets, deductions, credits, SALT, OBBB)
-- `generate_full_tax_report` — TurboTax-style full report: income → deductions → federal → FICA → state → take-home → refund
-- `process_1099_income` — process multiple 1099 forms (NEC, INT, DIV, B, MISC) with tax impact by category
-- `get_personalized_tax_calendar` — personalized deadlines based on situation (self-employed, extension, investments)
-- `analyze_paycheck` — verify paycheck withholding accuracy, project annual tax, suggest W-4 adjustments
+- `get_tax_document_checklist`: personalized filing document checklist based on income sources and life events
+- `optimize_capital_gains`: investment lot analysis with 0% bracket harvesting, tax-loss harvesting, wash sale warnings
+- `plan_retirement_withdrawals`: optimal withdrawal order (Traditional/Roth/Taxable), RMD calculation, Roth conversion opportunity
+- `plan_multi_year_taxes`: 3-5 year tax projection with bracket management, Roth conversion strategy, age milestones
+- `analyze_relocation_taxes`: in-depth state relocation analysis with multi-year savings projection and SALT impact
+- `simulate_tax_scenario`: what-if modeling for income changes, relocation, Roth conversion, 401k, filing status
+- `assess_audit_risk`: IRS audit risk scoring (0-100) with 15+ red flag checks and mitigation tips
+- `compare_mfj_vs_mfs`: MFJ vs MFS comparison with all MFS restriction warnings
+- `calculate_obbb_deductions`: OBBB Act new deductions calculator (tips, overtime, senior bonus, auto loan)
+- `what_changed_between_tax_years`: full year-over-year diff (brackets, deductions, credits, SALT, OBBB)
+- `generate_full_tax_report`: full report covering income, deductions, federal tax, FICA, state tax, take-home pay, and refund inputs
+- `process_1099_income`: process multiple 1099 forms (NEC, INT, DIV, B, MISC) with tax impact by category
+- `get_personalized_tax_calendar`: personalized deadlines based on situation (self-employed, extension, investments)
+- `analyze_paycheck`: verify paycheck withholding accuracy, project annual tax, suggest W-4 adjustments
 - Verified local tax data for NYC, Philadelphia, Detroit, Maryland counties, Ohio cities, Indiana counties
 - Usage guide (`docs/USAGE_GUIDE.md`) with 7 common workflows
 - Integration tests for all 39 tools (136 total tests)
@@ -61,7 +99,7 @@ All notable changes to irs-taxpayer-mcp.
 ### Added
 
 - AMT (Alternative Minimum Tax) calculation with ISO spread and SALT add-back
-- `calculate_eitc` — precise EITC calculation with phase-in/plateau/phase-out
+- `calculate_eitc`: precise EITC calculation with phase-in/plateau/phase-out
 - SSE transport support (`--sse` flag with `/health` endpoint)
 - IRS Revenue Procedure citations on all data files
 - 26 automated data validation tests
@@ -89,13 +127,13 @@ All notable changes to irs-taxpayer-mcp.
 - Additional Medicare Tax (0.9%)
 - QBI deduction (Section 199A)
 - Short-term capital gains support
-- `calculate_total_tax` — combined federal + state tax
-- `calculate_w4_withholding` — W-4 form recommendations
-- `get_tax_planning_tips` — year-end optimization
-- `compare_tax_years` — TY2024 vs TY2025 comparison
-- `estimate_self_employment_tax` — full SE breakdown
-- `analyze_mortgage_tax_benefit` — mortgage deduction analysis
-- `analyze_education_tax_benefits` — AOTC vs LLC comparison
+- `calculate_total_tax`: combined federal + state tax
+- `calculate_w4_withholding`: W-4 form recommendations
+- `get_tax_planning_tips`: year-end optimization
+- `compare_tax_years`: TY2024 vs TY2025 comparison
+- `estimate_self_employment_tax`: full SE breakdown
+- `analyze_mortgage_tax_benefit`: mortgage deduction analysis
+- `analyze_education_tax_benefits`: AOTC vs LLC comparison
 - Expanded state tax brackets (CT, DE, HI, MN, MO, NJ, OR)
 - 55 unit tests (vitest)
 - GitHub Actions CI (Node 18/20/22)

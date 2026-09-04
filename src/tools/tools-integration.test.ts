@@ -621,4 +621,214 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Not Available");
     });
   });
+
+  describe("high-level federal accuracy regressions", () => {
+    it("taxes qualified dividends at long-term capital gains rates", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2024,
+        filingStatus: "single",
+        w2Income: 100000,
+        dividendIncome: 20000,
+        qualifiedDividends: 20000,
+      });
+
+      expect(text).toContain("| Capital Gains Tax | $3,000 |");
+      expect(text).toContain("| **Federal Tax After Refundable Credits** | **$16,841** |");
+    });
+
+    it("reports refundable EITC as a refund when no tax or withholding remains", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2024,
+        filingStatus: "single",
+        w2Income: 16500,
+        dependents: 1,
+      });
+
+      expect(text).toContain("| EITC | -$4,213 |");
+      expect(text).toContain("| **Federal Tax After Refundable Credits** | **-$4,213** |");
+      expect(text).toContain("| **Federal Refund** | **$4,213**");
+    });
+
+    it("uses the TY2025 Social Security wage base in paycheck analysis", async () => {
+      const { text } = await callTool(server, "analyze_paycheck", {
+        taxYear: 2025,
+        filingStatus: "single",
+        payFrequency: "monthly",
+        grossPay: 14675,
+        federalWithheld: 3000,
+        socialSecurityWithheld: 910,
+      });
+
+      expect(text).toContain("| Social Security | $910 | ~$910 | +$0 |");
+    });
+  });
+
+  describe("MFJ and MFS accuracy regressions", () => {
+    it("allocates dependents to the separate returns instead of dropping them", async () => {
+      const { text } = await callTool(server, "compare_mfj_vs_mfs", {
+        taxYear: 2024,
+        spouse1Income: 80000,
+        spouse2Income: 60000,
+        dependents: 1,
+      });
+
+      expect(text).toContain("| Combined Tax | **$12,482** | **$12,657** |");
+      expect(text).toContain("| Dependents Allocation | 1 joint | 1 + 0 |");
+    });
+
+    it("requires both MFS spouses to itemize when combined itemized deductions are provided", async () => {
+      const { text } = await callTool(server, "compare_mfj_vs_mfs", {
+        taxYear: 2024,
+        spouse1Income: 80000,
+        spouse2Income: 60000,
+        itemizedDeductions: 20000,
+      });
+
+      expect(text).toContain("| MFS Deductions | - | $10,000 + $10,000 |");
+      expect(text).toContain("| Combined Tax | **$14,482** | **$16,506** |");
+    });
+
+    it("rejects dependent counts that would make allocation search unbounded", async () => {
+      const { text, isError } = await callTool(server, "compare_mfj_vs_mfs", {
+        taxYear: 2024,
+        spouse1Income: 80000,
+        spouse2Income: 60000,
+        dependents: 21,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("Dependents cannot exceed 20");
+    });
+  });
+
+  describe("OBBB phase-out accuracy regressions", () => {
+    it("partially phases out tips and overtime at 10 percent of excess MAGI", async () => {
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025,
+        filingStatus: "single",
+        agi: 151000,
+        tipIncome: 25000,
+        overtimePay: 12500,
+      });
+
+      expect(text).toContain("| Tips Income Deduction | $24,900 | $25,000 |");
+      expect(text).toContain("| Overtime Pay Deduction | $12,400 | $12,500 |");
+      expect(text).toContain("| **Total OBBB Deductions** | **$37,300** |");
+    });
+
+    it("phases out auto loan interest by $200 per $1,000 or portion", async () => {
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025,
+        filingStatus: "single",
+        agi: 100001,
+        autoLoanInterest: 10000,
+      });
+
+      expect(text).toContain("| Auto Loan Interest Deduction | $9,800 | $10,000 |");
+    });
+
+    it("reduces each senior deduction by 6 percent of excess MAGI", async () => {
+      const { text: singleText } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025,
+        filingStatus: "single",
+        agi: 76000,
+        age: 65,
+      });
+      const { text: jointText } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025,
+        filingStatus: "married_filing_jointly",
+        agi: 175000,
+        age: 65,
+        spouseAge: 65,
+      });
+
+      expect(singleText).toContain("| Senior Bonus Deduction (65+) | $5,940 | $6,000 |");
+      expect(jointText).toContain("| Senior Bonus Deduction (65+) | $9,000 | $12,000 |");
+    });
+
+    it("does not allow tips, overtime, or senior deductions for MFS", async () => {
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2025,
+        filingStatus: "married_filing_separately",
+        agi: 50000,
+        age: 65,
+        tipIncome: 10000,
+        overtimePay: 5000,
+      });
+
+      expect(text).toContain("| **Total OBBB Deductions** | **$0** |");
+      expect(text).toContain("Married taxpayers must file jointly");
+    });
+  });
+
+  describe("state tax fail-closed regressions", () => {
+    it("returns an error instead of applying Arkansas top rate to all income", async () => {
+      const { text, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "AR",
+        taxableIncome: 100000,
+        filingStatus: "single",
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("Arkansas graduated tax brackets are not available");
+    });
+
+    it("uses California married brackets in the state estimate", async () => {
+      const { text } = await callTool(server, "estimate_state_tax", {
+        stateCode: "CA",
+        taxableIncome: 100000,
+        filingStatus: "married",
+      });
+
+      expect(text).toContain("| **Estimated State Tax** | **$2,581** |");
+    });
+
+    it("fails the comparison when any requested state lacks supported brackets", async () => {
+      const { text, isError } = await callTool(server, "compare_state_taxes", {
+        states: ["AR", "TX"],
+        taxableIncome: 100000,
+      });
+
+      expect(isError).toBe(true);
+      expect(text).toContain("Arkansas graduated tax brackets are not available");
+    });
+
+    it.each([
+      ["calculate_total_tax", {
+        taxYear: 2024,
+        filingStatus: "married_filing_jointly",
+        grossIncome: 100000,
+        stateCode: "NY",
+      }],
+      ["generate_full_tax_report", {
+        taxYear: 2024,
+        filingStatus: "married_filing_jointly",
+        w2Income: 100000,
+        stateCode: "NY",
+      }],
+      ["simulate_tax_scenario", {
+        taxYear: 2024,
+        filingStatus: "married_filing_jointly",
+        currentIncome: 100000,
+        currentState: "NY",
+      }],
+      ["plan_multi_year_taxes", {
+        filingStatus: "married_filing_jointly",
+        currentAge: 40,
+        years: [{ year: 2024, expectedIncome: 100000, stateCode: "NY" }],
+      }],
+      ["analyze_relocation_taxes", {
+        taxYear: 2024,
+        filingStatus: "married_filing_jointly",
+        grossIncome: 100000,
+        fromState: "TX",
+        toState: "NY",
+      }],
+    ] as const)("returns an MCP error from %s when married state brackets are unavailable", async (toolName, args) => {
+      const { text, isError } = await callTool(server, toolName, args);
+
+      expect(isError).toBe(true);
+      expect(text).toContain("New York married filing-status brackets are not available");
+    });
+  });
 });

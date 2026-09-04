@@ -1,6 +1,6 @@
-# Usage Guide — irs-taxpayer-mcp
+# Usage Guide: irs-taxpayer-mcp
 
-A practical guide to getting the most out of the 39 tax tools.
+A practical guide to getting the most out of the 43 tax tools.
 
 ## Quick Reference: Which Tool to Use
 
@@ -81,82 +81,82 @@ Gets personalized suggestions for maximizing deductions before year-end.
 
 ### Core Calculations (6 tools)
 
-These do the math. They take income and deduction inputs and return precise tax calculations.
+These tools perform deterministic calculations for modeled inputs. Unsupported paths may return an error, and planning tools may use documented simplifications.
 
-- `calculate_federal_tax` — The foundation. All other tools build on this.
-- `get_tax_brackets` — Look up brackets for any year/status
-- `compare_filing_statuses` — Which status saves the most?
-- `estimate_quarterly_tax` — For self-employed and gig workers
-- `calculate_total_tax` — Federal + state in one call
-- `calculate_w4_withholding` — W-4 form guidance
+- `calculate_federal_tax`: The foundation. All other tools build on this.
+- `get_tax_brackets`: Look up brackets for any year/status
+- `compare_filing_statuses`: Which status saves the most?
+- `estimate_quarterly_tax`: For self-employed and gig workers
+- `calculate_total_tax`: Federal + state in one call
+- `calculate_w4_withholding`: W-4 form guidance
 
 ### Analysis & Planning (7 tools)
 
 These help you make decisions.
 
-- `get_tax_planning_tips` — Year-end optimization
-- `compare_tax_years` — How do 2024 and 2025 differ?
-- `estimate_self_employment_tax` — Full SE breakdown
-- `analyze_mortgage_tax_benefit` — Should I itemize with my mortgage?
-- `analyze_education_tax_benefits` — AOTC vs LLC
-- `compare_mfj_vs_mfs` — Joint vs separate filing
-- `simulate_tax_scenario` — What-if modeling
+- `get_tax_planning_tips`: Year-end optimization
+- `compare_tax_years`: How do 2024 and 2025 differ?
+- `estimate_self_employment_tax`: Full SE breakdown
+- `analyze_mortgage_tax_benefit`: Should I itemize with my mortgage?
+- `analyze_education_tax_benefits`: AOTC vs LLC
+- `compare_mfj_vs_mfs`: Joint vs separate filing
+- `simulate_tax_scenario`: What-if modeling
 
 ### Full Reports (4 tools)
 
 These give you the big picture.
 
-- `generate_full_tax_report` — Everything in one report
-- `process_1099_income` — Handle multiple 1099s
-- `get_personalized_tax_calendar` — Your deadlines
-- `analyze_paycheck` — Verify your pay stub
+- `generate_full_tax_report`: Everything in one report
+- `process_1099_income`: Handle multiple 1099s
+- `get_personalized_tax_calendar`: Your deadlines
+- `analyze_paycheck`: Verify your pay stub
 
 ### Credits & Deductions (5 tools)
 
 These help you find money.
 
-- `list_tax_credits` — Browse 20+ credits
-- `check_credit_eligibility` — Quick screening
-- `calculate_eitc` — Precise EITC amount
-- `list_deductions` — All deductions with rules
-- `standard_vs_itemized` — Which is better for you?
+- `list_tax_credits`: Browse 20+ credits
+- `check_credit_eligibility`: Quick screening
+- `calculate_eitc`: Precise EITC amount
+- `list_deductions`: All deductions with rules
+- `standard_vs_itemized`: Which is better for you?
 
 ### Retirement (2 tools)
 
 Long-term planning.
 
-- `get_retirement_accounts` — IRA, 401k, HSA, 529 details
-- `get_retirement_strategy` — Backdoor Roth, tax-loss harvesting
+- `get_retirement_accounts`: IRA, 401k, HSA, 529 details
+- `get_retirement_strategy`: Backdoor Roth, tax-loss harvesting
 
 ### State Taxes (4 tools)
 
 State-level analysis.
 
-- `get_state_tax_info` — Any state's rates and brackets
-- `estimate_state_tax` — State tax estimate
-- `compare_state_taxes` — Multi-state comparison
-- `list_no_income_tax_states` — The 9 tax-free states
+- `get_state_tax_info`: Any state's rates and brackets
+- `estimate_state_tax`: State tax estimate
+- `compare_state_taxes`: Multi-state comparison
+- `list_no_income_tax_states`: The 9 tax-free states
 
 ### IRS Info (3 tools)
 
 Public IRS data.
 
-- `get_tax_deadlines` — Filing deadlines
-- `check_refund_status` — How to check your refund
-- `get_irs_form_info` — Form descriptions
+- `get_tax_deadlines`: Filing deadlines
+- `check_refund_status`: How to check your refund
+- `get_irs_form_info`: Form descriptions
 
 ### OBBB & Risk (3 tools)
 
 New law and compliance.
 
-- `calculate_obbb_deductions` — Tips, overtime, senior, auto loan
-- `what_changed_between_tax_years` — Full year-over-year diff
-- `assess_audit_risk` — Red flag identification
+- `calculate_obbb_deductions`: Tips, overtime, senior, auto loan
+- `what_changed_between_tax_years`: Full year-over-year diff
+- `assess_audit_risk`: Red flag identification
 
 ## Tips
 
-- Always specify `taxYear` — TY2024 and TY2025 have different rules (OBBB Act)
-- For the most accurate results, provide as many inputs as possible
+- Always specify `taxYear`: TY2024 and TY2025 have different rules (OBBB Act)
+- For the best supported estimate, provide all inputs requested by the selected tool and review its stated limitations.
 - Use `generate_full_tax_report` when you want everything at once
 - Use `simulate_tax_scenario` when you want to compare two situations
-- All calculations are estimates — consult a tax professional for filing
+- All calculations are estimates: consult a tax professional for filing

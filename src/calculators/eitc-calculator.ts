@@ -13,21 +13,22 @@ interface EITCParams {
   phaseoutStart: number;
   phaseoutStartMFJ: number;
   completionThreshold: number;
+  completionThresholdMFJ: number;
 }
 
 // TY2024 EITC parameters by number of qualifying children
 const EITC_2024: Record<number, EITCParams> = {
-  0: { creditRate: 0.0765, earnedIncomeThreshold: 7840, maxCredit: 600, phaseoutRate: 0.0765, phaseoutStart: 9800, phaseoutStartMFJ: 17250, completionThreshold: 18591 },
-  1: { creditRate: 0.34, earnedIncomeThreshold: 11750, maxCredit: 3995, phaseoutRate: 0.1598, phaseoutStart: 20600, phaseoutStartMFJ: 28030, completionThreshold: 49084 },
-  2: { creditRate: 0.40, earnedIncomeThreshold: 16510, maxCredit: 6604, phaseoutRate: 0.2106, phaseoutStart: 20600, phaseoutStartMFJ: 28030, completionThreshold: 55768 },
-  3: { creditRate: 0.45, earnedIncomeThreshold: 16510, maxCredit: 7430, phaseoutRate: 0.2106, phaseoutStart: 20600, phaseoutStartMFJ: 28030, completionThreshold: 59899 },
+  0: { creditRate: 0.0765, earnedIncomeThreshold: 8260, maxCredit: 632, phaseoutRate: 0.0765, phaseoutStart: 10330, phaseoutStartMFJ: 17250, completionThreshold: 18591, completionThresholdMFJ: 25511 },
+  1: { creditRate: 0.34, earnedIncomeThreshold: 12390, maxCredit: 4213, phaseoutRate: 0.1598, phaseoutStart: 22720, phaseoutStartMFJ: 29640, completionThreshold: 49084, completionThresholdMFJ: 56004 },
+  2: { creditRate: 0.40, earnedIncomeThreshold: 17400, maxCredit: 6960, phaseoutRate: 0.2106, phaseoutStart: 22720, phaseoutStartMFJ: 29640, completionThreshold: 55768, completionThresholdMFJ: 62688 },
+  3: { creditRate: 0.45, earnedIncomeThreshold: 17400, maxCredit: 7830, phaseoutRate: 0.2106, phaseoutStart: 22720, phaseoutStartMFJ: 29640, completionThreshold: 59899, completionThresholdMFJ: 66819 },
 };
 
 const EITC_2025: Record<number, EITCParams> = {
-  0: { creditRate: 0.0765, earnedIncomeThreshold: 8070, maxCredit: 617, phaseoutRate: 0.0765, phaseoutStart: 10080, phaseoutStartMFJ: 17760, completionThreshold: 19139 },
-  1: { creditRate: 0.34, earnedIncomeThreshold: 12090, maxCredit: 4111, phaseoutRate: 0.1598, phaseoutStart: 21190, phaseoutStartMFJ: 28870, completionThreshold: 50517 },
-  2: { creditRate: 0.40, earnedIncomeThreshold: 16989, maxCredit: 6796, phaseoutRate: 0.2106, phaseoutStart: 21190, phaseoutStartMFJ: 28870, completionThreshold: 57554 },
-  3: { creditRate: 0.45, earnedIncomeThreshold: 16989, maxCredit: 7645, phaseoutRate: 0.2106, phaseoutStart: 21190, phaseoutStartMFJ: 28870, completionThreshold: 61647 },
+  0: { creditRate: 0.0765, earnedIncomeThreshold: 8490, maxCredit: 649, phaseoutRate: 0.0765, phaseoutStart: 10620, phaseoutStartMFJ: 17730, completionThreshold: 19104, completionThresholdMFJ: 26214 },
+  1: { creditRate: 0.34, earnedIncomeThreshold: 12730, maxCredit: 4328, phaseoutRate: 0.1598, phaseoutStart: 23350, phaseoutStartMFJ: 30470, completionThreshold: 50434, completionThresholdMFJ: 57554 },
+  2: { creditRate: 0.40, earnedIncomeThreshold: 17880, maxCredit: 7152, phaseoutRate: 0.2106, phaseoutStart: 23350, phaseoutStartMFJ: 30470, completionThreshold: 57310, completionThresholdMFJ: 64430 },
+  3: { creditRate: 0.45, earnedIncomeThreshold: 17880, maxCredit: 8046, phaseoutRate: 0.2106, phaseoutStart: 23350, phaseoutStartMFJ: 30470, completionThreshold: 61555, completionThresholdMFJ: 68675 },
 };
 
 const EITC_DATA: Record<number, Record<number, EITCParams>> = {
@@ -86,7 +87,7 @@ export function calculateEITC(input: EITCInput): EITCResult {
   const isMFJ = input.filingStatus === "married_filing_jointly";
   const phaseoutStart = isMFJ ? params.phaseoutStartMFJ : params.phaseoutStart;
   const incomeLimit = isMFJ
-    ? params.completionThreshold + (params.phaseoutStartMFJ - params.phaseoutStart)
+    ? params.completionThresholdMFJ
     : params.completionThreshold;
 
   // Use the greater of earned income or AGI for phase-out

@@ -5,6 +5,13 @@
 
 import { getStateInfo, type StateBracket } from "../data/state-taxes.js";
 
+export class UnsupportedStateTaxCalculationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UnsupportedStateTaxCalculationError";
+  }
+}
+
 export interface StateTaxInput {
   stateCode: string;
   taxableIncome: number;
@@ -58,10 +65,19 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
 
   if (state.taxType === "flat") {
     tax = adjustedIncome * state.topRate;
-  } else if (state.brackets && state.brackets.length > 0) {
-    tax = calculateGraduatedTax(adjustedIncome, state.brackets);
   } else {
-    tax = adjustedIncome * state.topRate;
+    if (!state.brackets || state.brackets.length === 0) {
+      throw new UnsupportedStateTaxCalculationError(
+        `${state.name} graduated tax brackets are not available`,
+      );
+    }
+    const brackets = status === "married" ? state.marriedBrackets : state.brackets;
+    if (!brackets || brackets.length === 0) {
+      throw new UnsupportedStateTaxCalculationError(
+        `${state.name} married filing-status brackets are not available`,
+      );
+    }
+    tax = calculateGraduatedTax(adjustedIncome, brackets);
   }
 
   return {

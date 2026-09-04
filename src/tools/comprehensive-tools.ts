@@ -50,7 +50,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       stateWithheld: z.number().min(0).optional().describe("State tax already withheld YTD"),
       estimatedPaymentsMade: z.number().min(0).optional().describe("Estimated tax payments already made"),
     },
-    async (params) => {
+    wrapToolHandler(async (params) => {
       const taxData = getTaxYearData(params.taxYear);
       if (!taxData) {
         return ERRORS.unsupportedYear(params.taxYear);
@@ -66,6 +66,13 @@ export function registerComprehensiveTools(server: McpServer): void {
       const stcg = params.shortTermCapitalGains ?? 0;
       const other = params.otherIncome ?? 0;
       const grossIncome = w2 + se + interest + dividends + ltcg + stcg + other;
+
+      if (qualDiv > dividends) {
+        return {
+          content: [{ type: "text", text: "Qualified dividends cannot exceed total ordinary dividends." }],
+          isError: true,
+        };
+      }
 
       if (grossIncome <= 0) {
         return ERRORS.zeroIncome();
@@ -88,7 +95,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         grossIncome,
         w2Income: w2,
         selfEmploymentIncome: se,
-        capitalGains: ltcg > 0 ? ltcg : undefined,
+        capitalGains: Math.max(0, ltcg) + qualDiv > 0 ? Math.max(0, ltcg) + qualDiv : undefined,
         capitalGainsLongTerm: true,
         shortTermCapitalGains: stcg > 0 ? stcg : undefined,
         aboveTheLineDeductions: params.aboveTheLineDeductions,
@@ -131,14 +138,17 @@ export function registerComprehensiveTools(server: McpServer): void {
       }
 
       // Totals
-      const totalFederal = federalResult.totalFederalTax - (eitcResult.eligible ? eitcResult.credit : 0);
-      const totalAllTaxes = Math.max(0, totalFederal) + ficaTotal + stateTax;
+      const refundableEITC = eitcResult.eligible ? eitcResult.credit : 0;
+      const totalFederal = federalResult.totalFederalTax - refundableEITC;
+      const totalAllTaxes = totalFederal + ficaTotal + stateTax;
       const takeHome = grossIncome - totalAllTaxes;
+      const formatTaxAmount = (amount: number): string =>
+        amount < 0 ? `-$${fmt(Math.abs(amount))}` : `$${fmt(amount)}`;
 
       // Withholding / refund
       const withheld = (params.federalWithheld ?? 0) + (params.estimatedPaymentsMade ?? 0);
       const stateWithheld = params.stateWithheld ?? 0;
-      const federalOwed = Math.max(0, totalFederal) - withheld;
+      const federalBalance = totalFederal - withheld;
       const stateOwed = stateTax - stateWithheld;
 
       const lines = [
@@ -182,8 +192,8 @@ export function registerComprehensiveTools(server: McpServer): void {
         federalResult.amt > 0 ? `| AMT | $${fmt(federalResult.amt)} |` : "",
         federalResult.childTaxCredit > 0 ? `| Child Tax Credit | -$${fmt(federalResult.childTaxCredit)} |` : "",
         eitcResult.eligible ? `| EITC | -$${fmt(eitcResult.credit)} |` : "",
-        `| **Federal Tax** | **$${fmt(Math.max(0, totalFederal))}** |`,
-        `| Effective Federal Rate | ${(Math.max(0, totalFederal) / grossIncome * 100).toFixed(2)}% |`,
+        `| **Federal Tax After Refundable Credits** | **${formatTaxAmount(totalFederal)}** |`,
+        `| Effective Federal Rate | ${(totalFederal / grossIncome * 100).toFixed(2)}% |`,
         `| Marginal Rate | ${(federalResult.marginalRate * 100).toFixed(0)}% |`,
         "",
         `## 4. FICA (Employee Share)`,
@@ -210,30 +220,30 @@ export function registerComprehensiveTools(server: McpServer): void {
         `## ${params.stateCode ? "6" : "5"}. Total Tax Burden`,
         `| Component | Amount | Rate |`,
         `|-----------|--------|------|`,
-        `| Federal Tax | $${fmt(Math.max(0, totalFederal))} | ${(Math.max(0, totalFederal) / grossIncome * 100).toFixed(2)}% |`,
+        `| Federal Tax After Refundable Credits | ${formatTaxAmount(totalFederal)} | ${(totalFederal / grossIncome * 100).toFixed(2)}% |`,
         `| FICA | $${fmt(Math.round(ficaTotal))} | ${(ficaTotal / grossIncome * 100).toFixed(2)}% |`,
         params.stateCode ? `| State Tax | $${fmt(stateTax)} | ${(stateTax / grossIncome * 100).toFixed(2)}% |` : "",
-        `| **Total Taxes** | **$${fmt(Math.round(totalAllTaxes))}** | **${(totalAllTaxes / grossIncome * 100).toFixed(2)}%** |`,
+        `| **Net Taxes and Credits** | **${formatTaxAmount(Math.round(totalAllTaxes))}** | **${(totalAllTaxes / grossIncome * 100).toFixed(2)}%** |`,
         "",
         `| | Amount |`,
         `|---|---|`,
         `| Gross Income | $${fmt(grossIncome)} |`,
-        `| Total Taxes | -$${fmt(Math.round(totalAllTaxes))} |`,
+        `| Net Taxes and Credits | ${formatTaxAmount(Math.round(totalAllTaxes))} |`,
         `| **Take-Home** | **$${fmt(Math.round(takeHome))}** |`,
         `| Monthly Take-Home | $${fmt(Math.round(takeHome / 12))} |`,
         `| Biweekly Take-Home | $${fmt(Math.round(takeHome / 26))} |`,
       );
 
       // Refund / owed section
-      if (withheld > 0 || stateWithheld > 0) {
+      if (withheld > 0 || stateWithheld > 0 || totalFederal < 0) {
         lines.push(
           "",
           `## ${params.stateCode ? "7" : "6"}. Refund / Amount Owed`,
           `| Item | Amount |`,
           `|------|--------|`,
-          `| Federal Tax Owed | $${fmt(Math.max(0, totalFederal))} |`,
+          `| Federal Tax After Refundable Credits | ${formatTaxAmount(totalFederal)} |`,
           `| Federal Withheld + Estimated | -$${fmt(withheld)} |`,
-          federalOwed > 0 ? `| **Federal Balance Due** | **$${fmt(Math.round(federalOwed))}** |` : `| **Federal Refund** | **$${fmt(Math.round(Math.abs(federalOwed)))}** 🎉 |`,
+          federalBalance > 0 ? `| **Federal Balance Due** | **$${fmt(Math.round(federalBalance))}** |` : `| **Federal Refund** | **$${fmt(Math.round(Math.abs(federalBalance)))}** 🎉 |`,
         );
         if (params.stateCode) {
           lines.push(
@@ -252,7 +262,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       );
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
-    }
+    })
   );
 
   // --- Tool 2: 1099 Income Processor ---
@@ -483,8 +493,18 @@ export function registerComprehensiveTools(server: McpServer): void {
       const federalDiff = actualFederal - expectedPerPeriod;
 
       // Expected FICA
-      const expectedSS = Math.round(Math.min(annualGross, 168600) * 0.062 / periodsPerYear);
-      const expectedMedicare = Math.round(annualGross * 0.0145 / periodsPerYear);
+      const taxData = getTaxYearData(params.taxYear);
+      if (!taxData) {
+        return ERRORS.unsupportedYear(params.taxYear);
+      }
+      const expectedSS = Math.round(
+        Math.min(annualGross, taxData.socialSecurity.wageBase) *
+          taxData.socialSecurity.taxRate /
+          periodsPerYear,
+      );
+      const expectedMedicare = Math.round(
+        annualGross * taxData.medicare.taxRate / periodsPerYear,
+      );
       const actualSS = params.socialSecurityWithheld ?? 0;
       const actualMedicare = params.medicareWithheld ?? 0;
 
@@ -563,7 +583,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       whatIfNewDependents: z.number().int().min(0).optional().describe("New number of dependents"),
       whatIfItemizedChange: z.number().optional().describe("Change in itemized deductions"),
     },
-    async (params) => {
+    wrapToolHandler(async (params) => {
       // --- Current scenario ---
       const currentFederal = calculateTax({
         taxYear: params.taxYear,
@@ -693,7 +713,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       lines.push("", `> ⚠️ Simplified estimate. Does not account for all deductions, credits, or state-specific rules.`);
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };
-    }
+    })
   );
 
   // --- Tool 6: Audit Risk Assessment ---

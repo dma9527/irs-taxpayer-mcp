@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /**
  * IRS Taxpayer MCP Server
  *
@@ -8,136 +7,78 @@
  *   - All tax calculations run locally (no PII leaves the machine)
  *   - Only public IRS data is fetched remotely when needed
  *
- * Supports both stdio and SSE transports:
+ * Supports stdio and Streamable HTTP transports:
  *   stdio (default): npx irs-taxpayer-mcp
- *   SSE:             npx irs-taxpayer-mcp --sse [--port 3000]
+ *   HTTP:            npx irs-taxpayer-mcp --http [--port 3000]
  *
  * @see https://modelcontextprotocol.io
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { registerTaxCalculationTools } from "./tools/tax-calculation-tools.js";
-import { registerDeductionTools } from "./tools/deduction-tools.js";
-import { registerIrsLookupTools } from "./tools/irs-lookup-tools.js";
-import { registerCreditTools } from "./tools/credit-tools.js";
-import { registerStateTaxTools } from "./tools/state-tax-tools.js";
-import { registerPlanningTools } from "./tools/planning-tools.js";
-import { registerObbbTools } from "./tools/obbb-tools.js";
-import { registerComprehensiveTools } from "./tools/comprehensive-tools.js";
-import { registerAdvancedTools } from "./tools/advanced-tools.js";
-import { registerSmartTools } from "./tools/smart-tools.js";
-import http from "node:http";
-
-const server = new McpServer({
-  name: "irs-taxpayer-mcp",
-  version: "0.5.3",
-  description:
-    "Tax calculation, credits, deductions, state taxes, and retirement strategy tools for individual US taxpayers. " +
-    "All financial calculations run locally — your income data never leaves your machine.",
-});
-
-// Register all tool groups
-registerTaxCalculationTools(server);   // 6 tools: calculate, brackets, compare, quarterly, total, w4
-registerDeductionTools(server);        // 2 tools: list deductions, standard vs itemized
-registerIrsLookupTools(server);        // 3 tools: deadlines, refund status, form info
-registerCreditTools(server);           // 5 tools: list credits, eligibility, retirement accounts, strategies, EITC
-registerStateTaxTools(server);         // 4 tools: state info, estimate, compare states, no-tax states
-registerPlanningTools(server);         // 6 tools: planning tips, year compare, SE tax, mortgage, education, MFJ vs MFS
-registerObbbTools(server);             // 2 tools: OBBB deductions calculator, what changed between years
-registerComprehensiveTools(server);    // 6 tools: report, 1099, calendar, paycheck, scenario, audit
-registerAdvancedTools(server);         // 5 tools: docs, capgains, retirement, multi-year, relocation
-registerSmartTools(server);            // 3 tools: health check, knowledge base, form guide
+import {
+  parseCliOptions,
+  startHttpServer,
+  type CliOptions,
+} from "./http-server.js";
+import {
+  createTaxServer,
+  SERVER_VERSION,
+  TOOL_COUNT,
+} from "./tax-server.js";
 
 const args = process.argv.slice(2);
 
-if (args.includes("--help") || args.includes("-h")) {
-  printHelp();
-  process.exit(0);
+async function startStdio(): Promise<void> {
+  const server = createTaxServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error(`IRS Taxpayer MCP server running on stdio; ${TOOL_COUNT} tools loaded`);
 }
 
-const useSSE = args.includes("--sse");
-const portIndex = args.indexOf("--port");
-const port = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : 3000;
-
-async function main(): Promise<void> {
-  if (useSSE) {
-    await startSSE(port);
-  } else {
+async function main(options: CliOptions): Promise<void> {
+  if (options.transport === "stdio") {
     await startStdio();
+    return;
+  }
+
+  await startHttpServer(options);
+  const hostForUrl = options.host === "::1" ? "[::1]" : options.host;
+  console.error(
+    `IRS Taxpayer MCP server running on Streamable HTTP at http://${hostForUrl}:${options.port}/mcp; ${TOOL_COUNT} tools loaded`,
+  );
+  if (args.includes("--sse")) {
+    console.error("Warning: --sse is deprecated and now starts Streamable HTTP. Use --http.");
   }
 }
 
-async function startStdio(): Promise<void> {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("IRS Taxpayer MCP server running on stdio — 39 tools loaded");
+if (args.includes("--help") || args.includes("-h")) {
+  printHelp();
+} else {
+  try {
+    await main(parseCliOptions(args));
+  } catch (error: unknown) {
+    console.error("Failed to start server:", error);
+    process.exitCode = 1;
+  }
 }
-
-async function startSSE(ssePort: number): Promise<void> {
-  let sseTransport: SSEServerTransport | null = null;
-
-  const httpServer = http.createServer(async (req, res) => {
-    // CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-
-    if (req.url === "/sse" && req.method === "GET") {
-      sseTransport = new SSEServerTransport("/messages", res);
-      await server.connect(sseTransport);
-      return;
-    }
-
-    if (req.url === "/messages" && req.method === "POST") {
-      if (sseTransport) {
-        await sseTransport.handlePostMessage(req, res);
-      } else {
-        res.writeHead(400);
-        res.end("No SSE connection established. Connect to /sse first.");
-      }
-      return;
-    }
-
-    // Health check
-    if (req.url === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", tools: 39, transport: "sse" }));
-      return;
-    }
-
-    res.writeHead(404);
-    res.end("Not found. Use GET /sse for SSE connection, POST /messages for messages, GET /health for status.");
-  });
-
-  httpServer.listen(ssePort, () => {
-    console.error(`IRS Taxpayer MCP server running on SSE — http://localhost:${ssePort}/sse — 39 tools loaded`);
-  });
-}
-
-main().catch((err) => {
-  console.error("Failed to start server:", err);
-  process.exit(1);
-});
 
 function printHelp(): void {
   const help = `
-irs-taxpayer-mcp v0.5.3 — Tax assistant MCP server for US individual taxpayers
+irs-taxpayer-mcp v${SERVER_VERSION}: Tax assistant MCP server for US individual taxpayers
 
 USAGE:
-  npx irs-taxpayer-mcp              Start in stdio mode (default)
-  npx irs-taxpayer-mcp --sse        Start in SSE mode (port 3000)
-  npx irs-taxpayer-mcp --sse --port 8080
-  npx irs-taxpayer-mcp --help       Show this help
+  npx irs-taxpayer-mcp                         Start in stdio mode (default)
+  npx irs-taxpayer-mcp --http                  Start Streamable HTTP on 127.0.0.1:3000
+  npx irs-taxpayer-mcp --http --port 8080      Use a different loopback port
+  npx irs-taxpayer-mcp --http --host localhost Bind another loopback hostname
+  npx irs-taxpayer-mcp --http --allowed-origin https://trusted.example
+  npx irs-taxpayer-mcp --help                  Show this help
 
-TOOLS (39):
+  --sse is a deprecated alias for --http. Legacy GET /sse is not exposed.
+  HTTP transport only binds to loopback hosts. Browser Origins must exactly match
+  a local server Origin or a repeated --allowed-origin value.
+
+TOOLS (${TOOL_COUNT}):
 
   Federal Tax Calculations
     calculate_federal_tax        Full federal tax with AMT, NIIT, QBI, SE tax, CTC
@@ -197,6 +138,12 @@ TOOLS (39):
     plan_retirement_withdrawals  Withdrawal order strategy
     plan_multi_year_taxes        3-5 year tax projection
     analyze_relocation_taxes     State relocation analysis
+
+  Guidance & Feedback
+    run_tax_health_check         Check tool coverage and tax-data freshness
+    lookup_tax_rule              Search the built-in tax knowledge base
+    get_form_filing_guide        Step-by-step IRS form filing guidance
+    submit_feedback              Generate a GitHub issue link for feedback
 
 PRIVACY: All calculations run locally. No data leaves your machine.
 DATA: TY2024 (Rev. Proc. 2023-34) and TY2025 (OBBB Act).

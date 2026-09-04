@@ -554,7 +554,7 @@ export function registerPlanningTools(server: McpServer): void {
       taxYear: z.number().describe("Tax year (2024 or 2025)"),
       spouse1Income: z.number().min(0).describe("Spouse 1 gross income"),
       spouse2Income: z.number().min(0).describe("Spouse 2 gross income"),
-      dependents: z.number().int().min(0).optional().describe("Number of qualifying children"),
+      dependents: z.number().int().min(0).max(20).optional().describe("Number of qualifying children (maximum 20)"),
       itemizedDeductions: z.number().min(0).optional().describe("Total itemized deductions (combined for MFJ, split for MFS)"),
       studentLoanInterest: z.boolean().optional().describe("Either spouse paying student loan interest"),
       hasEducationCredits: z.boolean().optional().describe("Either spouse claiming AOTC or LLC"),
@@ -563,9 +563,13 @@ export function registerPlanningTools(server: McpServer): void {
     },
     async (params) => {
       const totalIncome = params.spouse1Income + params.spouse2Income;
+      const totalDependents = params.dependents ?? 0;
 
       if (totalIncome <= 0) {
         return { content: [{ type: "text", text: "Combined income must be greater than zero." }], isError: true };
+      }
+      if (totalDependents > 20) {
+        return { content: [{ type: "text", text: "Dependents cannot exceed 20 for MFJ versus MFS allocation." }], isError: true };
       }
 
       // MFJ calculation
@@ -577,19 +581,56 @@ export function registerPlanningTools(server: McpServer): void {
         itemizedDeductions: params.itemizedDeductions,
       });
 
-      // MFS calculation — each spouse files separately
-      const mfs1 = calculateTax({
-        taxYear: params.taxYear,
-        filingStatus: "married_filing_separately",
-        grossIncome: params.spouse1Income,
-        itemizedDeductions: params.itemizedDeductions ? Math.round(params.itemizedDeductions / 2) : undefined,
-      });
-      const mfs2 = calculateTax({
-        taxYear: params.taxYear,
-        filingStatus: "married_filing_separately",
-        grossIncome: params.spouse2Income,
-      });
-      const mfsTotalTax = mfs1.totalFederalTax + mfs2.totalFederalTax;
+      // MFS calculation. Dependents may be claimed on only one separate return,
+      // so evaluate every allocation and keep the lowest combined tax.
+      const combinedItemized = params.itemizedDeductions;
+      const hasCombinedItemized = combinedItemized !== undefined;
+      const spouse1Itemized = combinedItemized === undefined
+        ? undefined
+        : Math.floor(combinedItemized / 2);
+      const spouse2Itemized = combinedItemized === undefined
+        ? undefined
+        : combinedItemized - Math.floor(combinedItemized / 2);
+
+      const calculateMFSAllocation = (spouse1Dependents: number) => {
+        const spouse2Dependents = totalDependents - spouse1Dependents;
+        const mfs1 = calculateTax({
+          taxYear: params.taxYear,
+          filingStatus: "married_filing_separately",
+          grossIncome: params.spouse1Income,
+          dependents: spouse1Dependents,
+          itemizedDeductions: spouse1Itemized,
+          forceItemizedDeductions: hasCombinedItemized,
+        });
+        const mfs2 = calculateTax({
+          taxYear: params.taxYear,
+          filingStatus: "married_filing_separately",
+          grossIncome: params.spouse2Income,
+          dependents: spouse2Dependents,
+          itemizedDeductions: spouse2Itemized,
+          forceItemizedDeductions: hasCombinedItemized,
+        });
+        return {
+          mfs1,
+          mfs2,
+          mfsTotalTax: mfs1.totalFederalTax + mfs2.totalFederalTax,
+          spouse1Dependents,
+          spouse2Dependents,
+        };
+      };
+
+      const initialSpouse1Dependents = params.spouse1Income >= params.spouse2Income
+        ? totalDependents
+        : 0;
+      let bestMFS = calculateMFSAllocation(initialSpouse1Dependents);
+      for (let spouse1Dependents = 0; spouse1Dependents <= totalDependents; spouse1Dependents += 1) {
+        const candidate = calculateMFSAllocation(spouse1Dependents);
+        if (candidate.mfsTotalTax < bestMFS.mfsTotalTax) {
+          bestMFS = candidate;
+        }
+      }
+
+      const { mfs1, mfs2, mfsTotalTax, spouse1Dependents, spouse2Dependents } = bestMFS;
 
       const difference = mfsTotalTax - mfj.totalFederalTax;
       const recommendation = difference > 0 ? "MFJ" : difference < 0 ? "MFS" : "Either";
@@ -600,7 +641,9 @@ export function registerPlanningTools(server: McpServer): void {
         `| | MFJ (Joint) | MFS (Separate) |`,
         `|---|---|---|`,
         `| Combined Income | $${fmt(totalIncome)} | $${fmt(params.spouse1Income)} + $${fmt(params.spouse2Income)} |`,
-        `| Standard Deduction | $${fmt(mfj.deductionAmount)} | $${fmt(mfs1.deductionAmount)} each |`,
+        `| MFJ Deduction | $${fmt(mfj.deductionAmount)} | - |`,
+        `| MFS Deductions | - | $${fmt(mfs1.deductionAmount)} + $${fmt(mfs2.deductionAmount)} |`,
+        totalDependents > 0 ? `| Dependents Allocation | ${totalDependents} joint | ${spouse1Dependents} + ${spouse2Dependents} |` : "",
         `| Combined Tax | **$${fmt(mfj.totalFederalTax)}** | **$${fmt(mfsTotalTax)}** |`,
         `| Effective Rate | ${(mfj.effectiveRate * 100).toFixed(2)}% | ${(mfsTotalTax / totalIncome * 100).toFixed(2)}% |`,
         "",

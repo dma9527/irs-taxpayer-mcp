@@ -3,6 +3,9 @@
  * Provides consistent error format with actionable suggestions.
  */
 
+import { UnsupportedStateTaxCalculationError } from "../calculators/state-tax-calculator.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
 export type ErrorCode =
   | "UNSUPPORTED_TAX_YEAR"
   | "INVALID_STATE"
@@ -52,13 +55,22 @@ export function toolError(error: ToolError): { content: Array<{ type: "text"; te
  * Wrap a tool handler with try/catch that produces friendly error messages.
  */
 export function wrapToolHandler<T>(
-  handler: (params: T) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }>
-): (params: T) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  handler: (params: T) => Promise<CallToolResult>,
+): (params: T) => Promise<CallToolResult> {
   return async (params: T) => {
     try {
       return await handler(params);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+
+      if (err instanceof UnsupportedStateTaxCalculationError) {
+        return toolError({
+          code: "NOT_AVAILABLE",
+          message,
+          suggestion:
+            "Use get_state_tax_info to review available reference data, or choose a state and filing status with explicit numeric support.",
+        });
+      }
 
       // Detect common error patterns and give specific suggestions
       if (message.includes("not supported")) {

@@ -4,7 +4,11 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { STATE_TAX_DATA, getStateInfo, getNoIncomeTaxStates, type StateBracket } from "../data/state-taxes.js";
+import { STATE_TAX_DATA, getStateInfo, getNoIncomeTaxStates, type StateTaxType } from "../data/state-taxes.js";
+import {
+  calculateStateTax,
+  UnsupportedStateTaxCalculationError,
+} from "../calculators/state-tax-calculator.js";
 import { ERRORS } from "./error-handler.js";
 
 export function registerStateTaxTools(server: McpServer): void {
@@ -105,28 +109,24 @@ export function registerStateTaxTools(server: McpServer): void {
       }
 
       const status = filingStatus ?? "single";
-      let tax = 0;
-      let deduction = 0;
-
-      if (state.standardDeduction) {
-        deduction = status === "married" ? state.standardDeduction.married : state.standardDeduction.single;
-      }
-      if (state.personalExemption) {
-        deduction += status === "married" ? state.personalExemption.married : state.personalExemption.single;
-      }
-
-      const adjustedIncome = Math.max(0, taxableIncome - deduction);
-
-      if (state.taxType === "flat") {
-        tax = adjustedIncome * state.topRate;
-      } else if (state.brackets && state.brackets.length > 0) {
-        tax = calculateGraduatedTax(adjustedIncome, state.brackets);
-      } else {
-        // Fallback: use top rate as approximation
-        tax = adjustedIncome * state.topRate;
+      let result: ReturnType<typeof calculateStateTax>;
+      try {
+        result = calculateStateTax({ stateCode, taxableIncome, filingStatus: status });
+      } catch (error: unknown) {
+        if (error instanceof UnsupportedStateTaxCalculationError) {
+          return {
+            content: [{ type: "text", text: error.message }],
+            isError: true,
+          };
+        }
+        throw error;
       }
 
-      const effectiveRate = taxableIncome > 0 ? tax / taxableIncome : 0;
+      if (!result) {
+        return ERRORS.invalidState(stateCode);
+      }
+
+      const { adjustedIncome, deduction, tax, effectiveRate } = result;
 
       const lines = [
         `## ${state.name} — Estimated State Tax`,
@@ -155,31 +155,53 @@ export function registerStateTaxTools(server: McpServer): void {
     {
       states: z.array(z.string().length(2)).min(2).max(10).describe("Array of state codes to compare (e.g., ['CA', 'TX', 'WA', 'NY'])"),
       taxableIncome: z.number().min(0).describe("Annual taxable income"),
+      filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
     },
-    async ({ states, taxableIncome }) => {
-      const results = states.map((code) => {
-        const state = getStateInfo(code);
-        if (!state) return { code, name: "Unknown", tax: 0, rate: 0, type: "unknown" as const };
+    async ({ states, taxableIncome, filingStatus }) => {
+      const status = filingStatus ?? "single";
+      const results: Array<{
+        code: string;
+        name: string;
+        tax: number;
+        rate: number;
+        type: StateTaxType;
+      }> = [];
 
-        let tax = 0;
-        if (state.taxType === "none") {
-          tax = 0;
-        } else if (state.taxType === "flat") {
-          tax = taxableIncome * state.topRate;
-        } else if (state.brackets) {
-          tax = calculateGraduatedTax(taxableIncome, state.brackets);
-        } else {
-          tax = taxableIncome * state.topRate;
+      for (const code of states) {
+        const state = getStateInfo(code);
+        if (!state) {
+          return ERRORS.invalidState(code);
         }
 
-        return {
-          code: state.code,
-          name: state.name,
-          tax: Math.round(tax),
-          rate: taxableIncome > 0 ? tax / taxableIncome : 0,
-          type: state.taxType,
-        };
-      });
+        let result: ReturnType<typeof calculateStateTax>;
+        try {
+          result = calculateStateTax({
+            stateCode: code,
+            taxableIncome,
+            filingStatus: status,
+          });
+        } catch (error: unknown) {
+          if (error instanceof UnsupportedStateTaxCalculationError) {
+            return {
+              content: [{ type: "text", text: error.message }],
+              isError: true,
+            };
+          }
+          throw error;
+        }
+
+        if (!result) {
+          return ERRORS.invalidState(code);
+        }
+
+        results.push({
+          code: result.stateCode,
+          name: result.stateName,
+          tax: result.tax,
+          rate: result.effectiveRate,
+          type: result.taxType,
+        });
+      }
 
       results.sort((a, b) => a.tax - b.tax);
 
@@ -223,19 +245,4 @@ export function registerStateTaxTools(server: McpServer): void {
       return { content: [{ type: "text", text: lines.join("\n") }] };
     }
   );
-}
-
-function calculateGraduatedTax(income: number, brackets: StateBracket[]): number {
-  let tax = 0;
-  let remaining = income;
-
-  for (const bracket of brackets) {
-    if (remaining <= 0) break;
-    const bracketSize = bracket.max !== null ? bracket.max - bracket.min : Infinity;
-    const taxable = Math.min(remaining, bracketSize);
-    tax += taxable * bracket.rate;
-    remaining -= taxable;
-  }
-
-  return tax;
 }

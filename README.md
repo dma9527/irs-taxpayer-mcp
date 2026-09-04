@@ -2,12 +2,12 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**The most thorough open-source tax assistant for US individual taxpayers — powered by Model Context Protocol.**
+**An open-source tax estimation and planning assistant for US individual taxpayers using Model Context Protocol.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/irs-taxpayer-mcp.svg)](https://www.npmjs.com/package/irs-taxpayer-mcp)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 
 [English](README.md) | [中文](docs/README_zh.md) | [Español](docs/README_es.md) | [日本語](docs/README_ja.md)
@@ -24,20 +24,20 @@
 
 Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.
 
-This MCP server puts a tax-aware assistant right inside your AI chat. Ask it anything about your tax situation in plain language, and get precise, up-to-date answers — with all calculations running locally on your machine. No data leaves your computer. No IRS login needed. No SSN required.
+This MCP server puts a tax-aware assistant inside your AI chat. Ask about a supported tax scenario in plain language and get deterministic estimates from versioned TY2024 and TY2025 data. Calculations run locally on your machine. No IRS login or SSN is required.
 
-It knows about the One Big Beautiful Bill Act (2025), the latest bracket adjustments, SALT cap changes, and every major credit and deduction. It's like having a knowledgeable friend who happens to be a tax nerd.
+It includes OBBB provisions modeled for TY2025, federal brackets, selected credits and deductions, and explicitly supported state-tax paths. Unsupported state calculations fail closed instead of applying a rough top-rate estimate.
 
 ## 🔒 Privacy Architecture
 
 | Layer                | Design                                              |
 | -------------------- | --------------------------------------------------- |
-| All tax calculations | 100% local execution — zero network calls           |
-| User data storage    | Stateless — nothing saved between calls             |
-| Authentication       | Zero credentials — no SSN, no IRS login             |
+| All tax calculations | 100% local execution: zero network calls           |
+| User data storage    | Stateless: nothing saved between calls             |
+| Authentication       | Zero credentials: no SSN, no IRS login             |
 | Remote data          | Only public IRS info (form descriptions, deadlines) |
-| Telemetry            | None — no analytics, no tracking, no logging        |
-| Source code          | Fully open-source (MIT) — audit every calculation   |
+| Telemetry            | None: no analytics, no tracking, no logging        |
+| Source code          | Fully open-source (MIT): audit every calculation   |
 
 ## ⚡ Getting Started
 
@@ -71,7 +71,7 @@ Add this to your MCP client configuration:
 }
 ```
 
-**Cursor** — same format in Cursor's MCP settings.
+**Cursor**: same format in Cursor's MCP settings.
 
 ### Step 2: Restart your AI assistant
 
@@ -83,12 +83,12 @@ That's it. Just chat naturally:
 
 - _"Calculate my federal tax: $150k income, married filing jointly, 2 kids"_
 - _"Compare California vs Texas vs Washington for $200k income"_
-- _"I'm a freelancer making $80k — what are my quarterly estimated taxes?"_
+- _"I'm a freelancer making $80k: what are my quarterly estimated taxes?"_
 - _"What tax credits am I eligible for? AGI $60k, single, one child"_
 - _"Should I itemize or take the standard deduction? I pay $15k in mortgage interest and $12k in state taxes"_
 - _"Explain the Backdoor Roth IRA strategy"_
 - _"How much is the EITC for a family of 4 earning $35k?"_
-- _"I exercised ISOs this year — will I owe AMT?"_
+- _"I exercised ISOs this year: will I owe AMT?"_
 - _"Help me plan my year-end tax moves. I have a 401k and HSA."_
 
 ### Alternative: Docker
@@ -98,17 +98,26 @@ docker build -t irs-taxpayer-mcp .
 docker run -i irs-taxpayer-mcp
 ```
 
-### Alternative: SSE Transport
+### Alternative: Streamable HTTP Transport
 
 ```bash
-npx irs-taxpayer-mcp --sse --port 3000
-# Health check: http://localhost:3000/health
-# SSE endpoint: http://localhost:3000/sse
+npx irs-taxpayer-mcp --http --port 3000
+# MCP endpoint: http://127.0.0.1:3000/mcp
+# Health check: http://127.0.0.1:3000/health
 ```
+
+HTTP mode is stateless and binds only to a loopback host by default. Browser requests must use an exact allowed Origin. Add a trusted browser Origin with a repeatable flag:
+
+```bash
+npx irs-taxpayer-mcp --http \
+  --allowed-origin https://trusted-client.example
+```
+
+The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` and `/messages` endpoints are not exposed.
 
 </div>
 
-## 🛠️ Tools (39)
+## 🛠️ Tools (43)
 
 ### Federal Tax Calculations
 
@@ -140,7 +149,7 @@ npx irs-taxpayer-mcp --sse --port 3000
 
 | Tool                      | What it does                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| `get_retirement_accounts` | IRA, Roth, 401k, SEP, Solo 401k, HSA, 529 — limits, tax treatment, tips        |
+| `get_retirement_accounts` | IRA, Roth, 401k, SEP, Solo 401k, HSA, 529: limits, tax treatment, tips        |
 | `get_retirement_strategy` | Backdoor Roth, Mega Backdoor, Roth Conversion Ladder, Tax Loss/Gain Harvesting |
 
 ### Tax Planning & Scenarios
@@ -157,17 +166,17 @@ npx irs-taxpayer-mcp --sse --port 3000
 
 | Tool                        | What it does                                                          |
 | --------------------------- | --------------------------------------------------------------------- |
-| `get_state_tax_info`        | Rates, brackets, and details for all 50 states + DC                   |
-| `estimate_state_tax`        | Estimate state tax liability with state-specific deductions           |
-| `compare_state_taxes`       | Compare multiple states side-by-side (great for relocation decisions) |
-| `list_no_income_tax_states` | All 9 states with no income tax                                       |
+| `get_state_tax_info`        | Reference data and notes for all 50 states + DC                      |
+| `estimate_state_tax`        | Estimate supported state paths; unsupported bracket data fails closed |
+| `compare_state_taxes`       | Compare states only when every requested calculation is supported     |
+| `list_no_income_tax_states` | All 9 states with no broad individual income tax                      |
 
 ### IRS Information
 
 | Tool                  | What it does                                                       |
 | --------------------- | ------------------------------------------------------------------ |
 | `get_tax_deadlines`   | Key IRS dates and deadlines by tax year                            |
-| `check_refund_status` | How to check your refund (guidance only — no IRS account access)   |
+| `check_refund_status` | How to check your refund (guidance only: no IRS account access)   |
 | `get_irs_form_info`   | Info about 14 common IRS forms (1040, W-2, 1099s, Schedules, etc.) |
 
 ### OBBB Act (2025) Tools
@@ -175,13 +184,13 @@ npx irs-taxpayer-mcp --sse --port 3000
 | Tool                             | What it does                                                                               |
 | -------------------------------- | ------------------------------------------------------------------------------------------ |
 | `calculate_obbb_deductions`      | Calculate all 4 new OBBB deductions: tips, overtime, senior bonus, auto loan interest      |
-| `what_changed_between_tax_years` | Full diff between TY2024 and TY2025 — brackets, deductions, credits, SALT, OBBB provisions |
+| `what_changed_between_tax_years` | Full diff between TY2024 and TY2025: brackets, deductions, credits, SALT, OBBB provisions |
 
 ### Full Reports & Analysis
 
 | Tool                            | What it does                                                                                  |
 | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `generate_full_tax_report`      | TurboTax-style full report: income → deductions → federal → FICA → state → take-home → refund |
+| `generate_full_tax_report`      | Estimation report: income, deductions, federal, FICA, supported state tax, take-home, and refund inputs |
 | `process_1099_income`           | Process multiple 1099 forms (NEC, INT, DIV, B, MISC) with tax impact by category              |
 | `get_personalized_tax_calendar` | Personalized deadlines based on your situation (self-employed, extension, investments)        |
 | `analyze_paycheck`              | Verify paycheck withholding accuracy, project annual tax, suggest W-4 adjustments             |
@@ -194,13 +203,22 @@ npx irs-taxpayer-mcp --sse --port 3000
 | `plan_multi_year_taxes`         | 3-5 year tax projection with bracket management and age milestones                            |
 | `analyze_relocation_taxes`      | In-depth state relocation analysis with multi-year savings and SALT impact                    |
 
+### Guidance & Feedback
+
+| Tool                    | What it does                                                        |
+| ----------------------- | ------------------------------------------------------------------- |
+| `run_tax_health_check`  | Report tool coverage and the freshness of built-in tax-year data   |
+| `lookup_tax_rule`       | Search the built-in tax knowledge base                              |
+| `get_form_filing_guide` | Provide step-by-step guidance for supported IRS forms               |
+| `submit_feedback`       | Generate a prefilled GitHub issue link without transmitting tax data |
+
 ## 📊 Tax Year Coverage
 
-### TY2024 (filing now)
+### TY2024
 
-All data from IRS Revenue Procedure 2023-34. Standard deduction $14,600 (single) / $29,200 (MFJ). CTC $2,000. SALT cap $10,000.
+Supported historical calculation year using IRS Revenue Procedure 2023-34. Standard deduction $14,600 (single) / $29,200 (MFJ). CTC $2,000. SALT cap $10,000.
 
-### TY2025 (updated for One Big Beautiful Bill Act)
+### TY2025
 
 Reflects OBBB signed July 4, 2025:
 
@@ -209,6 +227,19 @@ Reflects OBBB signed July 4, 2025:
 - SALT cap: $40,000 for AGI ≤ $500K (was $10,000)
 - New deductions: tips ($25K), overtime ($12.5K), senior bonus ($6K age 65+), auto loan interest ($10K)
 - 401k catch-up: $11,250 for ages 60-63 (SECURE 2.0)
+
+## Supported Scope and Boundaries
+
+This project is a deterministic estimation and planning engine, not tax preparation or filing software.
+
+- Federal estimates cover the modeled TY2024 and TY2025 inputs exposed by each tool. They do not implement every Form 1040 line, schedule, election, limitation, carryforward, or dependency rule.
+- State reference information covers all 50 states and DC. Numeric estimates support all modeled no-tax and flat-tax states, graduated single brackets for AL, CA, CT, DE, HI, MN, MO, NJ, NY, and OR, and graduated married brackets for CA. Unsupported graduated or filing-status paths return an error.
+- State calculations do not yet model part-year or nonresident allocation, every local tax, or separate HoH and MFS brackets.
+- QBI, AMT, audit-risk, retirement, relocation, and multi-year outputs are planning estimates with documented simplifications.
+- Refund projections depend only on the inputs and refundable credits modeled by the selected tool. They are not an IRS refund determination.
+- The server does not generate a tax return, sign a return, transmit MeF data, or provide filing eligibility validation.
+
+See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federal return engine.
 
 ## 🧮 Calculation Engine
 
@@ -219,18 +250,19 @@ Reflects OBBB signed July 4, 2025:
 | Self-employment tax (SS + Medicare)          | ✅     |
 | Net Investment Income Tax (3.8% NIIT)        | ✅     |
 | Additional Medicare Tax (0.9%)               | ✅     |
-| Alternative Minimum Tax (AMT)                | ✅     |
-| QBI Deduction (Section 199A)                 | ✅     |
+| Alternative Minimum Tax (AMT)                | Modeled with stated limitations |
+| QBI Deduction (Section 199A)                 | Modeled with stated limitations |
 | Child Tax Credit with phase-out              | ✅     |
-| EITC precise calculation                     | ✅     |
+| EITC TY2024/TY2025 calculation               | ✅     |
 | Standard vs itemized deduction               | ✅     |
 | Year-specific SALT cap (OBBB)                | ✅     |
-| State taxes (50 states + DC)                 | ✅     |
-| 20+ federal tax credits                      | ✅     |
-| Retirement accounts & strategies             | ✅     |
-| W-4 withholding calculator                   | ✅     |
+| State reference data (50 states + DC)        | ✅     |
+| State numeric estimates                      | Supported paths only |
+| 20+ federal credit reference and screening   | ✅     |
+| Retirement account reference and planning    | Planning estimate |
+| W-4 withholding calculator                   | Planning estimate |
 
-All data points cite IRS Revenue Procedures, IRC sections, and relevant legislation (TCJA, SECURE 2.0, OBBB).
+Numeric regression tests cite IRS Revenue Procedures, IRC sections, and relevant legislation. Reference and planning tools may summarize rules that are not fully represented in the calculation engine.
 
 ## 🏗️ Build from Source
 
@@ -245,7 +277,7 @@ npm run dev        # development mode (tsx)
 
 ## 🐛 Found a Bug?
 
-- **Calculation error or incorrect data?** [Open an issue](https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose) — include the tool name, your inputs, and the expected result.
+- **Calculation error or incorrect data?** [Open an issue](https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose): include the tool name, your inputs, and the expected result.
 - **Questions or discussion?** [GitHub Discussions](https://github.com/dma9527/irs-taxpayer-mcp/discussions)
 - **Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 

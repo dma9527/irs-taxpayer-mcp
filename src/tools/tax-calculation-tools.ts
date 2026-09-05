@@ -9,7 +9,12 @@ import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { calculateW4 } from "../calculators/w4-calculator.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
-import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
+import {
+  AMT_PLANNING_NOTE,
+  fmt,
+  FilingStatusEnum,
+  registerTaxTool,
+} from "./shared.js";
 import { TaxInputValidationError } from "../calculators/validation.js";
 import { ERRORS, toolError, wrapToolHandler } from "./error-handler.js";
 
@@ -126,7 +131,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `**Estimated Quarterly Payment**: $${fmt(result.estimatedQuarterlyPayment)}`,
           "",
           result.qbiDeduction > 0 ? `> ℹ️ QBI method: ${result.qbiCalculationMethod}; wage/property limit: $${fmt(result.qbiWagePropertyLimit)}; phase-in: ${(result.qbiPhaseInPercentage * 100).toFixed(1)}%.` : "",
-          result.amt > 0 ? `> ℹ️ AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains. Other Form 6251 preference items remain outside the modeled inputs.` : "",
+          result.amt > 0 ? `> ℹ️ ${AMT_PLANNING_NOTE}` : "",
           ...result.limitations.map((limitation) => `> ⚠️ ${limitation}`),
           "",
           `> ⚠️ This is an estimate for educational purposes only. It does not constitute tax advice. Consult a qualified tax professional for your specific situation.`,

@@ -84,6 +84,42 @@ describe("calculateTax", () => {
       expect(result.taxableIncome).toBe(83900);
       expect(result.ordinaryIncomeTax).toBe(13170);
     });
+
+    it("calculates TY2026 MFJ brackets", () => {
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "married_filing_jointly",
+        grossIncome: 150000,
+      });
+
+      expect(result.taxableIncome).toBe(117800);
+      expect(result.ordinaryIncomeTax).toBe(15340);
+    });
+
+    it("applies the TY2026 unmarried age-65 deduction", () => {
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "single",
+        grossIncome: 100000,
+        age65OrOlder: true,
+      });
+
+      expect(result.deductionAmount).toBe(18150);
+      expect(result.taxableIncome).toBe(81850);
+    });
+
+    it("stacks TY2026 long-term gains above ordinary income", () => {
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "single",
+        grossIncome: 80000,
+        capitalGains: 50000,
+      });
+
+      expect(result.taxableIncome).toBe(63900);
+      expect(result.ordinaryIncomeTax).toBe(1420);
+      expect(result.capitalGainsTax).toBe(2167.5);
+    });
   });
 
   describe("additional deductions for age/blind", () => {
@@ -805,6 +841,43 @@ describe("calculateTax", () => {
 
       expect(result.capitalGainsTax).toBe(158325);
       expect(result.amt).toBeCloseTo(8363, 0);
+    });
+
+    it("treats qualified dividends and long-term gains equally under AMT", () => {
+      const common: TaxInput = {
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 1000000,
+        w2Income: 100000,
+      };
+      const dividendResult = calculateTax({
+        ...common,
+        qualifiedDividends: 900000,
+      });
+      const capitalGainResult = calculateTax({
+        ...common,
+        capitalGains: 900000,
+      });
+
+      expect(dividendResult.amt).toBe(8363);
+      expect(dividendResult.amt).toBe(capitalGainResult.amt);
+      expect(dividendResult.totalFederalTax)
+        .toBe(capitalGainResult.totalFederalTax);
+    });
+
+    it("caps preferential income at AMT taxable income after exemption", () => {
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 320000,
+        capitalGains: 247000,
+        itemizedDeductions: 72000,
+        age65OrOlder: true,
+      });
+
+      expect(result.taxableIncome).toBe(248000);
+      expect(result.capitalGainsTax).toBe(29947.5);
+      expect(result.amt).toBe(0);
     });
 
     it("AMT considers SALT add-back for itemizers", () => {

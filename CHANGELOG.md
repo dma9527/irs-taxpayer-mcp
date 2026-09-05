@@ -9,9 +9,14 @@ All notable changes to irs-taxpayer-mcp.
 - Added a monthly and manually runnable Planner Feedback dashboard that updates a GitHub Issue from reviewed labels, public npm downloads, aggregate resource variables, quality timing, privacy incidents, and the filing-engine gate.
 - Added monthly aggregate JSON artifacts and idempotent per-month snapshot comments without reading or reproducing issue bodies.
 
+### Fixed
+
+- Corrected stale full-report wording that claimed AMT did not preserve preferential rates for qualified dividends and net capital gains.
+- Centralized the AMT planning note so direct calculations and full reports cannot drift independently.
+
 ### Tests
 
-- Expanded the suite to 291 tests across 13 test files with privacy, aggregation, and workflow contract regressions.
+- Expanded the suite to 297 tests across 13 test files with privacy, aggregation, workflow contracts, qualified-dividend AMT equivalence, AMT preferential-income caps, and independent TY2026 calculation regressions.
 
 ## [1.0.1] - 2026-09-04
 

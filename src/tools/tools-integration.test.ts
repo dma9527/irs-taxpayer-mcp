@@ -529,6 +529,23 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("California");
       expect(text).toContain("Take-Home");
     });
+
+    it("describes preferential rates under AMT accurately", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2024,
+        filingStatus: "single",
+        w2Income: 100000,
+        longTermCapitalGains: 900000,
+      });
+
+      expect(text).toContain("| AMT | $8,363 |");
+      expect(text).toContain(
+        "AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains.",
+      );
+      expect(text).not.toContain(
+        "Does not apply preferential capital gains rates under AMT",
+      );
+    });
   });
 
   describe("generate_tax_plan", () => {

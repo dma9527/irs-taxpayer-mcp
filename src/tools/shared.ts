@@ -15,6 +15,9 @@ import type {
   ServerRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 
+export const AMT_PLANNING_NOTE =
+  "AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains. Other Form 6251 preference items remain outside the modeled inputs.";
+
 /** Format a number as US currency string (no $ prefix). */
 export function fmt(n: number): string {
   return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });

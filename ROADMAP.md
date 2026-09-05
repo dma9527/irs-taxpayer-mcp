@@ -27,7 +27,7 @@ Version 1.0.1 is a privacy-first deterministic TY2024 through TY2026 estimation 
 - Added separate CTC and EITC child facts plus fail-closed retirement, QBI, state, and annual-source requirements.
 - Added an executable filing-engine investment gate and privacy-safe opt-in feedback intake.
 - Added tag-driven OIDC releases for npm, GitHub Releases, and the MCP Registry.
-- Expanded the suite to 291 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, monthly dashboard aggregation, and Streamable HTTP MCP initialization.
+- Expanded the suite to 297 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, monthly dashboard aggregation, AMT preferential-rate coverage, and Streamable HTTP MCP initialization.
 
 ## Supported Today
 

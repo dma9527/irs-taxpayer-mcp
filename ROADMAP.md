@@ -4,7 +4,7 @@ _Last updated: 2026-09-04._
 
 ## Current Baseline
 
-Version 1.0.1 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 44 MCP tools. It is not tax preparation or filing software.
+Version 1.0.2 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 44 MCP tools. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -154,3 +154,4 @@ This phase begins only after the filing-grade verification gates are met.
 | 0.6.0 | 2026-09-04 | Planning-grade P0/P1 corrections, 43 modern MCP contracts, Streamable HTTP, and npm release. |
 | 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |
 | 1.0.1 | 2026-09-04 | First public 1.x release with npm 12-compatible OIDC automation. |
+| 1.0.2 | 2026-09-07 | Monthly feedback dashboard, AMT guidance correction, and independent TY2026/AMT regressions. |

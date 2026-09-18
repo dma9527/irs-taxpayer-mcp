@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-18
+
 ### Added
 
 - Added strict versioned `TaxpayerFacts` schemas that reject identity and unknown fields at every object level.

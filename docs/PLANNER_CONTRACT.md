@@ -2,14 +2,35 @@
 
 `generate_tax_plan` is the flagship workflow for deterministic tax estimation and planning. It combines supported federal calculations, employee FICA, optional exact-year state estimates, payments, assumptions, source provenance, and a calculation trace in one read-only MCP call.
 
+## Execution modes
+
+| Mode | Data path | `privacy.modelInvoked` |
+| --- | --- | --- |
+| Direct local CLI | Local JSON or guided terminal intake calls the deterministic engine directly | `false` |
+| MCP adapter | The MCP host supplies structured tool arguments; the host's model provider may process those facts | `true` |
+
+The direct local commands are:
+
+```bash
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
+
 ## Trust contract
 
-- Calculations run in the local MCP process.
-- The tool makes no network requests.
-- The tool does not persist inputs or outputs.
-- The tool emits no telemetry or analytics.
-- The LLM selects and supplies facts but never performs or mutates tax calculations.
+- The deterministic calculation engine makes no runtime network requests.
+- Direct local commands do not connect to MCP or invoke a model.
+- The MCP server sends and stores no taxpayer data, but the selected MCP host may send prompts and tool arguments to its model provider.
+- The engine emits no telemetry or analytics.
+- The LLM never performs or mutates tax calculations.
 - Unsupported tax years, state profiles, and required worksheet facts return typed errors.
+
+## Local TaxpayerFacts files
+
+Local import files require `schemaVersion: "1.0"` and the same calculation fields used by `generate_tax_plan`. Objects are strict at every level. Unknown identity fields, including names, SSNs, addresses, employer IDs, and account numbers, are rejected instead of ignored.
+
+Files are limited to 1 MiB and symbolic links are rejected. Newly generated files use mode `0600` on POSIX; Windows relies on the current user's filesystem permissions. Validation reports field paths and rules without printing supplied amounts or identity values.
 
 ## Input groups
 
@@ -30,7 +51,7 @@ Qualified dividends must be included in ordinary dividends. Gross and taxable re
 The `plan` object includes:
 
 - `contractVersion`: Stable planner contract version `1.0`.
-- `privacy`: Machine-readable local execution guarantees.
+- `privacy`: Machine-readable local engine guarantees plus `modelInvoked`, which is `false` for direct CLI and conservatively `true` for MCP calls.
 - `facts`: Separate supplied cash income, normalized tax gross income, earned income, and EITC investment income.
 - `results`: AGI, taxable income, federal components, refundable credits, FICA, state estimate, total tax, balances, and quarterly planning amount.
 - `assumptions`: Facts the caller must have already verified.
@@ -50,6 +71,6 @@ The planner does not:
 - Model every Form 1040 line, election, worksheet, schedule, or carryforward.
 - Model local, part-year, nonresident, community-property, or multi-state allocation rules.
 - Reuse state profiles across tax years.
-- Store taxpayer scenarios unless a future explicit opt-in local storage contract is added.
+- Store taxpayer scenarios automatically. Direct intake writes only to an explicit user-selected local output file.
 
 See `docs/FEEDBACK_AND_FILING_GATE.md` for the evidence required before investment in filing-grade behavior.

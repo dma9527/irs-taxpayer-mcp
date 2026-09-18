@@ -24,24 +24,62 @@
 
 Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.
 
-This MCP server puts a tax-aware assistant inside your AI chat. Ask about a supported tax scenario in plain language and get deterministic estimates from versioned TY2024 through TY2026 data. Calculations run locally on your machine. No IRS login or SSN is required.
+This package provides a deterministic local tax engine with two interfaces. Direct local CLI commands can collect, validate, import, and calculate supported tax facts without invoking an MCP client or model. The MCP server lets an AI assistant call the same engine, but tax facts entered into a cloud-hosted MCP client may be processed by that client's model provider. No IRS login or SSN is required.
 
 It includes OBBB provisions modeled for TY2025, federal brackets, selected credits and deductions, and explicitly supported state-tax paths. Unsupported state calculations fail closed instead of applying a rough top-rate estimate.
 
 ## 🔒 Privacy Architecture
 
-| Layer                | Design                                              |
-| -------------------- | --------------------------------------------------- |
-| All tax calculations | 100% local execution: zero network calls           |
-| User data storage    | Stateless: nothing saved between calls             |
-| Authentication       | Zero credentials: no SSN, no IRS login             |
-| Public IRS data     | Bundled and versioned locally: zero runtime network calls |
-| Telemetry            | None: no analytics, no tracking, no logging        |
-| Source code          | Fully open-source (MIT): audit every calculation   |
+| Layer | Design |
+| --- | --- |
+| Deterministic engine | Local execution with no runtime network calls |
+| Direct `intake`, `validate`, and `plan` commands | No MCP connection, model invocation, telemetry, or automatic persistence |
+| Local facts files | Strict versioned JSON, no identity fields, 1 MiB maximum, mode `0600` on POSIX |
+| MCP server | Sends and stores no taxpayer data |
+| MCP client and model | Privacy depends on the selected host and model provider; prompts and tool arguments may leave the machine |
+| Authentication | No SSN, IRS login, or taxpayer identity required |
+| Public IRS data | Bundled and versioned locally |
+| Source code | Open-source MIT code with auditable calculations |
 
 ## ⚡ Getting Started
 
-### Step 1: Add to your AI assistant
+### Option A: Direct local mode (recommended for taxpayer facts)
+
+Install once, before entering any tax facts:
+
+```bash
+npm install --global irs-taxpayer-mcp
+```
+
+Run the guided local questionnaire. It does not start MCP or invoke a model:
+
+```bash
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+```
+
+Or create and edit a strict local template:
+
+```bash
+irs-taxpayer-mcp template --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+```
+
+Calculate directly through the deterministic engine:
+
+```bash
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json --json
+```
+
+New facts files are created with mode `0600` on POSIX. On Windows, the CLI rejects existing symbolic links but relies on the current user's filesystem permissions. Existing files are not replaced unless `--force` is explicit. Imported JSON is limited to 1 MiB, rejects symbolic links and unknown fields, and does not accept names, SSNs, addresses, employer IDs, or account numbers.
+
+Using `npx` may download the public package before execution, but the direct commands do not send the facts file or its values over the network.
+
+### Option B: MCP mode for AI assistants
+
+> The MCP server makes no network requests and stores no taxpayer data. However, facts typed into an MCP client may be processed by that client's model provider. Use direct local mode or a local-model MCP client when end-to-end local handling is required.
+
+#### MCP Step 1: Add to your AI assistant
 
 Add this to your MCP client configuration:
 
@@ -73,13 +111,13 @@ Add this to your MCP client configuration:
 
 **Cursor**: same format in Cursor's MCP settings.
 
-### Step 2: Restart your AI assistant
+#### MCP Step 2: Restart your AI assistant
 
 After saving the config, restart the app. The MCP server will auto-download and connect.
 
-### Step 3: Start asking tax questions
+#### MCP Step 3: Ask supported tax questions
 
-That's it. Just chat naturally:
+The client model converts natural language into tool arguments. Do not enter real taxpayer facts here unless the selected MCP host and model satisfy your privacy requirements:
 
 - _"Calculate my federal tax: $150k income, married filing jointly, 2 kids"_
 - _"Compare California vs Texas vs Washington for $200k income"_
@@ -121,7 +159,7 @@ The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` 
 
 All tools use the current MCP `registerTool` API. Each advertises read-only annotations and an output schema, and returns both human-readable text and `structuredContent`. Error results include a stable error code, message, and recovery suggestion.
 
-The 1.0 flagship `generate_tax_plan` workflow returns domain structured results, assumptions, official source provenance, a calculation trace, and explicit unsupported boundaries. It performs no network requests, persistence, or telemetry. Unsupported tax years, state profiles, and required worksheet facts fail closed. See [Local Tax Planner 1.0 Contract](docs/PLANNER_CONTRACT.md).
+The 1.0 flagship `generate_tax_plan` workflow returns domain structured results, assumptions, official source provenance, a calculation trace, and explicit unsupported boundaries. The deterministic engine performs no network requests, persistence, or telemetry. Its structured privacy metadata reports whether the MCP adapter or direct CLI path was used. Unsupported tax years, state profiles, and required worksheet facts fail closed. See [Local Tax Planner 1.0 Contract](docs/PLANNER_CONTRACT.md).
 
 ### Federal Tax Calculations
 

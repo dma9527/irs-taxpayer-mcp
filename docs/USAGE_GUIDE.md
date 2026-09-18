@@ -6,6 +6,7 @@ A practical guide to getting the most out of the 44 tax tools.
 
 | I want to...                              | Use this tool                    |
 | ----------------------------------------- | -------------------------------- |
+| Enter or import tax facts without a model  | Direct local CLI commands           |
 | Build a local plan with sources and trace     | `generate_tax_plan`              |
 | Calculate my federal tax                  | `calculate_federal_tax`          |
 | See my total tax (federal + state + FICA) | `generate_full_tax_report`       |
@@ -25,6 +26,25 @@ A practical guide to getting the most out of the 44 tax tools.
 | Understand a Roth strategy                | `get_retirement_strategy`        |
 
 ## Common Workflows
+
+### Workflow 0: Private local onboarding and planning
+
+Use this path when tax facts must not be sent to an MCP client or model provider:
+
+```bash
+npm install --global irs-taxpayer-mcp
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
+
+For automation or reviewable output:
+
+```bash
+irs-taxpayer-mcp plan --facts taxpayer-facts.json --json
+```
+
+The direct commands call the deterministic engine without starting MCP or invoking a model. Generated facts files use mode `0600` on POSIX; imported objects are strict and reject identity fields.
 
 ### Workflow 1: "How much tax do I owe?"
 

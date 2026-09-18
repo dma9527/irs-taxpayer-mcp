@@ -167,6 +167,7 @@ describe("E2E Smoke Test", () => {
               networkRequests: z.literal(false),
               persisted: z.literal(false),
               telemetry: z.literal(false),
+              modelInvoked: z.literal(true),
             }),
             results: z.object({
               adjustedGrossIncome: z.number(),

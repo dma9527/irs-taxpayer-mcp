@@ -572,6 +572,7 @@ describe("MCP Tools Integration", () => {
             networkRequests: z.literal(false),
             persisted: z.literal(false),
             telemetry: z.literal(false),
+            modelInvoked: z.literal(true),
           }),
           facts: z.object({ grossIncome: z.number() }),
           results: z.object({

@@ -20,7 +20,15 @@
 
 ## 🔒 隐私优先
 
-**你的财务数据永远不会离开你的电脑。** 所有税务计算在本地运行，无网络传输，无数据存储，无需任何凭证。
+**确定性计算引擎不会联网或存储纳税数据。** 直接使用 `intake`、`validate` 和 `plan` 命令时不会启动 MCP 或调用模型。通过 MCP client 输入的 tax facts 可能由该 client 的模型供应商处理。
+
+不经过模型的本地使用方式：
+
+```bash
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
 
 ## 🛠️ 工具（44 个）
 

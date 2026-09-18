@@ -21,8 +21,8 @@ export function createTaxServer(): McpServer {
     name: SERVER_NAME,
     version: SERVER_VERSION,
     description:
-      "Privacy-first local tax calculation and planning tools for individual US taxpayers. " +
-      "All financial calculations are deterministic and run locally; your income data never leaves your machine.",
+      "The deterministic engine makes no runtime network requests and stores no taxpayer data. " +
+      "Tax facts entered through an MCP client may be processed by that client's model provider; use direct local CLI commands to bypass models.",
   });
 
   registerTaxCalculationTools(server);

@@ -20,7 +20,15 @@
 
 ## 🔒 プライバシー最優先
 
-**あなたの財務データはコンピューターから外に出ることはありません。** すべての計算はローカルで実行されます。
+**決定論的エンジンはネットワーク要求を行わず、税務データを保存しません。** 直接の `intake`、`validate`、`plan` コマンドはMCPを起動せず、モデルも呼び出しません。MCPクライアントに入力した税務情報は、そのクライアントのモデル提供者によって処理される場合があります。
+
+モデルを使わないローカル実行：
+
+```bash
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
 
 ## 🛠️ ツール（44個）
 

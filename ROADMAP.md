@@ -1,6 +1,6 @@
 # irs-taxpayer-mcp Roadmap
 
-_Last updated: 2026-09-04._
+_Last updated: 2026-09-18._
 
 ## Current Baseline
 
@@ -23,11 +23,12 @@ Version 1.0.2 is a privacy-first deterministic TY2024 through TY2026 estimation 
 - Replaced shared legacy SSE with stateless Streamable HTTP while retaining stdio.
 - Restricted HTTP to loopback hosts, added exact Origin allowlists, and enabled SDK Host validation.
 - Pinned direct runtime and development dependencies to exact versions.
-- Added `generate_tax_plan` with domain structured results, local-only privacy guarantees, assumptions, official sources, a calculation trace, and explicit unsupported boundaries.
+- Added `generate_tax_plan` with domain structured results, local engine guarantees, assumptions, official sources, a calculation trace, and explicit unsupported boundaries.
+- Added strict versioned TaxpayerFacts JSON, guided local intake, validation, and direct no-model planning commands.
 - Added separate CTC and EITC child facts plus fail-closed retirement, QBI, state, and annual-source requirements.
 - Added an executable filing-engine investment gate and privacy-safe opt-in feedback intake.
 - Added tag-driven OIDC releases for npm, GitHub Releases, and the MCP Registry.
-- Expanded the suite to 297 tests, including IRS numeric regressions, real structured planner contracts, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, monthly dashboard aggregation, AMT preferential-rate coverage, and Streamable HTTP MCP initialization.
+- Expanded the suite to 315 tests, including IRS numeric regressions, real structured planner contracts, direct local intake/import, privacy boundaries, capital-loss carryovers, filing investment gates, release metadata gates, npm 11/12 pack compatibility, monthly dashboard aggregation, AMT preferential-rate coverage, and Streamable HTTP MCP initialization.
 
 ## Supported Today
 
@@ -125,6 +126,7 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] Tool contract snapshot and stable agent evaluation suite.
 - [x] Tag-driven release workflow with OIDC, exact-tarball smoke, and idempotent retry checks.
 - [x] Monthly privacy-safe feedback and filing-gate dashboard with manual rerun support.
+- [x] Strict local TaxpayerFacts intake/import and direct no-model planning path.
 - [x] Configure the npm Trusted Publisher and verify OIDC publishing on a release tag.
 - [x] Stateless Streamable HTTP with loopback and Origin protections.
 - [x] IRS numeric regression tests for high-impact P0 defects.

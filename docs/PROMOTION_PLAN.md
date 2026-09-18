@@ -135,7 +135,7 @@ GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 
 - r/ChatGPT 或 r/ClaudeAI: "I built a local MCP server for supported US tax estimates"
 - r/tax: "Open-source tax estimator with 44 tools, updated for modeled OBBB provisions"
-- r/personalfinance: "Free tax estimation tool that runs locally: no data leaves your computer"
+- r/personalfinance: "Free deterministic tax planner with a direct local no-model CLI and an optional MCP adapter"
 - r/SideProject: 展示项目
 
 帖子模板：

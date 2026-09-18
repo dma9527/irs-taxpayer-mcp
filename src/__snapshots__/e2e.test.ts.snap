@@ -4816,6 +4816,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         "stateCode": {
           "maxLength": 2,
           "minLength": 2,
+          "pattern": "^[A-Za-z]{2}$",
           "type": "string",
         },
         "taxYear": {
@@ -4937,6 +4938,9 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                   "const": "local",
                   "type": "string",
                 },
+                "modelInvoked": {
+                  "type": "boolean",
+                },
                 "networkRequests": {
                   "const": false,
                   "type": "boolean",
@@ -4955,6 +4959,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "networkRequests",
                 "persisted",
                 "telemetry",
+                "modelInvoked",
               ],
               "type": "object",
             },

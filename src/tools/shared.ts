@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { FilingStatusSchema } from "../facts/taxpayer-facts.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   ShapeOutput,
@@ -24,12 +25,7 @@ export function fmt(n: number): string {
 }
 
 /** Zod enum for filing status, reused across all tool files. */
-export const FilingStatusEnum = z.enum([
-  "single",
-  "married_filing_jointly",
-  "married_filing_separately",
-  "head_of_household",
-]);
+export const FilingStatusEnum = FilingStatusSchema;
 
 const TAX_TOOL_OUTPUT_SCHEMA = {
   text: z.string(),

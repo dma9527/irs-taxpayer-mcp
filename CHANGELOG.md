@@ -4,6 +4,27 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- Added strict versioned `TaxpayerFacts` schemas that reject identity and unknown fields at every object level.
+- Added direct local `intake`, `template`, `validate`, and `plan` commands that bypass MCP and model invocation.
+- Added local JSON import with a 1 MiB limit, symbolic-link rejection, private `0600` POSIX output, overwrite protection, and value-redacted validation errors.
+
+### Changed
+
+- Extracted the deterministic tax-plan service from the MCP tool so direct CLI and MCP adapters share one calculation path.
+- Scoped privacy metadata with `modelInvoked: false` for direct CLI and `true` for MCP calls.
+- Corrected public privacy documentation to distinguish local engine guarantees from MCP client and model-provider behavior.
+
+### Security
+
+- Direct local commands make no tax-data network requests, start no MCP connection, invoke no model, and emit no telemetry.
+- Local facts files do not accept names, SSNs, addresses, employer IDs, or account numbers.
+
+### Tests
+
+- Expanded the suite to 315 tests across 15 test files with schema, import, permissions, redaction, retirement-zero, symlink, questionnaire, and real binary regressions.
+
 ## [1.0.2] - 2026-09-07
 
 ### Added

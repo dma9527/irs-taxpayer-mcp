@@ -20,7 +20,15 @@
 
 ## 🔒 Privacidad Primero
 
-**Sus datos financieros nunca salen de su computadora.** Todos los cálculos se ejecutan localmente.
+**El motor determinista no realiza solicitudes de red ni almacena datos fiscales.** Los comandos directos `intake`, `validate` y `plan` no inician MCP ni invocan un modelo. Los datos introducidos mediante un cliente MCP pueden ser procesados por el proveedor del modelo de ese cliente.
+
+Uso local sin modelo:
+
+```bash
+irs-taxpayer-mcp intake --output taxpayer-facts.json
+irs-taxpayer-mcp validate --facts taxpayer-facts.json
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
 
 ## 🛠️ Herramientas (44)
 

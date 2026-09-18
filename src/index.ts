@@ -3,10 +3,11 @@
  * IRS Taxpayer MCP Server
  *
  * A Model Context Protocol server for individual US taxpayers.
- * Local architecture:
- *   - All tax calculations run locally (no PII leaves the machine)
+ * Local calculation architecture:
+ *   - The deterministic engine makes no runtime network calls
  *   - Public IRS reference data is bundled and versioned locally
- *   - No runtime network calls, persistence, or telemetry
+ *   - Direct intake/validate/plan commands do not invoke a model or MCP client
+ *   - MCP client and model-provider privacy depends on the selected host
  *
  * Supports stdio and Streamable HTTP transports:
  *   stdio (default): npx irs-taxpayer-mcp
@@ -26,6 +27,11 @@ import {
   SERVER_VERSION,
   TOOL_COUNT,
 } from "./tax-server.js";
+import {
+  createTerminalLocalCommandIo,
+  isLocalCommand,
+  runLocalCommand,
+} from "./local-cli.js";
 
 const args = process.argv.slice(2);
 
@@ -52,7 +58,14 @@ async function main(options: CliOptions): Promise<void> {
   }
 }
 
-if (args.includes("--help") || args.includes("-h")) {
+if (isLocalCommand(args)) {
+  const terminal = createTerminalLocalCommandIo();
+  try {
+    process.exitCode = await runLocalCommand(args, terminal.io);
+  } finally {
+    terminal.close();
+  }
+} else if (args.includes("--help") || args.includes("-h")) {
   printHelp();
 } else {
   try {
@@ -74,6 +87,16 @@ USAGE:
   npx irs-taxpayer-mcp --http --host localhost Bind another loopback hostname
   npx irs-taxpayer-mcp --http --allowed-origin https://trusted.example
   npx irs-taxpayer-mcp --help                  Show this help
+
+LOCAL PRIVACY COMMANDS (NO MCP CONNECTION OR MODEL):
+  npx irs-taxpayer-mcp intake --output facts.json
+  npx irs-taxpayer-mcp template --output facts.json
+  npx irs-taxpayer-mcp validate --facts facts.json
+  npx irs-taxpayer-mcp plan --facts facts.json
+  npx irs-taxpayer-mcp plan --facts facts.json --json
+
+  Local facts files are strict, versioned JSON and use mode 0600 on POSIX.
+  These commands do not start MCP, invoke a model, make network requests, or emit telemetry.
 
   --sse is a deprecated alias for --http. Legacy GET /sse is not exposed.
   HTTP transport only binds to loopback hosts. Browser Origins must exactly match
@@ -147,7 +170,9 @@ TOOLS (${TOOL_COUNT}):
     get_form_filing_guide        Step-by-step IRS form filing guidance
     submit_feedback              Generate a GitHub issue link for feedback
 
-PRIVACY: All calculations run locally. No data leaves your machine.
+PRIVACY: The server and direct local commands make no runtime network requests.
+MCP MODE: Tax facts may be processed by the MCP client's model provider.
+DIRECT MODE: intake, validate, and plan do not invoke MCP or a model.
 DATA: TY2024 through TY2026 from annual IRS and SSA sources.
 `;
   console.log(help);

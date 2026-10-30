@@ -6,6 +6,7 @@ import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ITEMIZED_DEDUCTIONS, ABOVE_THE_LINE_DEDUCTIONS } from "../data/deductions.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
+import { applyItemizedDeductionLimits, calculateNonItemizerCharitableDeduction } from "../calculators/tax-calculator.js";
 import { ERRORS } from "./error-handler.js";
 import { fmt, registerTaxTool } from "./shared.js";
 
@@ -62,7 +63,8 @@ export function registerDeductionTools(server: McpServer): void {
       medicalExpenses: z.number().min(0).optional().describe("Unreimbursed medical expenses"),
       stateLocalTaxes: z.number().min(0).optional().describe("State/local income + property taxes paid"),
       mortgageInterest: z.number().min(0).optional().describe("Home mortgage interest paid"),
-      charitableDonations: z.number().min(0).optional().describe("Charitable contributions"),
+      charitableDonations: z.number().min(0).optional().describe("Charitable contributions claimed on Schedule A"),
+      nonItemizerCashDonations: z.number().min(0).optional().describe("TY2026+: qualifying cash gifts to public charities (not donor-advised funds) for the non-itemizer deduction"),
       otherItemized: z.number().min(0).optional().describe("Other itemized deductions"),
       agi: z.number().min(0).describe("Adjusted Gross Income (needed for medical expense threshold)"),
       age65OrOlder: z.boolean().optional(),
@@ -87,10 +89,18 @@ export function registerDeductionTools(server: McpServer): void {
       const mortgage = params.mortgageInterest ?? 0;
       const charity = params.charitableDonations ?? 0;
       const other = params.otherItemized ?? 0;
-      const totalItemized = medical + salt + mortgage + charity + other;
+      const preLimitItemized = medical + salt + mortgage + charity + other;
+      const { charitableFloorReduction, itemizedDeductionLimitReduction, itemizedAllowed: totalItemized } =
+        applyItemizedDeductionLimits(data, params.filingStatus, params.agi, preLimitItemized, charity);
+      const nonItemizerCharitable = calculateNonItemizerCharitableDeduction(
+        data,
+        params.filingStatus,
+        params.nonItemizerCashDonations ?? 0,
+      );
+      const standardSide = stdDeduction + nonItemizerCharitable;
 
-      const recommendation = totalItemized > stdDeduction ? "itemized" : "standard";
-      const savings = Math.abs(totalItemized - stdDeduction);
+      const recommendation = totalItemized > standardSide ? "itemized" : "standard";
+      const savings = Math.abs(totalItemized - standardSide);
 
       const lines = [
         `## Standard vs Itemized Deduction — TY${params.taxYear}`,
@@ -102,9 +112,13 @@ export function registerDeductionTools(server: McpServer): void {
         `| Mortgage Interest | $${fmt(mortgage)} |`,
         `| Charitable | $${fmt(charity)} |`,
         other > 0 ? `| Other | $${fmt(other)} |` : "",
+        charitableFloorReduction > 0 ? `| Charitable 0.5% of AGI floor | -$${fmt(charitableFloorReduction)} |` : "",
+        itemizedDeductionLimitReduction > 0 ? `| Itemized deduction limit (2/37) | -$${fmt(itemizedDeductionLimitReduction)} |` : "",
         `| **Total Itemized** | **$${fmt(totalItemized)}** |`,
         "",
-        `**Standard Deduction**: $${fmt(stdDeduction)}`,
+        nonItemizerCharitable > 0
+          ? `**Standard Deduction**: $${fmt(stdDeduction)} + $${fmt(nonItemizerCharitable)} non-itemizer charitable deduction = $${fmt(standardSide)}`
+          : `**Standard Deduction**: $${fmt(stdDeduction)}`,
         "",
         `💡 **Recommendation**: Take the **${recommendation} deduction** — saves $${fmt(savings)} more.`,
       ].filter(Boolean);

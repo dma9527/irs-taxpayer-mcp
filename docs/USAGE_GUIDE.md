@@ -1,6 +1,6 @@
 # Usage Guide: irs-taxpayer-mcp
 
-A practical guide to getting the most out of the 44 tax tools.
+A practical guide to getting the most out of the 45 tax tools.
 
 ## Quick Reference: Which Tool to Use
 

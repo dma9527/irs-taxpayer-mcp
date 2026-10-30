@@ -139,3 +139,43 @@ describe("calculateEITC IRS parameter verification", () => {
     expect(overInvestmentLimit.reason).toContain("$12,200");
   });
 });
+
+describe("calculateEITC phase-out limit during phase-in", () => {
+  it("returns zero when AGI phase-out exceeds the phase-in credit", () => {
+    // Phase-in 8,000 * 7.65% = 612; phase-out cap 649 - (25,000 - 10,620) * 7.65% < 0.
+    const result = calculateEITC({
+      taxYear: 2025,
+      filingStatus: "single",
+      earnedIncome: 8000,
+      agi: 25000,
+      qualifyingChildren: 0,
+    });
+    expect(result.credit).toBe(0);
+    expect(result.eligible).toBe(false);
+  });
+
+  it("limits the phase-in credit to the AGI phase-out amount", () => {
+    // Phase-in 10,000 * 34% = 3,400; cap 4,328 - (30,000 - 23,350) * 15.98% = 3,265.33.
+    const result = calculateEITC({
+      taxYear: 2025,
+      filingStatus: "single",
+      earnedIncome: 10000,
+      agi: 30000,
+      qualifyingChildren: 1,
+    });
+    expect(result.credit).toBe(3265);
+    expect(result.phase).toBe("phase-out");
+  });
+
+  it("keeps the full phase-in credit when AGI is below the phase-out start", () => {
+    const result = calculateEITC({
+      taxYear: 2025,
+      filingStatus: "single",
+      earnedIncome: 10000,
+      agi: 20000,
+      qualifyingChildren: 1,
+    });
+    expect(result.credit).toBe(3400);
+    expect(result.phase).toBe("phase-in");
+  });
+});

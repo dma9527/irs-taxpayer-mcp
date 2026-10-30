@@ -256,6 +256,11 @@ export function buildTaxpayerFactsFromAnswers(
   const deductions = compactObject({
     aboveTheLine: optionalNumber(answers.aboveTheLine),
     itemized: optionalNumber(answers.itemized),
+    itemizedCharitable: optionalNumber(answers.itemizedCharitable),
+    nonItemizerCashCharitable: optionalNumber(answers.nonItemizerCashCharitable),
+    qualifiedTips: optionalNumber(answers.qualifiedTips),
+    qualifiedOvertimeCompensation: optionalNumber(answers.qualifiedOvertimeCompensation),
+    qualifiedVehicleLoanInterest: optionalNumber(answers.qualifiedVehicleLoanInterest),
     forceItemized: optionalBoolean(answers.forceItemized),
   });
   const family = compactObject({
@@ -267,6 +272,13 @@ export function buildTaxpayerFactsFromAnswers(
     hasForm2555: optionalBoolean(answers.hasForm2555),
     marriedFilingSeparatelyLivedWithSpouse:
       optionalBoolean(answers.marriedFilingSeparatelyLivedWithSpouse),
+    dependentCareExpenses: optionalNumber(answers.dependentCareExpenses),
+    dependentCareQualifyingIndividuals:
+      optionalInteger(answers.dependentCareQualifyingIndividuals),
+    dependentCareBenefitsExcluded: optionalNumber(answers.dependentCareBenefitsExcluded),
+    spouseEarnedIncome: optionalNumber(answers.spouseEarnedIncome),
+    age65OrOlder: optionalBoolean(answers.age65OrOlder),
+    spouseAge65OrOlder: optionalBoolean(answers.spouseAge65OrOlder),
   });
   const education = compactObject({
     aotcStudentQualifiedExpenses:
@@ -344,6 +356,11 @@ async function collectIntakeAnswers(io: LocalCommandIO) {
   );
   await ask("aboveTheLine", "Above-the-line deductions", "0");
   await ask("itemized", "Eligible itemized deduction total", "0");
+  await ask("itemizedCharitable", "Charitable gifts included in the itemized total", "0");
+  await ask("nonItemizerCashCharitable", "Cash gifts to public charities if you take the standard deduction (TY2026+)", "0");
+  await ask("qualifiedTips", "Qualified tips (TY2025+)", "0");
+  await ask("qualifiedOvertimeCompensation", "Qualified overtime premium (TY2025+)", "0");
+  await ask("qualifiedVehicleLoanInterest", "Interest on a new US-assembled vehicle loan (TY2025+)", "0");
   await ask("forceItemized", "Force itemized deductions? yes or no", "no");
   await ask("qualifyingChildrenForCtc", "Qualifying children for CTC", "0");
   await ask("qualifyingChildrenForEitc", "Qualifying children for EITC", "0");
@@ -355,6 +372,12 @@ async function collectIntakeAnswers(io: LocalCommandIO) {
     "For MFS, lived with spouse during the year? yes or no",
     "no",
   );
+  await ask("dependentCareExpenses", "Child and dependent care expenses paid so you could work", "0");
+  await ask("dependentCareQualifyingIndividuals", "Qualifying individuals for the dependent care credit", "0");
+  await ask("dependentCareBenefitsExcluded", "Employer dependent care benefits excluded (W-2 box 10)", "0");
+  await ask("spouseEarnedIncome", "For MFJ, spouse's earned income (included above)", "0");
+  await ask("age65OrOlder", "Were you 65 or older at year end? yes or no", "no");
+  await ask("spouseAge65OrOlder", "For MFJ, was your spouse 65 or older? yes or no", "no");
   await ask(
     "aotcStudentQualifiedExpenses",
     "AOTC expenses per student, comma-separated",

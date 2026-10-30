@@ -50,6 +50,26 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "description": "Whether capital gains are long-term (default: true)",
           "type": "boolean",
         },
+        "charitableCashContributions": {
+          "description": "TY2026+: qualifying cash gifts to public charities (not donor-advised funds) for the non-itemizer deduction",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependentCareBenefitsExcluded": {
+          "description": "Employer dependent care benefits excluded from wages (W-2 box 10)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependentCareExpenses": {
+          "description": "Form 2441 work-related care expenses paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependentCareQualifyingIndividuals": {
+          "description": "Qualifying individuals for the Child and Dependent Care Credit",
+          "minimum": 0,
+          "type": "integer",
+        },
         "dependents": {
           "description": "Legacy count of qualifying child dependents for nonrefundable CTC only",
           "minimum": 0,
@@ -94,8 +114,13 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "itemizedCharitableContributions": {
+          "description": "TY2026+: charitable portion of itemizedDeductions, for the 0.5% of AGI floor",
+          "minimum": 0,
+          "type": "number",
+        },
         "itemizedDeductions": {
-          "description": "Total itemized deductions (if greater than standard deduction)",
+          "description": "Schedule A total after the SALT cap and medical floor, before the TY2026 charitable floor and 2/37 limit",
           "minimum": 0,
           "type": "number",
         },
@@ -131,6 +156,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "description": "Whether the business is a specified service trade or business",
           "type": "boolean",
         },
+        "qualifiedBusinessMaterialParticipation": {
+          "description": "TY2026+: taxpayer materially participates, enabling the $400 minimum QBI deduction",
+          "type": "boolean",
+        },
         "qualifiedBusinessPropertyBasis": {
           "description": "Unadjusted basis immediately after acquisition of qualified property; pass 0 when none",
           "minimum": 0,
@@ -143,6 +172,21 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "qualifiedDividends": {
           "description": "Qualified dividends included in gross income, taxed at preferential rates but not netted with capital losses",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedOvertimeCompensation": {
+          "description": "TY2025+ Schedule 1-A: FLSA overtime premium (the half of time-and-a-half)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedTips": {
+          "description": "TY2025+ Schedule 1-A: qualified tips from a listed tipped occupation",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedVehicleLoanInterest": {
+          "description": "TY2025+ Schedule 1-A: interest on a loan for a new US-assembled personal vehicle",
           "minimum": 0,
           "type": "number",
         },
@@ -177,6 +221,19 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "socialSecurityTaxesPaid": {
           "description": "Schedule 8812 payroll-tax amount for the 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseAge65OrOlder": {
+          "description": "Spouse is 65 or older",
+          "type": "boolean",
+        },
+        "spouseBlind": {
+          "description": "Spouse is blind",
+          "type": "boolean",
+        },
+        "spouseEarnedIncome": {
+          "description": "MFJ only: spouse's earned income, already included in w2Income or earnedIncome",
           "minimum": 0,
           "type": "number",
         },
@@ -940,7 +997,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "type": "boolean",
         },
         "charitableDonations": {
-          "description": "Charitable contributions",
+          "description": "Charitable contributions claimed on Schedule A",
           "minimum": 0,
           "type": "number",
         },
@@ -960,6 +1017,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "mortgageInterest": {
           "description": "Home mortgage interest paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "nonItemizerCashDonations": {
+          "description": "TY2026+: qualifying cash gifts to public charities (not donor-advised funds) for the non-itemizer deduction",
           "minimum": 0,
           "type": "number",
         },
@@ -1362,6 +1424,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "description": "Paid income tax to a foreign country",
           "type": "boolean",
         },
+        "taxYear": {
+          "description": "Tax year (default: 2026)",
+          "type": "number",
+        },
       },
       "required": [
         "agi",
@@ -1492,6 +1558,119 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "type": "object",
     },
     "name": "get_retirement_strategy",
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+            },
+            "message": {
+              "type": "string",
+            },
+            "suggestion": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "code",
+            "message",
+            "suggestion",
+          ],
+          "type": "object",
+        },
+        "isError": {
+          "type": "boolean",
+        },
+        "text": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+        "isError",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "description": "Estimate the TY2026 Premium Tax Credit (Form 8962) from annual Form 1095-A totals. Uses the Rev. Proc. 2025-25 applicable percentages, the 400% poverty-line limit, and full repayment of excess advance payments.",
+    "execution": {
+      "taskSupport": "forbidden",
+    },
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "advancePayments": {
+          "description": "Form 1095-A column C annual total (APTC)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "annualBenchmarkPremium": {
+          "description": "Form 1095-A column B annual total (SLCSP)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "annualEnrollmentPremium": {
+          "description": "Form 1095-A column A annual total",
+          "minimum": 0,
+          "type": "number",
+        },
+        "familySize": {
+          "description": "Tax family size (Form 8962 line 1)",
+          "minimum": 1,
+          "type": "integer",
+        },
+        "filingStatus": {
+          "enum": [
+            "single",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
+          ],
+          "type": "string",
+        },
+        "householdIncome": {
+          "description": "Form 8962 line 3 household income (modified AGI)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "povertyLineRegion": {
+          "description": "Poverty-line table (default: 48 contiguous states and DC)",
+          "enum": [
+            "contiguous",
+            "alaska",
+            "hawaii",
+          ],
+          "type": "string",
+        },
+        "taxYear": {
+          "description": "Tax year (only 2026 is modeled)",
+          "type": "number",
+        },
+      },
+      "required": [
+        "taxYear",
+        "filingStatus",
+        "householdIncome",
+        "familySize",
+        "annualEnrollmentPremium",
+        "annualBenchmarkPremium",
+        "advancePayments",
+      ],
+      "type": "object",
+    },
+    "name": "estimate_premium_tax_credit",
     "outputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -4638,6 +4817,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
             "isSstb": {
               "type": "boolean",
             },
+            "materialParticipation": {
+              "description": "TY2026+: materially participates, enabling the $400 minimum QBI deduction",
+              "type": "boolean",
+            },
             "qualifiedBusinessIncome": {
               "minimum": 0,
               "type": "number",
@@ -4667,7 +4850,32 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
               "type": "boolean",
             },
             "itemized": {
-              "description": "Eligible itemized deduction total after applicable limits",
+              "description": "Schedule A total after the SALT cap and medical floor, before the TY2026 charitable floor and IRC 68 limit",
+              "minimum": 0,
+              "type": "number",
+            },
+            "itemizedCharitable": {
+              "description": "TY2026+: charitable portion of itemized, for the 0.5% of AGI floor",
+              "minimum": 0,
+              "type": "number",
+            },
+            "nonItemizerCashCharitable": {
+              "description": "TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction",
+              "minimum": 0,
+              "type": "number",
+            },
+            "qualifiedOvertimeCompensation": {
+              "description": "TY2025+ Schedule 1-A FLSA overtime premium",
+              "minimum": 0,
+              "type": "number",
+            },
+            "qualifiedTips": {
+              "description": "TY2025+ Schedule 1-A qualified tips",
+              "minimum": 0,
+              "type": "number",
+            },
+            "qualifiedVehicleLoanInterest": {
+              "description": "TY2025+ Schedule 1-A interest on a new US-assembled personal vehicle loan",
               "minimum": 0,
               "type": "number",
             },
@@ -4697,6 +4905,21 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         "family": {
           "additionalProperties": false,
           "properties": {
+            "age65OrOlder": {
+              "type": "boolean",
+            },
+            "dependentCareBenefitsExcluded": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "dependentCareExpenses": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "dependentCareQualifyingIndividuals": {
+              "minimum": 0,
+              "type": "integer",
+            },
             "hasForm2555": {
               "type": "boolean",
             },
@@ -4716,6 +4939,14 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
               "type": "integer",
             },
             "socialSecurityTaxesPaid": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "spouseAge65OrOlder": {
+              "type": "boolean",
+            },
+            "spouseEarnedIncome": {
+              "description": "MFJ only: spouse's earned income, already included in household income",
               "minimum": 0,
               "type": "number",
             },
@@ -4988,6 +5219,9 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                   ],
                   "type": "string",
                 },
+                "dependentCareCredit": {
+                  "type": "number",
+                },
                 "effectiveFederalRate": {
                   "type": "number",
                 },
@@ -5003,10 +5237,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "federalTaxAfterRefundableCredits": {
                   "type": "number",
                 },
+                "itemizedDeductionLimitReduction": {
+                  "type": "number",
+                },
                 "marginalRate": {
                   "type": "number",
                 },
                 "niit": {
+                  "type": "number",
+                },
+                "nonItemizerCharitableDeduction": {
                   "type": "number",
                 },
                 "ordinaryIncomeTax": {
@@ -5038,6 +5278,8 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "adjustedGrossIncome",
                 "deductionType",
                 "deductionAmount",
+                "nonItemizerCharitableDeduction",
+                "itemizedDeductionLimitReduction",
                 "taxableIncome",
                 "ordinaryIncomeTax",
                 "capitalGainsTax",
@@ -5045,6 +5287,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "niit",
                 "additionalMedicareTax",
                 "amt",
+                "dependentCareCredit",
                 "refundableCredits",
                 "federalTaxAfterRefundableCredits",
                 "employeeFica",

@@ -1,6 +1,6 @@
 # irs-taxpayer-mcp Roadmap
 
-_Last updated: 2026-09-18._
+_Last updated: 2026-10-30._
 
 ## Current Baseline
 
@@ -78,6 +78,25 @@ Current decision: `BLOCKED`. No qualifying evidence has been counted yet.
 - [x] Implement planning-grade QBI thresholds, SSTB phase-outs, wage limits, and qualified-property limits.
 - [x] Implement AMT preferential-rate treatment for qualified dividends and net capital gains, with explicit limits for unmodeled Form 6251 preference items.
 - [ ] Reject every unsupported federal election or schedule with a typed error.
+
+## TY2026 Season Readiness (planned)
+
+Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md). Audit on 2026-10-30 found TY2026 federal tables correct but the season not yet ready.
+
+- [x] Fix AMT exemption phase-out rate: 50% from TY2026 under OBBB. Also added the Form 6251 standard deduction add-back.
+- [x] Cap the EITC phase-in credit by the AGI-based phase-out (IRC 32(a)(2)).
+- [x] Add TY2026 retirement and HSA contribution limits.
+- [x] Model the TY2026 non-itemizer charitable deduction and the 0.5% of AGI itemized charitable floor.
+- [x] Model the TY2026 IRC 68 2/37 itemized deduction limit.
+- [x] Calculate the Child and Dependent Care Credit, including the TY2026 OBBB schedule.
+- [🔄] Add TY2026 numeric profiles: CA, MA, IL, PA, and NC done; NY and remaining states pending official TY2026 sources.
+- [x] Add a TY2026 Premium Tax Credit estimate (Form 8962 annual method).
+- [x] Separate TY2025 and TY2026 law changes with primary-source citations in `what_changed_between_tax_years`.
+- [x] Use the 2026 Form W-4 Step 3 child amount ($2,200).
+- [🔄] Validate 50 golden TY2026 scenarios and run a differential test against an independent engine. 41 synthetic scenarios match PSL Tax-Calculator 6.8.5 (exact mode, credit take-up disabled) within $1; golden worksheet set still pending.
+- [x] Add Schedule 1-A (tips, overtime, vehicle loan interest, senior) to the federal calculation.
+- [x] Add the TY2026 $400 minimum QBI deduction.
+- [x] Fix AMT Form 6251 Part III capital-gain stacking and line 40 cap.
 
 ## Phase 2: Forms and Schedules
 

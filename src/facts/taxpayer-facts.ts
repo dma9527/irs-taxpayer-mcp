@@ -39,7 +39,20 @@ const IncomeSchema = z.object({
 const DeductionsSchema = z.object({
   aboveTheLine: z.number().min(0).optional(),
   itemized: z.number().min(0).optional().describe(
-    "Eligible itemized deduction total after applicable limits",
+    "Schedule A total after the SALT cap and medical floor, before the TY2026 charitable floor and IRC 68 limit",
+  ),
+  itemizedCharitable: z.number().min(0).optional().describe(
+    "TY2026+: charitable portion of itemized, for the 0.5% of AGI floor",
+  ),
+  nonItemizerCashCharitable: z.number().min(0).optional().describe(
+    "TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction",
+  ),
+  qualifiedTips: z.number().min(0).optional().describe("TY2025+ Schedule 1-A qualified tips"),
+  qualifiedOvertimeCompensation: z.number().min(0).optional().describe(
+    "TY2025+ Schedule 1-A FLSA overtime premium",
+  ),
+  qualifiedVehicleLoanInterest: z.number().min(0).optional().describe(
+    "TY2025+ Schedule 1-A interest on a new US-assembled personal vehicle loan",
   ),
   forceItemized: z.boolean().optional(),
 }).strict();
@@ -51,6 +64,14 @@ const FamilySchema = z.object({
   socialSecurityTaxesPaid: z.number().min(0).optional(),
   hasForm2555: z.boolean().optional(),
   marriedFilingSeparatelyLivedWithSpouse: z.boolean().optional(),
+  dependentCareExpenses: z.number().min(0).optional(),
+  dependentCareQualifyingIndividuals: z.number().int().min(0).optional(),
+  dependentCareBenefitsExcluded: z.number().min(0).optional(),
+  spouseEarnedIncome: z.number().min(0).optional().describe(
+    "MFJ only: spouse's earned income, already included in household income",
+  ),
+  age65OrOlder: z.boolean().optional(),
+  spouseAge65OrOlder: z.boolean().optional(),
 }).strict();
 
 const EducationSchema = z.object({
@@ -64,6 +85,9 @@ const BusinessSchema = z.object({
   w2Wages: z.number().min(0).optional(),
   qualifiedPropertyBasis: z.number().min(0).optional(),
   isSstb: z.boolean().optional(),
+  materialParticipation: z.boolean().optional().describe(
+    "TY2026+: materially participates, enabling the $400 minimum QBI deduction",
+  ),
 }).strict();
 
 const PaymentsSchema = z.object({

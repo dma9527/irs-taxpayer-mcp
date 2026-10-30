@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14325C"/>
+      <stop offset="1" stop-color="#0A1B33"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="url(#bg)"/>
+  <!-- pediment -->
+  <path d="M256 92 L420 172 L92 172 Z" fill="#FFFFFF"/>
+  <rect x="104" y="180" width="304" height="18" rx="4" fill="#FFFFFF"/>
+  <!-- columns rising like a bar chart -->
+  <rect x="128" y="300" width="44" height="92" rx="6" fill="#FFFFFF" opacity="0.55"/>
+  <rect x="200" y="262" width="44" height="130" rx="6" fill="#FFFFFF" opacity="0.75"/>
+  <rect x="272" y="226" width="44" height="166" rx="6" fill="#FFFFFF"/>
+  <rect x="344" y="212" width="44" height="180" rx="6" fill="#34C27A"/>
+  <!-- base -->
+  <rect x="92" y="404" width="328" height="22" rx="5" fill="#34C27A"/>
+</svg>

@@ -2,9 +2,9 @@
  * Retirement account rules and strategies — IRA, 401k, Roth, Backdoor Roth, etc.
  *
  * IRS Sources:
- *   IRA limits: IRC §219, Notice 2023-75 (TY2024), Notice 2024-80 (TY2025)
- *   401k limits: IRC §402(g), Notice 2023-75, Notice 2024-80
- *   HSA limits: Rev. Proc. 2023-23 (TY2024), Rev. Proc. 2024-25 (TY2025)
+ *   IRA limits: IRC §219, Notice 2023-75 (TY2024), Notice 2024-80 (TY2025), Notice 2025-67 (TY2026)
+ *   401k limits: IRC §402(g), Notice 2023-75, Notice 2024-80, Notice 2025-67
+ *   HSA limits: Rev. Proc. 2023-23 (TY2024), Rev. Proc. 2024-25 (TY2025), Rev. Proc. 2025-19 (TY2026)
  *   SEP IRA: IRC §408(k), 25% of compensation
  *   529 plans: IRC §529, SECURE 2.0 Act §126 (Roth rollover)
  */
@@ -15,6 +15,7 @@ export interface RetirementAccountRule {
   type: "traditional" | "roth" | "employer" | "other";
   contributionLimit2024: string;
   contributionLimit2025: string;
+  contributionLimit2026: string;
   catchUp: string;
   taxTreatment: string;
   incomeLimit?: string;
@@ -30,9 +31,10 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "traditional",
     contributionLimit2024: "$7,000",
     contributionLimit2025: "$7,000",
-    catchUp: "$1,000 additional if age 50+ ($8,000 total)",
+    contributionLimit2026: "$7,500",
+    catchUp: "Age 50+: $1,000 additional through TY2025, $1,100 for TY2026 ($8,600 total)",
     taxTreatment: "Contributions may be tax-deductible. Grows tax-deferred. Withdrawals taxed as ordinary income",
-    incomeLimit: "Deduction phases out if covered by employer plan: Single $77,000-$87,000 / MFJ $123,000-$143,000 (TY2024)",
+    incomeLimit: "Deduction phases out if covered by employer plan: Single $77,000-$87,000 / MFJ $123,000-$143,000 (TY2024); Single $81,000-$91,000 / MFJ $129,000-$149,000 (TY2026)",
     rmdRequired: true,
     description: "Individual retirement account with potential tax-deductible contributions",
     tips: "If you're above the income limit for deduction but below Roth limit, consider non-deductible Traditional IRA as step 1 of Backdoor Roth",
@@ -43,9 +45,10 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "roth",
     contributionLimit2024: "$7,000",
     contributionLimit2025: "$7,000",
-    catchUp: "$1,000 additional if age 50+ ($8,000 total)",
+    contributionLimit2026: "$7,500",
+    catchUp: "Age 50+: $1,000 additional through TY2025, $1,100 for TY2026 ($8,600 total)",
     taxTreatment: "Contributions are NOT deductible. Grows tax-free. Qualified withdrawals are tax-free",
-    incomeLimit: "Single: $146,000-$161,000 MAGI. MFJ: $230,000-$240,000 (TY2024). Above this = no direct contribution",
+    incomeLimit: "Single: $146,000-$161,000 MAGI. MFJ: $230,000-$240,000 (TY2024). Single/HoH: $153,000-$168,000. MFJ: $242,000-$252,000 (TY2026). Above this = no direct contribution",
     rmdRequired: false,
     description: "Tax-free growth and withdrawals in retirement. Best for those expecting higher future tax rates",
     tips: "No RMDs ever. Can withdraw contributions (not earnings) anytime without penalty. Best long-term wealth builder",
@@ -56,18 +59,20 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "employer",
     contributionLimit2024: "$23,000 employee elective deferral",
     contributionLimit2025: "$23,500 employee elective deferral",
-    catchUp: "TY2024: $7,500 if age 50+ ($30,500 total). TY2025: $7,500 if 50+, $11,250 if ages 60-63 (SECURE 2.0)",
+    contributionLimit2026: "$24,500 employee elective deferral",
+    catchUp: "TY2024: $7,500 if age 50+ ($30,500 total). TY2025: $7,500 if 50+, $11,250 if ages 60-63 (SECURE 2.0). TY2026: $8,000 if 50+ ($32,500 total), $11,250 if ages 60-63",
     taxTreatment: "Traditional: pre-tax contributions, taxed on withdrawal. Roth 401k: after-tax, tax-free withdrawal",
     rmdRequired: true,
     description: "Employer-sponsored retirement plan. Often includes employer match",
-    tips: "Always contribute at least enough to get full employer match — it's free money. Total limit (employee + employer) is $69,000 (TY2024) / $70,000 (TY2025)",
+    tips: "Always contribute at least enough to get full employer match, since it's free money. Total limit (employee + employer) is $69,000 (TY2024) / $70,000 (TY2025) / $72,000 (TY2026)",
   },
   {
     id: "sep_ira",
     name: "SEP IRA",
     type: "traditional",
-    contributionLimit2024: "25% of net self-employment income, up to $69,000",
-    contributionLimit2025: "25% of net self-employment income, up to $70,000",
+    contributionLimit2024: "20% of net self-employment earnings after the half SE tax deduction, up to $69,000",
+    contributionLimit2025: "20% of net self-employment earnings after the half SE tax deduction, up to $70,000",
+    contributionLimit2026: "20% of net self-employment earnings after the half SE tax deduction, up to $72,000",
     catchUp: "No catch-up provision",
     taxTreatment: "Employer contributions are tax-deductible. Grows tax-deferred. Withdrawals taxed as ordinary income",
     rmdRequired: true,
@@ -78,9 +83,10 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     id: "solo_401k",
     name: "Solo 401(k)",
     type: "employer",
-    contributionLimit2024: "$23,000 employee + 25% of compensation as employer, total up to $69,000",
-    contributionLimit2025: "$23,500 employee + 25% of compensation as employer, total up to $70,000",
-    catchUp: "$7,500 if age 50+ (TY2024)",
+    contributionLimit2024: "$23,000 employee + employer profit share, total up to $69,000",
+    contributionLimit2025: "$23,500 employee + employer profit share, total up to $70,000",
+    contributionLimit2026: "$24,500 employee + employer profit share, total up to $72,000",
+    catchUp: "$7,500 if age 50+ (TY2024, TY2025); $8,000 if 50+ and $11,250 if ages 60-63 (TY2026)",
     taxTreatment: "Can have both Traditional and Roth components",
     rmdRequired: true,
     description: "401(k) for self-employed with no employees (except spouse)",
@@ -92,6 +98,7 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "other",
     contributionLimit2024: "$4,150 individual / $8,300 family",
     contributionLimit2025: "$4,300 individual / $8,550 family",
+    contributionLimit2026: "$4,400 individual / $8,750 family",
     catchUp: "$1,000 additional if age 55+",
     taxTreatment: "Triple tax advantage: deductible contributions, tax-free growth, tax-free withdrawals for medical expenses",
     rmdRequired: false,
@@ -104,6 +111,7 @@ export const RETIREMENT_ACCOUNTS: RetirementAccountRule[] = [
     type: "other",
     contributionLimit2024: "No federal limit (state limits vary, typically $300K-$500K lifetime). Gift tax exclusion: $18,000/year per beneficiary",
     contributionLimit2025: "$19,000/year gift tax exclusion per beneficiary",
+    contributionLimit2026: "$19,000/year gift tax exclusion per beneficiary",
     catchUp: "5-year gift tax averaging: contribute up to $90,000 ($95,000 TY2025) at once",
     taxTreatment: "No federal deduction (some states offer deduction). Tax-free growth. Tax-free withdrawals for qualified education expenses",
     rmdRequired: false,

@@ -155,7 +155,7 @@ The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` 
 
 </div>
 
-## 🛠️ Tools (44)
+## 🛠️ Tools (45)
 
 All tools use the current MCP `registerTool` API. Each advertises read-only annotations and an output schema, and returns both human-readable text and `structuredContent`. Error results include a stable error code, message, and recovery suggestion.
 
@@ -186,6 +186,7 @@ The 1.0 flagship `generate_tax_plan` workflow returns domain structured results,
 | `list_tax_credits`         | 20+ federal credits: CTC, EITC, AOTC, EV, solar, saver's credit, and more |
 | `check_credit_eligibility` | Quick screening based on your income, family, and situation               |
 | `calculate_eitc`           | Precise EITC calculation with phase-in/plateau/phase-out for 0-3 children |
+| `estimate_premium_tax_credit` | TY2026 Premium Tax Credit (Form 8962) with the 400% limit and full APTC repayment |
 
 ### Retirement & Strategy
 
@@ -279,6 +280,10 @@ Uses IRS Revenue Procedure 2025-32 and the SSA 2026 contribution and benefit bas
 - Child Tax Credit: $2,200 per qualifying child, with up to $1,700 refundable
 - SALT cap: $40,400 for MAGI up to $505,000; $20,200 and $252,500 for MFS
 - Social Security wage base: $184,500
+- AMT exemption phase-out at 50% above $500,000 / $1,000,000 AMTI (OBBB)
+- Non-itemizer charitable deduction ($1,000 / $2,000), 0.5% itemized charitable floor, and 2/37 itemized deduction limit
+- Child and Dependent Care Credit up to 50% of qualifying expenses
+- 401(k) $24,500, IRA $7,500, HSA $4,400 / $8,750
 - Updated ordinary, capital-gains, EITC, and AMT thresholds
 
 ## Supported Scope and Boundaries
@@ -286,7 +291,7 @@ Uses IRS Revenue Procedure 2025-32 and the SSA 2026 contribution and benefit bas
 This project is a deterministic estimation and planning engine, not tax preparation or filing software.
 
 - Federal estimates cover the modeled TY2024 through TY2026 inputs exposed by each tool. They do not implement every Form 1040 line, schedule, election, limitation, carryforward, or dependency rule.
-- State reference information covers all 50 states and DC. Numeric estimates require an exact tax-year profile: TY2024 supports AK, CA, FL, NV, SD, TN, TX, and WY; TY2025 and TY2026 support AK, FL, NH, NV, SD, TN, TX, and WY. California TY2024 supports single and married brackets. Other state-year and filing-status paths return an error.
+- State reference information covers all 50 states and DC. Numeric estimates require an exact tax-year profile: TY2024 supports AK, CA, FL, NV, SD, TN, TX, and WY; TY2025 supports AK, FL, NH, NV, SD, TN, TX, and WY; TY2026 adds IL, MA, NC, and PA. California TY2024 supports single and married brackets. Other state-year and filing-status paths return an error.
 - State calculations do not yet model part-year or nonresident allocation, every local tax, or separate HoH and MFS brackets.
 - QBI, AMT, audit-risk, retirement, relocation, and multi-year outputs are planning estimates with documented simplifications.
 - Refund projections depend only on the inputs and refundable credits modeled by the selected tool. They are not an IRS refund determination.

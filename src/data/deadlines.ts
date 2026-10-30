@@ -33,4 +33,15 @@ export const TAX_DEADLINES: Record<number, TaxDeadline[]> = {
     { date: "2026-09-15", description: "Q3 2026 estimated tax payment due", form: "1040-ES" },
     { date: "2026-10-15", description: "Extended filing deadline (if extension filed)", form: "1040", notes: "Must file Form 4868 by April 15" },
   ],
+  // Statutory due dates with the IRC 7503 weekend rule; confirm against the 2027 Publication 509.
+  2026: [
+    { date: "2027-01-15", description: "Q4 2026 estimated tax payment due", form: "1040-ES" },
+    { date: "2027-02-01", description: "Employers must send W-2 forms to employees", notes: "January 31 falls on a Sunday" },
+    { date: "2027-02-01", description: "Payers must send 1099 forms to recipients", notes: "January 31 falls on a Sunday" },
+    { date: "2027-04-15", description: "Individual tax return filing deadline", form: "1040" },
+    { date: "2027-04-15", description: "Q1 2027 estimated tax payment due", form: "1040-ES" },
+    { date: "2027-06-15", description: "Q2 2027 estimated tax payment due", form: "1040-ES" },
+    { date: "2027-09-15", description: "Q3 2027 estimated tax payment due", form: "1040-ES" },
+    { date: "2027-10-15", description: "Extended filing deadline (if extension filed)", form: "1040", notes: "Must file Form 4868 by April 15" },
+  ],
 };

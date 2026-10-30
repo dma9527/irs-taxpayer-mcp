@@ -35,6 +35,8 @@ export interface TaxYearData {
   };
   qualifiedBusinessIncomeDeductionRate: number;
   qbiLimit: Record<FilingStatus, { threshold: number; phaseoutEnd: number }>;
+  /** IRC 199A(i) minimum deduction for active QBI (TY2026+). */
+  qbiMinimumDeduction?: { amount: number; qualifiedBusinessIncomeThreshold: number };
   capitalGainsBrackets: Record<FilingStatus, { rate: number; threshold: number }[]>;
   socialSecurity: {
     taxRate: number;
@@ -58,6 +60,8 @@ export interface TaxYearData {
   amt: {
     exemption: Record<FilingStatus, number>;
     phaseoutStart: Record<FilingStatus, number>;
+    /** Exemption reduction per dollar of AMTI above phaseoutStart (IRC 55(d)(3); 50% from TY2026 under OBBB). */
+    phaseoutRate: number;
     rate28Threshold: Record<FilingStatus, number>;
   };
   saltCap: {
@@ -68,6 +72,29 @@ export interface TaxYearData {
     enhancedAgiThreshold?: number;
     enhancedMfsAgiThreshold?: number;
     phaseoutRate?: number;
+  };
+  /** IRC 170(p) non-itemizer cash deduction and 170(b)(1)(I) 0.5% itemized floor (TY2026+). */
+  charitableDeduction?: {
+    nonItemizerCashLimit: Record<FilingStatus, number>;
+    itemizedFloorRate: number;
+  };
+  /** IRC 68 limit: itemized deductions reduced by this fraction of the excess over the 37% bracket (TY2026+). */
+  itemizedDeductionLimitRate?: number;
+  /** IRC 21(a)(2) applicable percentage schedule in whole percentage points. */
+  dependentCareCredit: {
+    expenseLimitOne: number;
+    expenseLimitTwoOrMore: number;
+    maxRate: number;
+    firstPhasedownFloor: number;
+    firstPhasedownStart: number;
+    firstPhasedownStep: number;
+    secondPhasedown?: {
+      start: number;
+      startJoint: number;
+      step: number;
+      stepJoint: number;
+      floor: number;
+    };
   };
   /** OBBB new deductions (TY2025+) */
   obbbDeductions?: {
@@ -204,12 +231,21 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         married_filing_separately: 609350,
         head_of_household: 609350,
       },
+      phaseoutRate: 0.25,
       rate28Threshold: {
         single: 232600,
         married_filing_jointly: 232600,
         married_filing_separately: 116300,
         head_of_household: 232600,
       },
+    },
+    dependentCareCredit: {
+      expenseLimitOne: 3000,
+      expenseLimitTwoOrMore: 6000,
+      maxRate: 35,
+      firstPhasedownFloor: 20,
+      firstPhasedownStart: 15000,
+      firstPhasedownStep: 2000,
     },
     saltCap: {
       base: 10000,
@@ -342,12 +378,21 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         married_filing_separately: 626350,
         head_of_household: 626350,
       },
+      phaseoutRate: 0.25,
       rate28Threshold: {
         single: 239100,
         married_filing_jointly: 239100,
         married_filing_separately: 119550,
         head_of_household: 239100,
       },
+    },
+    dependentCareCredit: {
+      expenseLimitOne: 3000,
+      expenseLimitTwoOrMore: 6000,
+      maxRate: 35,
+      firstPhasedownFloor: 20,
+      firstPhasedownStart: 15000,
+      firstPhasedownStep: 2000,
     },
     saltCap: {
       base: 10000,
@@ -428,6 +473,7 @@ export const TAX_DATA: Record<number, TaxYearData> = {
       married_filing_separately: { threshold: 201775, phaseoutEnd: 276775 },
       head_of_household: { threshold: 201750, phaseoutEnd: 276750 },
     },
+    qbiMinimumDeduction: { amount: 400, qualifiedBusinessIncomeThreshold: 1000 },
     capitalGainsBrackets: {
       single: [
         { rate: 0, threshold: 49450 },
@@ -492,11 +538,38 @@ export const TAX_DATA: Record<number, TaxYearData> = {
         married_filing_separately: 500000,
         head_of_household: 500000,
       },
+      phaseoutRate: 0.50,
       rate28Threshold: {
         single: 244500,
         married_filing_jointly: 244500,
         married_filing_separately: 122250,
         head_of_household: 244500,
+      },
+    },
+    // OBBB sections 70424, 70425, 70111 (IRC 170(p), 170(b)(1)(I), 68, 21(a)(2)).
+    charitableDeduction: {
+      nonItemizerCashLimit: {
+        single: 1000,
+        married_filing_jointly: 2000,
+        married_filing_separately: 1000,
+        head_of_household: 1000,
+      },
+      itemizedFloorRate: 0.005,
+    },
+    itemizedDeductionLimitRate: 2 / 37,
+    dependentCareCredit: {
+      expenseLimitOne: 3000,
+      expenseLimitTwoOrMore: 6000,
+      maxRate: 50,
+      firstPhasedownFloor: 35,
+      firstPhasedownStart: 15000,
+      firstPhasedownStep: 2000,
+      secondPhasedown: {
+        start: 75000,
+        startJoint: 150000,
+        step: 2000,
+        stepJoint: 4000,
+        floor: 20,
       },
     },
     saltCap: {

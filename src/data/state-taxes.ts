@@ -34,6 +34,8 @@ export interface StateInfo {
   marriedBrackets?: StateBracket[];
   standardDeduction?: { single: number; married: number };
   personalExemption?: { single: number; married: number };
+  /** Personal exemption is disallowed when income exceeds this amount. */
+  exemptionIncomeLimit?: { single: number; married: number };
   notes?: string;
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
@@ -209,13 +211,34 @@ function createCalculationProfile(
   stateCode: string,
   taxYear: number,
   source: string,
+  overrides: Partial<StateInfo> = {},
 ): StateCalculationInfo {
   const state = STATE_TAX_DATA[stateCode];
   if (!state) {
     throw new Error(`Unknown state calculation profile: ${stateCode}`);
   }
-  return { ...state, taxYear, source };
+  return { ...state, ...overrides, taxYear, source };
 }
+
+// FTB TY2026 Schedules X and Y with the 1% Mental Health Services Tax spliced in above $1,000,000.
+const CA_2026_SINGLE: StateBracket[] = [
+  { min: 0, max: 11456, rate: 0.01 }, { min: 11456, max: 27157, rate: 0.02 }, { min: 27157, max: 42861, rate: 0.04 },
+  { min: 42861, max: 59498, rate: 0.06 }, { min: 59498, max: 75197, rate: 0.08 }, { min: 75197, max: 384109, rate: 0.093 },
+  { min: 384109, max: 460927, rate: 0.103 }, { min: 460927, max: 768213, rate: 0.113 }, { min: 768213, max: 1000000, rate: 0.123 },
+  { min: 1000000, max: null, rate: 0.133 },
+];
+const CA_2026_JOINT: StateBracket[] = [
+  { min: 0, max: 22912, rate: 0.01 }, { min: 22912, max: 54314, rate: 0.02 }, { min: 54314, max: 85722, rate: 0.04 },
+  { min: 85722, max: 118996, rate: 0.06 }, { min: 118996, max: 150394, rate: 0.08 }, { min: 150394, max: 768218, rate: 0.093 },
+  { min: 768218, max: 921854, rate: 0.103 }, { min: 921854, max: 1000000, rate: 0.113 }, { min: 1000000, max: 1536426, rate: 0.123 },
+  { min: 1536426, max: null, rate: 0.133 },
+];
+
+// Massachusetts applies the 4% surtax to taxable income above one threshold for every filing status.
+const MA_2026_BRACKETS: StateBracket[] = [
+  { min: 0, max: 1107750, rate: 0.05 },
+  { min: 1107750, max: null, rate: 0.09 },
+];
 
 function createNoTaxProfiles(taxYear: number): Partial<Record<string, StateCalculationInfo>> {
   return Object.fromEntries(
@@ -256,6 +279,58 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       "NH",
       2026,
       "New Hampshire Department of Revenue Administration, no broad individual income tax",
+    ),
+    CA: createCalculationProfile(
+      "CA",
+      2026,
+      "California FTB Tax News, October 2026: 2026 indexing and tax rate schedules",
+      {
+        brackets: CA_2026_SINGLE,
+        marriedBrackets: CA_2026_JOINT,
+        standardDeduction: { single: 5900, married: 11800 },
+        notes: "TY2026 FTB Schedules X and Y; 1% Mental Health Services Tax above $1,000,000. Exemption credits and the HoH Schedule Z are not modeled",
+      },
+    ),
+    MA: createCalculationProfile(
+      "MA",
+      2026,
+      "Massachusetts DOR tax rates (TY2026 surtax threshold $1,107,750) and personal exemption amounts",
+      {
+        taxType: "graduated",
+        topRate: 0.09,
+        brackets: MA_2026_BRACKETS,
+        marriedBrackets: MA_2026_BRACKETS,
+        personalExemption: { single: 4400, married: 8800 },
+        notes: "Part A short-term gains (8.5%), dependent and age exemptions, and MA-specific deductions are not modeled",
+      },
+    ),
+    IL: createCalculationProfile(
+      "IL",
+      2026,
+      "Illinois Department of Revenue, TY2026 rate 4.95% and $2,925 exemption allowance",
+      {
+        personalExemption: { single: 2925, married: 5850 },
+        exemptionIncomeLimit: { single: 250000, married: 500000 },
+        notes: "Dependent and age 65 or blind exemptions and Illinois subtractions such as retirement income are not modeled",
+      },
+    ),
+    PA: createCalculationProfile(
+      "PA",
+      2026,
+      "Pennsylvania Department of Revenue, 3.07% flat rate (REV-414(I) 2026)",
+      {
+        notes: "PA taxes eight income classes without federal adjustments; local earned income taxes and Tax Forgiveness are not modeled",
+      },
+    ),
+    NC: createCalculationProfile(
+      "NC",
+      2026,
+      "NCDOR tax rate schedules (3.99% for tax years after 2025) and statutory standard deduction",
+      {
+        topRate: 0.0399,
+        standardDeduction: { single: 12750, married: 25500 },
+        notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled",
+      },
     ),
   },
 };

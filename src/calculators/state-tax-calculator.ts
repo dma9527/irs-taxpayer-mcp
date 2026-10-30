@@ -82,7 +82,10 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   if (state.standardDeduction) {
     deduction = status === "married" ? state.standardDeduction.married : state.standardDeduction.single;
   }
-  if (state.personalExemption) {
+  const exemptionIncomeLimit = state.exemptionIncomeLimit
+    ? (status === "married" ? state.exemptionIncomeLimit.married : state.exemptionIncomeLimit.single)
+    : Infinity;
+  if (state.personalExemption && incomeBeforeDeductions <= exemptionIncomeLimit) {
     deduction += status === "married" ? state.personalExemption.married : state.personalExemption.single;
   }
 

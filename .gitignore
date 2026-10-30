@@ -9,3 +9,6 @@ dist/
 
 .mcpregistry_*
 .DS_Store
+
+# Agensi skill build artifact
+irs-tax-calculator-skill.zip

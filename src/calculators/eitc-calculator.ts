@@ -108,21 +108,23 @@ export function calculateEITC(input: EITCInput): EITCResult {
   if (input.earnedIncome <= 0) {
     credit = 0;
     phase = "ineligible";
-  } else if (input.earnedIncome <= params.earnedIncomeThreshold) {
-    // Phase-in: credit increases with income
-    credit = input.earnedIncome * params.creditRate;
-    phase = "phase-in";
-  } else if (phaseoutIncome <= phaseoutStart) {
-    // Plateau: max credit
-    credit = params.maxCredit;
-    phase = "plateau";
-  } else if (phaseoutIncome < incomeLimit) {
-    // Phase-out: credit decreases
-    credit = params.maxCredit - (phaseoutIncome - phaseoutStart) * params.phaseoutRate;
-    phase = "phase-out";
   } else {
-    credit = 0;
-    phase = "ineligible";
+    // IRC 32(a)(2): the earned-income credit is capped by the phase-out on the greater of AGI or earned income.
+    const earnedIncomeCredit = Math.min(input.earnedIncome * params.creditRate, params.maxCredit);
+    const phaseoutCap = phaseoutIncome > phaseoutStart
+      ? params.maxCredit - (phaseoutIncome - phaseoutStart) * params.phaseoutRate
+      : params.maxCredit;
+    credit = Math.max(0, Math.min(earnedIncomeCredit, phaseoutCap));
+    if (credit <= 0 || phaseoutIncome >= incomeLimit) {
+      credit = 0;
+      phase = "ineligible";
+    } else if (phaseoutCap < earnedIncomeCredit) {
+      phase = "phase-out";
+    } else if (input.earnedIncome <= params.earnedIncomeThreshold) {
+      phase = "phase-in";
+    } else {
+      phase = "plateau";
+    }
   }
 
   credit = Math.max(0, Math.round(credit));

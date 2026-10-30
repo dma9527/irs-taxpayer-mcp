@@ -7,6 +7,8 @@ import { z } from "zod";
 import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTaxYearData, SUPPORTED_TAX_YEARS, type FilingStatus } from "../data/tax-brackets.js";
+import { calculateScheduleOneADeductions } from "../calculators/tax-calculator.js";
+import { getLawChangesEffectiveBetween, type LawChangeModeling } from "../data/law-changes.js";
 import { ERRORS } from "./error-handler.js";
 
 
@@ -50,108 +52,42 @@ export function registerObbbTools(server: McpServer): void {
       const deductions: Array<{ name: string; amount: number; max: number; eligible: boolean; reason?: string }> = [];
 
       const isMFS = params.filingStatus === "married_filing_separately";
-
-      // Senior bonus
       const age = params.age ?? 0;
       const spouseAge = params.spouseAge ?? 0;
       const seniorCount = (age >= 65 ? 1 : 0) + (isMFJ && spouseAge >= 65 ? 1 : 0);
+      const scheduleOneA = calculateScheduleOneADeductions(data, params.filingStatus, params.agi, {
+        qualifiedTips: params.tipIncome,
+        qualifiedOvertimeCompensation: params.overtimePay,
+        qualifiedVehicleLoanInterest: params.autoLoanInterest,
+        seniorCount,
+      });
+      const addDeduction = (name: string, amount: number, max: number, jointReturnRequired: boolean) => {
+        const rounded = Math.round(amount);
+        deductions.push({
+          name,
+          amount: rounded,
+          max,
+          eligible: rounded > 0,
+          reason: rounded > 0
+            ? undefined
+            : jointReturnRequired ? "Married taxpayers must file jointly" : "Fully phased out by MAGI",
+        });
+      };
+
       if (seniorCount > 0) {
-        const maxSenior = seniorCount * obbb.seniorBonus.amount;
-        if (isMFS) {
-          deductions.push({
-            name: "Senior Bonus Deduction (65+)",
-            amount: 0,
-            max: maxSenior,
-            eligible: false,
-            reason: "Married taxpayers must file jointly",
-          });
-        } else {
-          const phaseout = isMFJ ? obbb.seniorBonus.phaseoutMFJ : obbb.seniorBonus.phaseoutSingle;
-          const reduction = Math.round(
-            Math.max(0, params.agi - phaseout) * 0.06 * seniorCount,
-          );
-          const seniorAmount = Math.max(0, maxSenior - reduction);
-          deductions.push({
-            name: "Senior Bonus Deduction (65+)",
-            amount: seniorAmount,
-            max: maxSenior,
-            eligible: seniorAmount > 0,
-            reason: seniorAmount === 0 ? "Fully phased out by MAGI" : undefined,
-          });
-        }
+        addDeduction("Senior Bonus Deduction (65+)", scheduleOneA.senior, seniorCount * obbb.seniorBonus.amount, isMFS);
       } else if (age > 0) {
         deductions.push({ name: "Senior Bonus Deduction (65+)", amount: 0, max: obbb.seniorBonus.amount, eligible: false, reason: "Must be age 65 or older" });
       }
-
-      // Tips deduction
-      const tips = params.tipIncome ?? 0;
-      if (tips > 0) {
-        const tipsLimit = isMFJ ? obbb.tipsDeduction.agiLimitMFJ : obbb.tipsDeduction.agiLimitSingle;
-        const tipsBase = Math.min(tips, obbb.tipsDeduction.max);
-        if (isMFS) {
-          deductions.push({
-            name: "Tips Income Deduction",
-            amount: 0,
-            max: obbb.tipsDeduction.max,
-            eligible: false,
-            reason: "Married taxpayers must file jointly",
-          });
-        } else {
-          const reduction = Math.round(Math.max(0, params.agi - tipsLimit) * 0.1);
-          const tipsDeduction = Math.max(0, tipsBase - reduction);
-          deductions.push({
-            name: "Tips Income Deduction",
-            amount: tipsDeduction,
-            max: obbb.tipsDeduction.max,
-            eligible: tipsDeduction > 0,
-            reason: tipsDeduction === 0 ? "Fully phased out by MAGI" : undefined,
-          });
-        }
+      if ((params.tipIncome ?? 0) > 0) {
+        addDeduction("Tips Income Deduction", scheduleOneA.tips, obbb.tipsDeduction.max, isMFS);
       }
-
-      // Overtime deduction
-      const overtime = params.overtimePay ?? 0;
-      if (overtime > 0) {
-        const overtimeLimit = isMFJ ? obbb.overtimeDeduction.agiLimitMFJ : obbb.overtimeDeduction.agiLimitSingle;
+      if ((params.overtimePay ?? 0) > 0) {
         const overtimeMax = isMFJ ? obbb.overtimeDeduction.maxMFJ : obbb.overtimeDeduction.maxSingle;
-        const overtimeBase = Math.min(overtime, overtimeMax);
-        if (isMFS) {
-          deductions.push({
-            name: "Overtime Pay Deduction",
-            amount: 0,
-            max: overtimeMax,
-            eligible: false,
-            reason: "Married taxpayers must file jointly",
-          });
-        } else {
-          const reduction = Math.round(Math.max(0, params.agi - overtimeLimit) * 0.1);
-          const overtimeDeduction = Math.max(0, overtimeBase - reduction);
-          deductions.push({
-            name: "Overtime Pay Deduction",
-            amount: overtimeDeduction,
-            max: overtimeMax,
-            eligible: overtimeDeduction > 0,
-            reason: overtimeDeduction === 0 ? "Fully phased out by MAGI" : undefined,
-          });
-        }
+        addDeduction("Overtime Pay Deduction", scheduleOneA.overtime, overtimeMax, isMFS);
       }
-
-      // Auto loan interest
-      const autoInterest = params.autoLoanInterest ?? 0;
-      if (autoInterest > 0) {
-        const autoLimit = isMFJ ? obbb.autoLoanInterest.agiLimitMFJ : obbb.autoLoanInterest.agiLimitSingle;
-        const autoBase = Math.min(autoInterest, obbb.autoLoanInterest.max);
-        const reduction = params.agi > autoLimit
-          ? Math.ceil((params.agi - autoLimit) / 1000) * 200
-          : 0;
-        const autoDeduction = Math.max(0, autoBase - reduction);
-        deductions.push({
-          name: "Auto Loan Interest Deduction",
-          amount: autoDeduction,
-          max: obbb.autoLoanInterest.max,
-          eligible: autoDeduction > 0,
-          reason: autoDeduction === 0 ? "Fully phased out by MAGI" : undefined,
-        });
+      if ((params.autoLoanInterest ?? 0) > 0) {
+        addDeduction("Auto Loan Interest Deduction", scheduleOneA.vehicleLoanInterest, obbb.autoLoanInterest.max, false);
       }
 
       const totalDeduction = deductions.reduce((sum, d) => sum + d.amount, 0);
@@ -253,7 +189,7 @@ export function registerObbbTools(server: McpServer): void {
         const o = to.obbbDeductions;
         lines.push(
           "",
-          `### 🆕 New in TY${toYear} (One Big Beautiful Bill Act)`,
+          `### OBBB Schedule 1-A Amounts (TY2025 through TY2028)`,
           "",
           `| New Deduction | Max Amount | AGI Limit | Expires |`,
           `|---------------|-----------|-----------|---------|`,
@@ -264,9 +200,32 @@ export function registerObbbTools(server: McpServer): void {
         );
       }
 
+      const modelingLabel: Record<LawChangeModeling, string> = {
+        calculated: "Calculated",
+        reference: "Reference only",
+        not_modeled: "Not modeled",
+      };
+      const lawChanges = getLawChangesEffectiveBetween(fromYear, toYear);
+      for (let year = fromYear + 1; year <= toYear; year += 1) {
+        const yearChanges = lawChanges.filter((change) => change.effectiveTaxYear === year);
+        if (yearChanges.length === 0) continue;
+        lines.push(
+          "",
+          `### Law Changes Effective TY${year}`,
+          "",
+          `| Change | Type | Rule | Citation | In this tool |`,
+          `|--------|------|------|----------|--------------|`,
+          ...yearChanges.map((change) =>
+            `| ${change.title} | ${change.kind} | ${change.summary} | ${change.citation} | ${modelingLabel[change.modeling]} |`),
+          "",
+          ...[...new Map(yearChanges.flatMap((change) => change.sources).map((source) => [source.url, source])).values()]
+            .map((source) => `- [${source.title}](${source.url})`),
+        );
+      }
+
       lines.push(
         "",
-        `> Source: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 plus OBBB (TY2025), Rev. Proc. 2025-32 plus SSA data (TY2026)`,
+        `> Inflation-adjusted amounts: IRS Rev. Proc. 2023-34 (TY2024), Rev. Proc. 2024-40 (TY2025), Rev. Proc. 2025-32 and SSA (TY2026). Law changes are listed by the first tax year they apply.`,
       );
 
       return { content: [{ type: "text", text: lines.filter(Boolean).join("\n") }] };

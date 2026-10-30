@@ -8,7 +8,8 @@ import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
-import { getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
+import { getSaltCap, getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
+import { calculateSelfEmployedSepLimit, getContributionLimits } from "../data/contribution-limits.js";
 
 
 
@@ -52,7 +53,7 @@ export function registerPlanningTools(server: McpServer): void {
       // 401k/403b
       if (params.hasRetirementPlan) {
         const current = params.currentRetirementContributions ?? 0;
-        const limit = params.taxYear >= 2025 ? 23500 : 23000;
+        const limit = getContributionLimits(params.taxYear).electiveDeferral;
         const remaining = Math.max(0, limit - current);
         if (remaining > 0) {
           const taxSavings = Math.round(remaining * marginalRate);
@@ -67,7 +68,7 @@ export function registerPlanningTools(server: McpServer): void {
       // HSA
       if (params.hasHSA) {
         const current = params.currentHSAContributions ?? 0;
-        const limit = params.taxYear >= 2025 ? 4300 : 4150; // individual
+        const limit = getContributionLimits(params.taxYear).hsaSelfOnly;
         const remaining = Math.max(0, limit - current);
         if (remaining > 0) {
           const taxSavings = Math.round(remaining * marginalRate);
@@ -96,7 +97,8 @@ export function registerPlanningTools(server: McpServer): void {
       }
 
       // Tax-gain harvesting (low income)
-      if (params.hasCapitalGains && result.taxableIncome < 47025 && params.filingStatus === "single") {
+      const zeroRateCapitalGainThreshold = getTaxYearData(params.taxYear)?.capitalGainsBrackets[params.filingStatus][0]?.threshold ?? 0;
+      if (params.hasCapitalGains && result.taxableIncome < zeroRateCapitalGainThreshold) {
         tips.push(
           `### 📈 Tax-Gain Harvesting\n` +
           `Your taxable income is in the 0% long-term capital gains bracket.\n` +
@@ -129,10 +131,10 @@ export function registerPlanningTools(server: McpServer): void {
       if (params.isSelfEmployed) {
         tips.push(
           `### 📋 Self-Employment Deductions\n` +
-          `- SEP IRA: contribute up to 25% of net SE income (max $${params.taxYear >= 2025 ? "70,000" : "69,000"})\n` +
+          `- SEP IRA: contribute up to 20% of net self-employment earnings after the half SE tax deduction (max $${fmt(getContributionLimits(params.taxYear).definedContributionTotal)})\n` +
           `- Home office deduction (simplified: $5/sq ft, max $1,500)\n` +
           `- Health insurance premiums (100% deductible above-the-line)\n` +
-          `- Business expenses: equipment, software, mileage ($0.67/mile TY2024)`
+          `- Business expenses: equipment, software, and business mileage at the IRS standard mileage rate for the year`
         );
       }
 
@@ -280,7 +282,8 @@ export function registerPlanningTools(server: McpServer): void {
       const quarterlyPayment = Math.ceil((result.totalFederalTax) / 4);
 
       // SEP IRA max
-      const sepMax = Math.min(Math.round(netProfit * 0.25), params.taxYear >= 2025 ? 70000 : 69000);
+      const sepMax = calculateSelfEmployedSepLimit(netProfit, seDeductionHalf, params.taxYear);
+      const contributionLimits = getContributionLimits(params.taxYear);
 
       const lines = [
         `## Self-Employment Tax Breakdown — TY${params.taxYear}`,
@@ -319,9 +322,9 @@ export function registerPlanningTools(server: McpServer): void {
         `### Retirement Contribution Limits`,
         `| Account | Max Contribution |`,
         `|---------|-----------------|`,
-        `| SEP IRA | $${fmt(sepMax)} (25% of net profit) |`,
-        `| Solo 401(k) Employee | $${fmt(params.taxYear >= 2025 ? 23500 : 23000)} |`,
-        `| Solo 401(k) Total | $${fmt(params.taxYear >= 2025 ? 70000 : 69000)} |`,
+        `| SEP IRA | $${fmt(sepMax)} (20% of net earnings after half SE tax) |`,
+        `| Solo 401(k) Employee | $${fmt(contributionLimits.electiveDeferral)} |`,
+        `| Solo 401(k) Total | $${fmt(contributionLimits.definedContributionTotal)} |`,
         "",
         `> ⚠️ Estimate only. Consult a tax professional for your specific situation.`,
       ].filter(Boolean);
@@ -685,7 +688,7 @@ export function registerPlanningTools(server: McpServer): void {
       }
 
       restrictions.push(
-        "⚠️ **SALT Cap**: Reduced to $5K TY2024 / $20K TY2025 (vs $10K/$40K for MFJ)",
+        "⚠️ **SALT Cap**: Reduced to $5K TY2024 / $20K TY2025 / $20.2K TY2026 (vs $10K/$40K/$40.4K for MFJ)",
         "⚠️ **Capital Gains 0% Bracket**: Halved ($47,025 single vs $94,050 MFJ for TY2024)",
         "⚠️ **Social Security**: Up to 85% of benefits may be taxable (lower threshold than MFJ)",
         "⚠️ **Itemizing**: If one spouse itemizes, the other MUST also itemize (cannot mix)",

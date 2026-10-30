@@ -39,7 +39,12 @@ export interface TaxInput {
   lifetimeLearningQualifiedExpenses?: number;
   netInvestmentIncome?: number;
   aboveTheLineDeductions?: number;
+  /** Schedule A total after the SALT cap and AGI floors, before the TY2026 charitable floor and IRC 68 limit. */
   itemizedDeductions?: number;
+  /** Charitable portion included in itemizedDeductions (for the TY2026 0.5% of AGI floor). */
+  itemizedCharitableContributions?: number;
+  /** Qualifying cash gifts to public charities for the TY2026 non-itemizer deduction. */
+  charitableCashContributions?: number;
   forceItemizedDeductions?: boolean;
   dependents?: number;
   qualifyingChildrenForCtc?: number;
@@ -56,8 +61,20 @@ export interface TaxInput {
   qualifiedBusinessW2Wages?: number;
   qualifiedBusinessPropertyBasis?: number;
   qualifiedBusinessIsSstb?: boolean;
+  /** Taxpayer materially participates in the QBI businesses (IRC 199A(i) minimum deduction). */
+  qualifiedBusinessMaterialParticipation?: boolean;
   isoExerciseSpread?: number;
   stateTaxDeducted?: number;
+  /** Schedule 1-A (TY2025+): qualified tips, overtime premium, and US-assembled vehicle loan interest. */
+  qualifiedTips?: number;
+  qualifiedOvertimeCompensation?: number;
+  qualifiedVehicleLoanInterest?: number;
+  dependentCareExpenses?: number;
+  dependentCareQualifyingIndividuals?: number;
+  /** Employer dependent care benefits excluded under IRC 129. */
+  dependentCareBenefitsExcluded?: number;
+  /** MFJ only: the spouse's earned income, included in combined earned income. */
+  spouseEarnedIncome?: number;
 }
 
 export interface TaxBreakdown {
@@ -67,6 +84,9 @@ export interface TaxBreakdown {
   adjustedGrossIncome: number;
   deductionType: "standard" | "itemized";
   deductionAmount: number;
+  nonItemizerCharitableDeduction: number;
+  itemizedDeductionLimitReduction: number;
+  scheduleOneADeductions: ScheduleOneADeductions;
   taxableIncome: number;
   bracketBreakdown: { rate: number; taxableAmount: number; tax: number }[];
   ordinaryIncomeTax: number;
@@ -100,6 +120,7 @@ export interface TaxBreakdown {
   marginalRate: number;
   childTaxCredit: number;
   creditForOtherDependents: number;
+  dependentCareCredit: number;
   additionalChildTaxCredit: number;
   actcCalculationMethod: "none" | "earned_income" | "earned_income_limited" | "three_child_payroll";
   limitations: string[];
@@ -506,16 +527,18 @@ function calculateAMT(
   filingStatus: FilingStatus,
   taxData: TaxYearData,
   isoSpread: number,
-  saltDeducted: number
+  saltDeducted: number,
+  standardDeductionAddBack: number,
+  regularOrdinaryTaxableIncome: number,
 ): number {
-  // AMT income = regular taxable income + preference items
-  const amtIncome = taxableIncome + isoSpread + saltDeducted;
+  // AMTI = regular taxable income + standard deduction or SALT (Form 6251 line 2a) + ISO spread.
+  const amtIncome = taxableIncome + isoSpread + saltDeducted + standardDeductionAddBack;
 
-  // Exemption with phase-out (25 cents per dollar over threshold)
+  // Exemption phase-out: 25 cents per dollar through TY2025, 50 cents from TY2026 (OBBB).
   let exemption = taxData.amt.exemption[filingStatus];
   const phaseoutStart = taxData.amt.phaseoutStart[filingStatus];
   if (amtIncome > phaseoutStart) {
-    const reduction = (amtIncome - phaseoutStart) * 0.25;
+    const reduction = (amtIncome - phaseoutStart) * taxData.amt.phaseoutRate;
     exemption = Math.max(0, exemption - reduction);
   }
 
@@ -532,17 +555,172 @@ function calculateAMT(
   const ordinaryTentativeTax = amtOrdinaryIncome <= threshold
     ? amtOrdinaryIncome * 0.26
     : threshold * 0.26 + (amtOrdinaryIncome - threshold) * 0.28;
-  // The AMT capital-gain worksheet stacks eligible preferential income above ordinary AMT taxable income.
+  // Form 6251 Part III measures the 0%/15% bands from regular ordinary taxable income (lines 20, 27).
   const preferentialTentativeTax = calculateCapitalGainsTax(
     amtPreferentialIncome,
-    amtOrdinaryIncome,
+    regularOrdinaryTaxableIncome,
     filingStatus,
     taxData,
   );
-  const tentativeAMT = ordinaryTentativeTax + preferentialTentativeTax;
+  // Line 40: Part III never exceeds the 26%/28% tax on all AMT taxable income.
+  const flatTentativeTax = amtBase <= threshold
+    ? amtBase * 0.26
+    : threshold * 0.26 + (amtBase - threshold) * 0.28;
+  const tentativeAMT = Math.min(ordinaryTentativeTax + preferentialTentativeTax, flatTentativeTax);
 
   // AMT is the excess over regular tax
   return Math.max(0, tentativeAMT - regularTax);
+}
+
+export interface ScheduleOneADeductions {
+  tips: number;
+  overtime: number;
+  vehicleLoanInterest: number;
+  senior: number;
+}
+
+export interface ScheduleOneAInput {
+  qualifiedTips?: number;
+  qualifiedOvertimeCompensation?: number;
+  qualifiedVehicleLoanInterest?: number;
+  seniorCount: number;
+}
+
+const NO_SCHEDULE_ONE_A: ScheduleOneADeductions = { tips: 0, overtime: 0, vehicleLoanInterest: 0, senior: 0 };
+
+/** OBBB Schedule 1-A deductions (IRC 224, 225, 163(h)(4), 151(d)(5)); MAGI equals AGI here. */
+export function calculateScheduleOneADeductions(
+  taxData: TaxYearData,
+  filingStatus: FilingStatus,
+  magi: number,
+  input: ScheduleOneAInput,
+): ScheduleOneADeductions {
+  const rules = taxData.obbbDeductions;
+  if (!rules) return { ...NO_SCHEDULE_ONE_A };
+  const isJoint = filingStatus === "married_filing_jointly";
+  const jointReturnRequired = filingStatus === "married_filing_separately";
+  const fullStepReduction = (threshold: number, perStep: number) =>
+    Math.floor(Math.max(0, magi - threshold) / 1000) * perStep;
+
+  const tipsThreshold = isJoint ? rules.tipsDeduction.agiLimitMFJ : rules.tipsDeduction.agiLimitSingle;
+  const tips = jointReturnRequired ? 0 : Math.max(
+    0,
+    Math.min(input.qualifiedTips ?? 0, rules.tipsDeduction.max) - fullStepReduction(tipsThreshold, 100),
+  );
+  const overtimeCap = isJoint ? rules.overtimeDeduction.maxMFJ : rules.overtimeDeduction.maxSingle;
+  const overtimeThreshold = isJoint ? rules.overtimeDeduction.agiLimitMFJ : rules.overtimeDeduction.agiLimitSingle;
+  const overtime = jointReturnRequired ? 0 : Math.max(
+    0,
+    Math.min(input.qualifiedOvertimeCompensation ?? 0, overtimeCap) - fullStepReduction(overtimeThreshold, 100),
+  );
+  // Vehicle loan interest phases out per $1,000 "or portion thereof".
+  const vehicleThreshold = isJoint ? rules.autoLoanInterest.agiLimitMFJ : rules.autoLoanInterest.agiLimitSingle;
+  const vehicleLoanInterest = Math.max(
+    0,
+    Math.min(input.qualifiedVehicleLoanInterest ?? 0, rules.autoLoanInterest.max)
+      - Math.ceil(Math.max(0, magi - vehicleThreshold) / 1000) * 200,
+  );
+  const seniorThreshold = isJoint ? rules.seniorBonus.phaseoutMFJ : rules.seniorBonus.phaseoutSingle;
+  const seniorPerPerson = Math.max(0, rules.seniorBonus.amount - Math.max(0, magi - seniorThreshold) * 0.06);
+  const senior = jointReturnRequired ? 0 : seniorPerPerson * input.seniorCount;
+  return { tips, overtime, vehicleLoanInterest, senior };
+}
+
+export interface ItemizedDeductionLimits {
+  charitableFloorReduction: number;
+  itemizedDeductionLimitReduction: number;
+  itemizedAllowed: number;
+}
+
+/** TY2026+ charitable 0.5% floor (IRC 170(b)(1)(I)) then the IRC 68 2/37 limit; no-ops for earlier years. */
+export function applyItemizedDeductionLimits(
+  taxData: TaxYearData,
+  filingStatus: FilingStatus,
+  agi: number,
+  itemized: number,
+  itemizedCharitable: number,
+): ItemizedDeductionLimits {
+  const charitableRules = taxData.charitableDeduction;
+  const charitableFloorReduction = charitableRules
+    ? Math.min(Math.min(itemizedCharitable, itemized), agi * charitableRules.itemizedFloorRate)
+    : 0;
+  const itemizedAfterFloor = itemized - charitableFloorReduction;
+  // Taxable income plus itemized deductions equals AGI before the QBI deduction.
+  const topBracketStart = taxData.brackets[filingStatus].at(-1)?.min ?? Infinity;
+  const itemizedDeductionLimitReduction = taxData.itemizedDeductionLimitRate
+    ? taxData.itemizedDeductionLimitRate
+      * Math.min(itemizedAfterFloor, Math.max(0, agi - topBracketStart))
+    : 0;
+  return {
+    charitableFloorReduction,
+    itemizedDeductionLimitReduction,
+    itemizedAllowed: itemizedAfterFloor - itemizedDeductionLimitReduction,
+  };
+}
+
+/** TY2026+ IRC 170(p) deduction for qualifying cash gifts by non-itemizers. */
+export function calculateNonItemizerCharitableDeduction(
+  taxData: TaxYearData,
+  filingStatus: FilingStatus,
+  cashContributions: number,
+): number {
+  const limit = taxData.charitableDeduction?.nonItemizerCashLimit[filingStatus] ?? 0;
+  return Math.min(Math.max(0, cashContributions), limit);
+}
+
+function dependentCareApplicablePercentage(
+  agi: number,
+  filingStatus: FilingStatus,
+  schedule: TaxYearData["dependentCareCredit"],
+): number {
+  const firstSteps = Math.ceil(Math.max(0, agi - schedule.firstPhasedownStart) / schedule.firstPhasedownStep);
+  let points = Math.max(schedule.firstPhasedownFloor, schedule.maxRate - firstSteps);
+  const second = schedule.secondPhasedown;
+  if (second) {
+    const isJoint = filingStatus === "married_filing_jointly";
+    const start = isJoint ? second.startJoint : second.start;
+    const step = isJoint ? second.stepJoint : second.step;
+    const secondSteps = Math.ceil(Math.max(0, agi - start) / step);
+    points = Math.max(second.floor, points - secondSteps);
+  }
+  return points / 100;
+}
+
+/** Form 2441 credit before the tax liability limit (IRC 21). */
+function calculateDependentCareCredit(
+  input: TaxInput,
+  agi: number,
+  earnedIncome: number,
+  taxData: TaxYearData,
+  limitations: string[],
+): number {
+  const expenses = input.dependentCareExpenses ?? 0;
+  const qualifyingIndividuals = input.dependentCareQualifyingIndividuals ?? 0;
+  if (expenses <= 0 || qualifyingIndividuals <= 0) return 0;
+  if (input.filingStatus === "married_filing_separately") {
+    limitations.push(
+      "The Child and Dependent Care Credit is not calculated for married filing separately; the living-apart exception is not modeled.",
+    );
+    return 0;
+  }
+  let earnedIncomeLimit = earnedIncome;
+  if (input.filingStatus === "married_filing_jointly") {
+    if (input.spouseEarnedIncome === undefined) {
+      limitations.push(
+        "The Child and Dependent Care Credit requires spouseEarnedIncome for married filing jointly.",
+      );
+      return 0;
+    }
+    earnedIncomeLimit = Math.min(input.spouseEarnedIncome, Math.max(0, earnedIncome - input.spouseEarnedIncome));
+  }
+  const schedule = taxData.dependentCareCredit;
+  const expenseCap = qualifyingIndividuals >= 2 ? schedule.expenseLimitTwoOrMore : schedule.expenseLimitOne;
+  const qualifiedExpenses = Math.max(0, Math.min(
+    expenses,
+    expenseCap - (input.dependentCareBenefitsExcluded ?? 0),
+    earnedIncomeLimit,
+  ));
+  return qualifiedExpenses * dependentCareApplicablePercentage(agi, input.filingStatus, schedule);
 }
 
 export function calculateTax(input: TaxInput): TaxBreakdown {
@@ -643,9 +821,50 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
   if (input.spouseAge65OrOlder) standardDeduction += additionalAmount;
   if (input.spouseBlind) standardDeduction += additionalAmount;
 
+  const limitations: string[] = [];
   const itemized = input.itemizedDeductions ?? 0;
-  const useItemized = input.forceItemizedDeductions === true || itemized > standardDeduction;
-  const deductionAmount = useItemized ? itemized : standardDeduction;
+  const {
+    itemizedAllowed,
+    itemizedDeductionLimitReduction,
+  } = applyItemizedDeductionLimits(
+    taxData,
+    input.filingStatus,
+    agi,
+    itemized,
+    input.itemizedCharitableContributions ?? 0,
+  );
+  const potentialNonItemizerCharitable = calculateNonItemizerCharitableDeduction(
+    taxData,
+    input.filingStatus,
+    input.charitableCashContributions ?? 0,
+  );
+  const useItemized = input.forceItemizedDeductions === true
+    || itemizedAllowed > standardDeduction + potentialNonItemizerCharitable;
+  const deductionAmount = useItemized ? itemizedAllowed : standardDeduction;
+  const nonItemizerCharitableDeduction = useItemized ? 0 : potentialNonItemizerCharitable;
+  const seniorCount = (input.age65OrOlder ? 1 : 0)
+    + (input.filingStatus === "married_filing_jointly" && input.spouseAge65OrOlder ? 1 : 0);
+  const scheduleOneADeductions = calculateScheduleOneADeductions(taxData, input.filingStatus, agi, {
+    qualifiedTips: input.qualifiedTips,
+    qualifiedOvertimeCompensation: input.qualifiedOvertimeCompensation,
+    qualifiedVehicleLoanInterest: input.qualifiedVehicleLoanInterest,
+    seniorCount,
+  });
+  const scheduleOneATotal = scheduleOneADeductions.tips
+    + scheduleOneADeductions.overtime
+    + scheduleOneADeductions.vehicleLoanInterest
+    + scheduleOneADeductions.senior;
+  if (input.filingStatus === "married_filing_separately" && taxData.obbbDeductions
+    && ((input.qualifiedTips ?? 0) > 0 || (input.qualifiedOvertimeCompensation ?? 0) > 0 || seniorCount > 0)) {
+    limitations.push(
+      "The tips, overtime, and senior deductions are not allowed for married filing separately.",
+    );
+  }
+  if (itemizedDeductionLimitReduction > 0 && (input.qualifiedBusinessIncome ?? 0) > 0) {
+    limitations.push(
+      "The IRC 68 itemized deduction limit uses AGI before the QBI deduction, which can slightly overstate the reduction.",
+    );
+  }
 
   // Step 3: Calculate taxable income after Schedule D netting.
   const longTermGains = capitalNetting.longTermGain;
@@ -654,7 +873,8 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     + taxableSocialSecurityBenefits
     + shortTermGains
     - capitalNetting.capitalLossDeduction;
-  const totalDeductions = aboveTheLine + seDeduction + deductionAmount;
+  const totalDeductions = aboveTheLine + seDeduction + deductionAmount + nonItemizerCharitableDeduction
+    + scheduleOneATotal;
   const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - totalDeductions);
   const unusedDeductions = Math.max(0, totalDeductions - Math.max(0, ordinaryIncome));
   const taxablePreferentialIncome = Math.max(
@@ -674,7 +894,12 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     input.qualifiedBusinessW2Wages,
     input.qualifiedBusinessPropertyBasis,
   );
-  const qbiDeduction = qbiResult.deduction;
+  // IRC 199A(i) (TY2026+): $400 minimum when active QBI is at least $1,000.
+  const minimumQbi = taxData.qbiMinimumDeduction;
+  const qbiDeduction = minimumQbi && input.qualifiedBusinessMaterialParticipation === true
+    && qbi >= minimumQbi.qualifiedBusinessIncomeThreshold
+    ? Math.max(qbiResult.deduction, minimumQbi.amount)
+    : qbiResult.deduction;
 
   const adjustedTaxableOrdinary = Math.max(0, taxableOrdinaryIncome - qbiDeduction);
 
@@ -748,6 +973,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     taxData,
     isoSpread,
     saltDeducted,
+    // Form 6251 line 1a adds back the Schedule 1-A senior deduction.
+    (useItemized ? 0 : deductionAmount) + scheduleOneADeductions.senior,
+    adjustedTaxableOrdinary,
   );
 
   const educationCredits = calculateEducationCredits(
@@ -759,13 +987,25 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     input.hasForm2555 ?? false,
   );
 
-  // Form 8863 nonrefundable credits reduce the tax available to CTC and ODC.
+  const actcEarnedIncome = input.earnedIncome
+    ?? ((input.w2Income ?? 0) + Math.max(0, (input.selfEmploymentIncome ?? 0) - seDeduction));
+
+  // Schedule 3 order: dependent care (Form 2441), then education credits, then CTC and ODC.
   const incomeTaxBeforeCredits = regularIncomeTax + amt;
+  const dependentCareCreditBeforeLimit = calculateDependentCareCredit(
+    input,
+    agi,
+    actcEarnedIncome,
+    taxData,
+    limitations,
+  );
+  const dependentCareCredit = Math.min(dependentCareCreditBeforeLimit, incomeTaxBeforeCredits);
+  const taxAfterDependentCare = incomeTaxBeforeCredits - dependentCareCredit;
   const nonrefundableAmericanOpportunityCreditApplied = Math.min(
     educationCredits.nonrefundableAmericanOpportunityCredit,
-    incomeTaxBeforeCredits,
+    taxAfterDependentCare,
   );
-  const taxAfterAotc = incomeTaxBeforeCredits
+  const taxAfterAotc = taxAfterDependentCare
     - nonrefundableAmericanOpportunityCreditApplied;
   const lifetimeLearningCreditApplied = Math.min(
     educationCredits.lifetimeLearningCredit,
@@ -785,7 +1025,6 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Refundable ACTC uses the Schedule 8812 earned-income method. For 3+ children,
   // the payroll-tax method is used only when the required values are supplied.
-  const limitations: string[] = [];
   const unusedCombinedDependentCredit = Math.max(
     0,
     childCreditAfterPhaseout
@@ -793,8 +1032,6 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
       - childCredit
       - creditForOtherDependents,
   );
-  const actcEarnedIncome = input.earnedIncome
-    ?? ((input.w2Income ?? 0) + Math.max(0, (input.selfEmploymentIncome ?? 0) - seDeduction));
   const earnedIncomeMethod = Math.max(
     0,
     actcEarnedIncome - taxData.childTaxCredit.earnedIncomeThreshold,
@@ -852,6 +1089,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     adjustedGrossIncome: agi,
     deductionType: useItemized ? "itemized" : "standard",
     deductionAmount,
+    nonItemizerCharitableDeduction,
+    itemizedDeductionLimitReduction,
+    scheduleOneADeductions,
     taxableIncome,
     bracketBreakdown: breakdown,
     ordinaryIncomeTax: ordinaryTax,
@@ -882,6 +1122,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     marginalRate,
     childTaxCredit: childCredit,
     creditForOtherDependents,
+    dependentCareCredit,
     additionalChildTaxCredit,
     actcCalculationMethod,
     limitations,

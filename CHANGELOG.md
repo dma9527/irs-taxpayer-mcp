@@ -4,6 +4,33 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Fixed
+
+- AMT exemption phase-out now uses 50 cents per dollar from TY2026 (OBBB), instead of 25 cents for every year.
+- AMT income now adds back the standard deduction for non-itemizers (Form 6251 line 2a). AMT was understated for every standard-deduction filer.
+- EITC phase-in credit is now capped by the AGI phase-out (IRC 32(a)(2)); it was overstated when AGI exceeded earned income.
+- TY2026 planning tools used TY2025 401(k), HSA, SEP, and Solo 401(k) limits. All limits now come from one year-keyed table.
+- Self-employed SEP limit now uses 20% of net earnings after the half SE tax deduction, not 25% of net profit (Pub. 560).
+- The tax-gain harvesting tip now uses the 0% capital-gain threshold for the selected year and filing status.
+- AMT capital-gain bands now stack on regular ordinary taxable income and cap at the flat 26%/28% tax (Form 6251 Part III lines 20, 27, 40). AMT was overstated for large preferential income.
+- `get_tax_deadlines` failed by default because TY2026 had no deadline data.
+- `check_credit_eligibility` used TY2024 CTC and EITC limits for every year and still offered EV and home energy credits that OBBB ended for TY2026.
+- `calculate_w4_withholding` Step 3 used $2,000 per child for every year; the 2026 Form W-4 uses $2,200.
+
+### Added
+
+- TY2026 non-itemizer cash charitable deduction ($1,000 single, $2,000 MFJ), 0.5% of AGI itemized charitable floor, and the IRC 68 2/37 itemized deduction limit.
+- Child and Dependent Care Credit (Form 2441) calculation with the TY2026 50% schedule and second phase-down.
+- TY2026 retirement and HSA contribution limits (Notice 2025-67, Rev. Proc. 2025-19).
+- TY2026 numeric state profiles for MA (5% plus 4% surtax), IL, PA, and NC.
+- Schedule 1-A deductions (tips, overtime, vehicle loan interest, senior) inside the federal calculation, with the senior deduction added back for AMT.
+- TY2026 $400 minimum QBI deduction for materially participating taxpayers (IRC 199A(i)).
+- TY2026 filing deadlines.
+- TY2026 California profile from the FTB October 2026 schedules, including the 1% Mental Health Services Tax.
+- `estimate_premium_tax_credit` (tool 45): TY2026 Premium Tax Credit from Rev. Proc. 2025-25, 2025 HHS poverty guidelines, the 400% limit, and full repayment of excess advance payments.
+- Year-keyed law change registry (`src/data/law-changes.ts`). `what_changed_between_tax_years` now lists TY2025 and TY2026 rule changes in separate sections with citations, primary-source links, and whether each change is calculated, reference only, or not modeled.
+- New inputs on `calculate_federal_tax`, `standard_vs_itemized`, `generate_tax_plan`, and the local intake.
+
 ## [1.1.0] - 2026-09-18
 
 ### Added

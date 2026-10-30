@@ -58,9 +58,9 @@ export const TAX_CREDITS: CreditRule[] = [
     category: "family",
     refundable: "no",
     description: "Credit for childcare or dependent care expenses that allow you to work",
-    maxAmount: "20-35% of up to $3,000 expenses (1 dependent) or $6,000 (2+). Max credit: $1,050 / $2,100",
-    eligibility: "Must have earned income, child under 13 or disabled dependent, expenses for work/job search",
-    phaseout: "Credit percentage decreases from 35% to 20% as AGI increases from $15,000 to $43,000",
+    maxAmount: "Percentage of up to $3,000 expenses (1 qualifying individual) or $6,000 (2+). TY2024-TY2025: 20-35%, max $1,050 / $2,100. TY2026+: 20-50%, max $1,500 / $3,000",
+    eligibility: "Must have earned income, child under 13 or disabled dependent, expenses for work/job search. Expense limit is reduced by excluded employer dependent care benefits",
+    phaseout: "TY2024-TY2025: 35% reduced 1 point per $2,000 of AGI over $15,000, to 20%. TY2026+ (IRC 21(a)(2) as amended by OBBB): 50% reduced 1 point per $2,000 over $15,000 to 35%, then 1 point per $2,000 ($4,000 MFJ) over $75,000 ($150,000 MFJ) to 20%",
     form: "Form 2441",
   },
   {
@@ -123,7 +123,7 @@ export const TAX_CREDITS: CreditRule[] = [
     eligibility: "New EV with final assembly in North America, MSRP limits ($55K cars / $80K trucks/SUVs), income limits",
     phaseout: "Income cap: $150,000 single / $300,000 MFJ / $225,000 HoH",
     form: "Form 8936",
-    tips: "Can transfer credit to dealer at point of sale for immediate price reduction",
+    tips: "Terminated by OBBB for vehicles acquired after September 30, 2025; not available for TY2026 purchases",
   },
   {
     id: "used_ev_credit",
@@ -135,6 +135,7 @@ export const TAX_CREDITS: CreditRule[] = [
     eligibility: "Used EV at least 2 model years old, price under $25,000, purchased from dealer",
     phaseout: "Income cap: $75,000 single / $150,000 MFJ / $112,500 HoH",
     form: "Form 8936",
+    tips: "Terminated by OBBB for vehicles acquired after September 30, 2025",
   },
   {
     id: "residential_energy",
@@ -145,7 +146,7 @@ export const TAX_CREDITS: CreditRule[] = [
     maxAmount: "30% of qualified expenses (no cap for most systems)",
     eligibility: "Installed on your primary or secondary US residence",
     form: "Form 5695",
-    tips: "This is the big solar panel credit. 30% rate through 2032, then steps down",
+    tips: "Terminated by OBBB: no credit for expenditures made after December 31, 2025 (Form 5695 instructions)",
   },
   {
     id: "energy_efficiency",
@@ -156,7 +157,7 @@ export const TAX_CREDITS: CreditRule[] = [
     maxAmount: "30% of costs, up to $3,200/year. Sub-limits: $1,200 general / $2,000 heat pumps",
     eligibility: "Improvements to your primary residence, must meet energy efficiency standards",
     form: "Form 5695",
-    tips: "Annual limit resets each year — plan improvements across multiple years to maximize",
+    tips: "Terminated by OBBB: no credit for property placed in service after December 31, 2025",
   },
 
   // === RETIREMENT ===

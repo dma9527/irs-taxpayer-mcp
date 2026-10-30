@@ -11,6 +11,7 @@ import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 import { SERVER_VERSION } from "../version.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
+import { getContributionLimits } from "../data/contribution-limits.js";
 
 
 
@@ -121,7 +122,7 @@ export function registerSmartTools(server: McpServer): void {
 
       // 4. Retirement savings gaps
       const k401 = params.retirement401k ?? 0;
-      const k401Limit = params.taxYear >= 2025 ? 23500 : 23000;
+      const k401Limit = getContributionLimits(params.taxYear).electiveDeferral;
       if (k401 > 0 && k401 < k401Limit) {
         const gap = k401Limit - k401;
         const taxSavings = Math.round(gap * result.marginalRate);
@@ -134,7 +135,7 @@ export function registerSmartTools(server: McpServer): void {
       }
 
       const hsa = params.hsaContributions ?? 0;
-      const hsaLimit = params.taxYear >= 2025 ? 4300 : 4150;
+      const hsaLimit = getContributionLimits(params.taxYear).hsaSelfOnly;
       if (hsa > 0 && hsa < hsaLimit) {
         const gap = hsaLimit - hsa;
         findings.push({
@@ -401,7 +402,7 @@ export function registerSmartTools(server: McpServer): void {
           ],
           tips: [
             "Keep a separate business bank account",
-            "Track mileage with an app (standard rate: $0.67/mile TY2024, $0.70/mile TY2025)",
+            "Track mileage with an app and apply the IRS standard mileage rate published for the tax year",
             "Meals are 50% deductible (must be business-related with documentation)",
             "Consider the simplified home office method ($5/sq ft) to avoid Form 8829",
           ],
@@ -446,7 +447,7 @@ export function registerSmartTools(server: McpServer): void {
           ],
           tips: [
             "Only itemize if total exceeds your standard deduction",
-            "SALT cap: $10K (TY2024), $40K (TY2025 per OBBB) — includes state income + property tax",
+            "SALT cap: $10K (TY2024), $40K (TY2025), $40.4K (TY2026) per OBBB, phased down above $500K/$505K MAGI; includes state income + property tax",
             "Charitable: need written acknowledgment for donations $250+",
             "Non-cash donations over $500 require Form 8283",
           ],

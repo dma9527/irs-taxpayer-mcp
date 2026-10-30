@@ -131,7 +131,7 @@ describe("MCP Tools Integration", () => {
         capitalGains: 900000,
       });
 
-      expect(text).toContain("Alternative Minimum Tax (AMT) | $8,363");
+      expect(text).toContain("Alternative Minimum Tax (AMT) | $12,159");
     });
 
     it("calculates taxable Social Security benefits", async () => {
@@ -244,6 +244,17 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Per-Paycheck");
       expect(text).toContain("Step 1");
     });
+
+    it("uses the year's child credit amount in Step 3 (2026 Form W-4: $2,200)", async () => {
+      const ty2026 = await callTool(server, "calculate_w4_withholding", {
+        taxYear: 2026, filingStatus: "married_filing_jointly", annualSalary: 120000, payFrequency: "biweekly", dependents: 2,
+      });
+      const ty2024 = await callTool(server, "calculate_w4_withholding", {
+        taxYear: 2024, filingStatus: "married_filing_jointly", annualSalary: 120000, payFrequency: "biweekly", dependents: 2,
+      });
+      expect(ty2026.text).toContain("2 qualifying child(ren) × $2,200 = $4,400");
+      expect(ty2024.text).toContain("2 qualifying child(ren) × $2,000 = $4,000");
+    });
   });
 
   // --- Deduction Tools ---
@@ -268,10 +279,35 @@ describe("MCP Tools Integration", () => {
       });
       expect(text).toContain("standard");
     });
+
+    it("applies the TY2026 charitable floor and 2/37 limit to itemized deductions", async () => {
+      // Pre-limit $60,000; floor 0.5% x $1,000,000 = $5,000; limit 55,000 x 2/37 = $2,973.
+      const { text } = await callTool(server, "standard_vs_itemized", {
+        taxYear: 2026, filingStatus: "married_filing_jointly", agi: 1000000,
+        stateLocalTaxes: 50000, mortgageInterest: 30000, charitableDonations: 20000,
+      });
+      expect(text).toContain("| Charitable 0.5% of AGI floor | -$5,000 |");
+      expect(text).toContain("| Itemized deduction limit (2/37) | -$2,973 |");
+      expect(text).toContain("| **Total Itemized** | **$52,027** |");
+    });
+
+    it("adds the TY2026 non-itemizer cash charitable deduction to the standard side", async () => {
+      const { text } = await callTool(server, "standard_vs_itemized", {
+        taxYear: 2026, filingStatus: "single", agi: 60000,
+        charitableDonations: 3000, nonItemizerCashDonations: 1500,
+      });
+      expect(text).toContain("**Standard Deduction**: $16,100 + $1,000 non-itemizer charitable deduction = $17,100");
+    });
   });
 
   // --- IRS Lookup Tools ---
   describe("get_tax_deadlines", () => {
+    it("returns TY2026 deadlines by default", async () => {
+      const { text, isError } = await callTool(server, "get_tax_deadlines", {});
+      expect(isError).toBeFalsy();
+      expect(text).toContain("TY2026");
+      expect(text).toContain("2027-04-15");
+    });
     it("returns deadlines for TY2024", async () => {
       const { text } = await callTool(server, "get_tax_deadlines", { taxYear: 2024 });
       expect(text).toContain("Deadlines");
@@ -315,6 +351,48 @@ describe("MCP Tools Integration", () => {
   });
 
   describe("check_credit_eligibility", () => {
+    it("estimates the TY2026 Premium Tax Credit with full repayment of excess advance payments", async () => {
+      const { text, isError } = await callTool(server, "estimate_premium_tax_credit", {
+        taxYear: 2026, filingStatus: "single", householdIncome: 31300, familySize: 1,
+        annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 4500,
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("| Household income as % of poverty line | 200% |");
+      expect(text).toContain("| Premium Tax Credit | $3,934 |");
+      expect(text).toContain("| Excess advance payment to repay | $566 |");
+      expect(text).toContain("Rev. Proc. 2025-25");
+    });
+
+    it("returns a typed error for an unsupported Premium Tax Credit year", async () => {
+      const { isError, text } = await callTool(server, "estimate_premium_tax_credit", {
+        taxYear: 2025, filingStatus: "single", householdIncome: 31300, familySize: 1,
+        annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 0,
+      });
+      expect(isError).toBe(true);
+      expect(text).toContain("TY2025");
+    });
+
+    it("uses TY2026 rules by default: $2,200 CTC and no expired energy or EV credits", async () => {
+      const { text } = await callTool(server, "check_credit_eligibility", {
+        agi: 90000, filingStatus: "married_filing_jointly", hasChildren: true, numChildren: 2,
+        hasEarnedIncome: true, boughtEV: true, installedSolar: true, madeHomeImprovements: true,
+      });
+      expect(text).toContain("$4,400 (2 children × $2,200)");
+      expect(text).toContain("❌ **Clean Vehicle Credit**: Not available for vehicles acquired after September 30, 2025");
+      expect(text).toContain("❌ **Residential Clean Energy Credit**: Expired for expenditures after December 31, 2025");
+      expect(text).toContain("❌ **Energy Efficient Home Improvement Credit**: Expired for property placed in service after December 31, 2025");
+    });
+
+    it("keeps TY2024 EV and energy credits available", async () => {
+      const { text } = await callTool(server, "check_credit_eligibility", {
+        taxYear: 2024, agi: 90000, filingStatus: "married_filing_jointly", hasChildren: true, numChildren: 2,
+        boughtEV: true, installedSolar: true,
+      });
+      expect(text).toContain("$4,000 (2 children × $2,000)");
+      expect(text).toContain("✅ **Clean Vehicle Credit**");
+      expect(text).toContain("✅ **Residential Clean Energy Credit**");
+    });
+
     it("checks eligibility", async () => {
       const { text } = await callTool(server, "check_credit_eligibility", {
         agi: 50000, filingStatus: "single", hasChildren: true, numChildren: 1,
@@ -496,6 +574,14 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Tips");
     });
 
+    it("phases out tips in full $1,000 steps per IRC 224(b)(2)", async () => {
+      // Excess $10,500 is 10 full steps: 20,000 - 1,000 = 19,000.
+      const { text } = await callTool(server, "calculate_obbb_deductions", {
+        taxYear: 2026, filingStatus: "single", agi: 160500, tipIncome: 20000,
+      });
+      expect(text).toContain("| Tips Income Deduction | $19,000 |");
+    });
+
     it("shows not available for TY2024", async () => {
       const { text } = await callTool(server, "calculate_obbb_deductions", {
         taxYear: 2024, filingStatus: "single", agi: 50000,
@@ -505,6 +591,30 @@ describe("MCP Tools Integration", () => {
   });
 
   describe("what_changed_between_tax_years", () => {
+    it("separates TY2026 law changes from TY2025 changes with sources", async () => {
+      const { text } = await callTool(server, "what_changed_between_tax_years", {
+        fromYear: 2025, toYear: 2026,
+      });
+      const ty2026 = text.slice(text.indexOf("### Law Changes Effective TY2026"));
+      expect(ty2026).toContain("IRC 68");
+      expect(ty2026).toContain("OBBB sec. 70111");
+      expect(ty2026).toContain("Not modeled");
+      expect(ty2026).not.toContain("Qualified tips deduction");
+      expect(text).not.toContain("### Law Changes Effective TY2025");
+    });
+
+    it("lists TY2025 and TY2026 law changes in separate sections across both years", async () => {
+      const { text } = await callTool(server, "what_changed_between_tax_years", {
+        fromYear: 2024, toYear: 2026,
+      });
+      const ty2025Start = text.indexOf("### Law Changes Effective TY2025");
+      const ty2026Start = text.indexOf("### Law Changes Effective TY2026");
+      expect(ty2025Start).toBeGreaterThan(-1);
+      expect(ty2026Start).toBeGreaterThan(ty2025Start);
+      expect(text.slice(ty2025Start, ty2026Start)).toContain("Qualified tips deduction");
+      expect(text.slice(ty2026Start)).toContain("Child and Dependent Care Credit");
+    });
+
     it("shows differences between TY2024 and TY2025", async () => {
       const { text } = await callTool(server, "what_changed_between_tax_years", {
         fromYear: 2024, toYear: 2025,
@@ -538,7 +648,7 @@ describe("MCP Tools Integration", () => {
         longTermCapitalGains: 900000,
       });
 
-      expect(text).toContain("| AMT | $8,363 |");
+      expect(text).toContain("| AMT | $12,159 |");
       expect(text).toContain(
         "AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains.",
       );
@@ -549,6 +659,28 @@ describe("MCP Tools Integration", () => {
   });
 
   describe("generate_tax_plan", () => {
+    it("applies TY2026 non-itemizer charitable and dependent care facts", async () => {
+      // Taxable $40,000 - $24,150 - $1,000 = $14,850; care credit 37% x $3,000 = $1,110.
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "head_of_household",
+        income: { w2: 40000 },
+        deductions: { nonItemizerCashCharitable: 1500 },
+        family: { dependentCareExpenses: 4000, dependentCareQualifyingIndividuals: 1 },
+      });
+      const plan = z.object({
+        plan: z.object({
+          results: z.object({
+            taxableIncome: z.number(),
+            ordinaryIncomeTax: z.number(),
+            dependentCareCredit: z.number(),
+          }),
+        }),
+      }).parse(result.structuredContent);
+      expect(plan.plan.results.taxableIncome).toBe(14850);
+      expect(plan.plan.results.dependentCareCredit).toBeCloseTo(1110, 2);
+    });
+
     it("returns deterministic domain structured content without persistence", async () => {
       const result = await callTool(server, "generate_tax_plan", {
         taxYear: 2026,
@@ -616,7 +748,7 @@ describe("MCP Tools Integration", () => {
         taxYear: 2026,
         filingStatus: "single",
         income: { w2: 100000 },
-        stateCode: "CA",
+        stateCode: "NY",
       });
       const structured = z.object({
         isError: z.literal(true),
@@ -915,6 +1047,40 @@ describe("MCP Tools Integration", () => {
 
       expect(isError).toBe(true);
       expect(text).toContain("California TY2025 calculation data are not available");
+    });
+  });
+
+  describe("TY2026 contribution limits (Notice 2025-67, Rev. Proc. 2025-19)", () => {
+    it("uses TY2026 401(k) and HSA limits in planning tips", async () => {
+      const { text } = await callTool(server, "get_tax_planning_tips", {
+        taxYear: 2026, filingStatus: "single", estimatedIncome: 100000,
+        hasRetirementPlan: true, currentRetirementContributions: 10000,
+        hasHSA: true, currentHSAContributions: 1000,
+      });
+      expect(text).toContain("limit: $24,500");
+      expect(text).toContain("individual limit: $4,400");
+    });
+
+    it("uses TY2026 limits and the self-employed 20% SEP rate", async () => {
+      const { text } = await callTool(server, "estimate_self_employment_tax", {
+        taxYear: 2026, filingStatus: "single", grossRevenue: 120000, businessExpenses: 30000,
+      });
+      expect(text).toContain("| SEP IRA | $16,728");
+      expect(text).toContain("| Solo 401(k) Employee | $24,500 |");
+      expect(text).toContain("| Solo 401(k) Total | $72,000 |");
+    });
+
+    it("uses the TY2026 401(k) limit in the health check", async () => {
+      const { text } = await callTool(server, "run_tax_health_check", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 80000,
+        w2Income: 80000, retirement401k: 10000, federalWithheld: 15000,
+      });
+      expect(text).toContain("limit: $24,500");
+    });
+
+    it("lists TY2026 retirement account limits", async () => {
+      const { text } = await callTool(server, "get_retirement_accounts", { accountType: "roth_ira" });
+      expect(text).toContain("| TY2026 Limit | $7,500 |");
     });
   });
 

@@ -104,8 +104,10 @@ describe("calculateTax", () => {
         age65OrOlder: true,
       });
 
+      // Senior deduction 6,000 - 25,000 x 6% = 4,500; $100,000 - $18,150 - $4,500.
       expect(result.deductionAmount).toBe(18150);
-      expect(result.taxableIncome).toBe(81850);
+      expect(result.scheduleOneADeductions.senior).toBe(4500);
+      expect(result.taxableIncome).toBe(77350);
     });
 
     it("stacks TY2026 long-term gains above ordinary income", () => {
@@ -805,6 +807,57 @@ describe("calculateTax", () => {
   });
 
   describe("AMT (Alternative Minimum Tax)", () => {
+    it("phases out the TY2026 exemption at 50 cents per dollar under OBBB", () => {
+      // AMTI = taxable $283,900 + standard deduction $16,100 + ISO $400,000 = $700,000; exemption fully phased out.
+      // Tentative AMT = 244,500 * 26% + 455,500 * 28% = 191,110; regular tax = 68,134.25.
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "single",
+        grossIncome: 300000,
+        w2Income: 300000,
+        isoExerciseSpread: 400000,
+      });
+      expect(result.amt).toBeCloseTo(122975.75, 2);
+    });
+
+    it("keeps the 25 cent TY2025 exemption phase-out", () => {
+      // AMTI $700,000 (includes the $15,750 standard deduction add-back); exemption 88,100 - 73,650 * 25% = 69,687.50.
+      // Tentative AMT = 239,100 * 26% + 391,212.50 * 28% = 171,705.50; regular tax = 69,034.75.
+      const result = calculateTax({
+        taxYear: 2025,
+        filingStatus: "single",
+        grossIncome: 300000,
+        w2Income: 300000,
+        isoExerciseSpread: 400000,
+      });
+      expect(result.amt).toBeCloseTo(102670.75, 2);
+    });
+
+    it("measures AMT capital-gain bands from regular ordinary taxable income (Form 6251 Part III)", () => {
+      // TY2026: regular ordinary $83,900; 15% band 545,500 - 83,900 = 461,600; 438,400 at 20%.
+      // Tentative AMT 26,000 + 69,240 + 87,680 = 182,920; regular tax 13,170 + 156,920 = 170,090.
+      const result = calculateTax({
+        taxYear: 2026,
+        filingStatus: "single",
+        grossIncome: 1000000,
+        w2Income: 100000,
+        capitalGains: 900000,
+      });
+      expect(result.amt).toBeCloseTo(12830, 2);
+    });
+
+    it("adds the standard deduction back to AMTI (Form 6251 line 2a)", () => {
+      // AMTI = taxable $185,400 + standard $14,600 + ISO $100,000 = $300,000; exemption $85,700.
+      // Tentative AMT = 214,300 * 26% = 55,718; regular tax on $185,400 = 37,538.50.
+      const result = calculateTax({
+        taxYear: 2024,
+        filingStatus: "single",
+        grossIncome: 200000,
+        isoExerciseSpread: 100000,
+      });
+      expect(result.amt).toBeCloseTo(18179.5, 2);
+    });
+
     it("no AMT for typical W-2 earner", () => {
       const result = calculateTax(base2024Single);
       expect(result.amt).toBe(0);
@@ -839,8 +892,11 @@ describe("calculateTax", () => {
         capitalGains: 900000,
       });
 
+      // AMTI $1,000,000 adds back the $14,600 standard deduction (Form 6251 line 2a); exemption fully phased out.
+      // Part III bands use regular ordinary taxable income $85,400 (lines 20, 27): 433,500 at 15% + 466,500 at 20%.
+      // Tentative AMT 26,000 + 158,325 = 184,325; regular tax 13,841 + 158,325 = 172,166.
       expect(result.capitalGainsTax).toBe(158325);
-      expect(result.amt).toBeCloseTo(8363, 0);
+      expect(result.amt).toBeCloseTo(12159, 2);
     });
 
     it("treats qualified dividends and long-term gains equally under AMT", () => {
@@ -859,7 +915,7 @@ describe("calculateTax", () => {
         capitalGains: 900000,
       });
 
-      expect(dividendResult.amt).toBe(8363);
+      expect(dividendResult.amt).toBeCloseTo(12159, 2);
       expect(dividendResult.amt).toBe(capitalGainResult.amt);
       expect(dividendResult.totalFederalTax)
         .toBe(capitalGainResult.totalFederalTax);
@@ -997,5 +1053,304 @@ describe("P0 federal accuracy regressions", () => {
 
     expect(result.ordinaryIncomeTax).toBe(0);
     expect(result.totalFederalTax).toBeCloseTo(result.selfEmploymentTax, 2);
+  });
+});
+
+describe("TY2026 OBBB charitable and itemized deduction rules", () => {
+  it("allows the non-itemizer cash charitable deduction up to $1,000 single", () => {
+    // Taxable $80,000 - $16,100 - $1,000 = $62,900; tax 1,240 + 4,560 + 2,750.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "single",
+      grossIncome: 80000,
+      charitableCashContributions: 1500,
+    });
+    expect(result.nonItemizerCharitableDeduction).toBe(1000);
+    expect(result.adjustedGrossIncome).toBe(80000);
+    expect(result.taxableIncome).toBe(62900);
+    expect(result.ordinaryIncomeTax).toBeCloseTo(8550, 2);
+  });
+
+  it("caps the non-itemizer charitable deduction at $2,000 for MFJ", () => {
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 120000,
+      charitableCashContributions: 5000,
+    });
+    expect(result.nonItemizerCharitableDeduction).toBe(2000);
+    expect(result.taxableIncome).toBe(120000 - 32200 - 2000);
+  });
+
+  it("does not allow the non-itemizer charitable deduction before TY2026", () => {
+    const result = calculateTax({
+      taxYear: 2025,
+      filingStatus: "single",
+      grossIncome: 80000,
+      charitableCashContributions: 1500,
+    });
+    expect(result.nonItemizerCharitableDeduction).toBe(0);
+    expect(result.taxableIncome).toBe(64250);
+  });
+
+  it("applies the 0.5% of AGI floor to itemized charitable contributions", () => {
+    // Floor 0.5% x $200,000 = $1,000; itemized $30,000 becomes $29,000.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "single",
+      grossIncome: 200000,
+      itemizedDeductions: 30000,
+      itemizedCharitableContributions: 5000,
+    });
+    expect(result.deductionType).toBe("itemized");
+    expect(result.deductionAmount).toBe(29000);
+    expect(result.taxableIncome).toBe(171000);
+  });
+
+  it("limits the charitable floor to the charitable amount itemized", () => {
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "single",
+      grossIncome: 200000,
+      itemizedDeductions: 30000,
+      itemizedCharitableContributions: 400,
+    });
+    expect(result.deductionAmount).toBe(29600);
+  });
+
+  it("reduces itemized deductions by 2/37 of the full deduction above the 37% bracket", () => {
+    // Income above $768,700 is $231,300, more than itemized $60,000; reduction 60,000 x 2/37.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 1000000,
+      itemizedDeductions: 60000,
+    });
+    expect(result.itemizedDeductionLimitReduction).toBeCloseTo(3243.24, 2);
+    expect(result.deductionAmount).toBeCloseTo(56756.76, 2);
+  });
+
+  it("reduces itemized deductions by 2/37 of the excess when it is smaller", () => {
+    // Taxable income plus itemized $800,000 exceeds $768,700 by $31,300; reduction 31,300 x 2/37.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 800000,
+      itemizedDeductions: 60000,
+    });
+    expect(result.itemizedDeductionLimitReduction).toBeCloseTo(1691.89, 2);
+    expect(result.deductionAmount).toBeCloseTo(58308.11, 2);
+  });
+
+  it("does not apply the 2/37 limit before TY2026", () => {
+    const result = calculateTax({
+      taxYear: 2025,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 1000000,
+      itemizedDeductions: 60000,
+    });
+    expect(result.itemizedDeductionLimitReduction).toBe(0);
+    expect(result.deductionAmount).toBe(60000);
+  });
+});
+
+describe("Child and Dependent Care Credit", () => {
+  it("uses the TY2026 50% schedule reduced to 37% at $40,000 AGI", () => {
+    // 50% minus ceil(25,000 / 2,000) = 13 points; 37% of the $3,000 one-child limit.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "head_of_household",
+      grossIncome: 40000,
+      w2Income: 40000,
+      dependentCareExpenses: 4000,
+      dependentCareQualifyingIndividuals: 1,
+    });
+    expect(result.dependentCareCredit).toBeCloseTo(1110, 2);
+  });
+
+  it("applies the TY2026 second phase-down above $150,000 MFJ", () => {
+    // First phase-down floors at 35%; ceil(50,000 / 4,000) = 13 more points gives 22% of $6,000.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 200000,
+      w2Income: 200000,
+      spouseEarnedIncome: 80000,
+      dependentCareExpenses: 10000,
+      dependentCareQualifyingIndividuals: 2,
+    });
+    expect(result.dependentCareCredit).toBeCloseTo(1320, 2);
+  });
+
+  it("keeps the 20% floor for TY2025 at the same income", () => {
+    const result = calculateTax({
+      taxYear: 2025,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 200000,
+      w2Income: 200000,
+      spouseEarnedIncome: 80000,
+      dependentCareExpenses: 10000,
+      dependentCareQualifyingIndividuals: 2,
+    });
+    expect(result.dependentCareCredit).toBeCloseTo(1200, 2);
+  });
+
+  it("reduces the expense limit by excluded employer dependent care benefits", () => {
+    // ($6,000 - $5,000) x 22%.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 200000,
+      w2Income: 200000,
+      spouseEarnedIncome: 80000,
+      dependentCareExpenses: 10000,
+      dependentCareQualifyingIndividuals: 2,
+      dependentCareBenefitsExcluded: 5000,
+    });
+    expect(result.dependentCareCredit).toBeCloseTo(220, 2);
+  });
+
+  it("limits expenses to the lower-earning spouse's earned income", () => {
+    // Expenses capped at spouse earned income $2,000; 22% of $2,000.
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 200000,
+      w2Income: 200000,
+      spouseEarnedIncome: 2000,
+      dependentCareExpenses: 10000,
+      dependentCareQualifyingIndividuals: 2,
+    });
+    expect(result.dependentCareCredit).toBeCloseTo(440, 2);
+  });
+
+  it("does not calculate the MFJ credit without the spouse's earned income", () => {
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_jointly",
+      grossIncome: 200000,
+      w2Income: 200000,
+      dependentCareExpenses: 10000,
+      dependentCareQualifyingIndividuals: 2,
+    });
+    expect(result.dependentCareCredit).toBe(0);
+    expect(result.limitations.join(" ")).toContain("spouseEarnedIncome");
+  });
+
+  it("does not allow the credit for married filing separately", () => {
+    const result = calculateTax({
+      taxYear: 2026,
+      filingStatus: "married_filing_separately",
+      grossIncome: 60000,
+      w2Income: 60000,
+      dependentCareExpenses: 3000,
+      dependentCareQualifyingIndividuals: 1,
+    });
+    expect(result.dependentCareCredit).toBe(0);
+    expect(result.limitations.join(" ")).toContain("married filing separately");
+  });
+});
+
+describe("OBBB Schedule 1-A deductions in the federal calculation", () => {
+  it("applies the TY2026 $400 minimum QBI deduction for active businesses", () => {
+    // 20% x $1,500 = $300, raised to $400 under IRC 199A(i).
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 61500, w2Income: 60000,
+      qualifiedBusinessIncome: 1500, qualifiedBusinessMaterialParticipation: true,
+    });
+    expect(result.qbiDeduction).toBe(400);
+  });
+
+  it("does not apply the minimum QBI deduction without material participation or before TY2026", () => {
+    const passive = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 61500, w2Income: 60000, qualifiedBusinessIncome: 1500,
+    });
+    const priorYear = calculateTax({
+      taxYear: 2025, filingStatus: "single", grossIncome: 61500, w2Income: 60000,
+      qualifiedBusinessIncome: 1500, qualifiedBusinessMaterialParticipation: true,
+    });
+    expect(passive.qbiDeduction).toBe(300);
+    expect(priorYear.qbiDeduction).toBe(300);
+  });
+
+  it("allows the full $6,000 senior deduction below the phase-out", () => {
+    // $60,000 - ($16,100 + $2,050) - $6,000 = $35,850.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 60000, w2Income: 60000, age65OrOlder: true,
+    });
+    expect(result.scheduleOneADeductions.senior).toBe(6000);
+    expect(result.taxableIncome).toBe(35850);
+  });
+
+  it("phases out the senior deduction by 6% of MAGI over $75,000", () => {
+    // 6,000 - 15,000 x 6% = 5,100; $90,000 - $18,150 - $5,100 = $66,750.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 90000, w2Income: 90000, age65OrOlder: true,
+    });
+    expect(result.scheduleOneADeductions.senior).toBe(5100);
+    expect(result.taxableIncome).toBe(66750);
+  });
+
+  it("applies the senior phase-out per spouse for MFJ", () => {
+    // 2 x (6,000 - 50,000 x 6%) = 6,000; $200,000 - $35,500 - $6,000 = $158,500.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 200000, w2Income: 200000,
+      age65OrOlder: true, spouseAge65OrOlder: true,
+    });
+    expect(result.scheduleOneADeductions.senior).toBe(6000);
+    expect(result.taxableIncome).toBe(158500);
+  });
+
+  it("reduces the tips deduction by $100 per full $1,000 over $150,000", () => {
+    // Excess $10,500 is 10 full steps: 20,000 - 1,000 = 19,000.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 160500, w2Income: 160500, qualifiedTips: 20000,
+    });
+    expect(result.scheduleOneADeductions.tips).toBe(19000);
+    expect(result.taxableIncome).toBe(160500 - 16100 - 19000);
+  });
+
+  it("caps MFJ overtime at $25,000 before the phase-out", () => {
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 310000, w2Income: 310000,
+      qualifiedOvertimeCompensation: 30000,
+    });
+    expect(result.scheduleOneADeductions.overtime).toBe(24000);
+  });
+
+  it("reduces vehicle loan interest by $200 per $1,000 or portion over $100,000", () => {
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 100500, w2Income: 100500,
+      qualifiedVehicleLoanInterest: 3000,
+    });
+    expect(result.scheduleOneADeductions.vehicleLoanInterest).toBe(2800);
+  });
+
+  it("disallows tips, overtime, and senior deductions for married filing separately", () => {
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "married_filing_separately", grossIncome: 80000, w2Income: 80000,
+      age65OrOlder: true, qualifiedTips: 5000, qualifiedOvertimeCompensation: 5000,
+      qualifiedVehicleLoanInterest: 1000,
+    });
+    expect(result.scheduleOneADeductions).toEqual({ tips: 0, overtime: 0, vehicleLoanInterest: 1000, senior: 0 });
+    expect(result.limitations.join(" ")).toContain("married filing separately");
+  });
+
+  it("does not allow Schedule 1-A deductions before TY2025", () => {
+    const result = calculateTax({
+      taxYear: 2024, filingStatus: "single", grossIncome: 60000, w2Income: 60000, age65OrOlder: true,
+      qualifiedTips: 5000,
+    });
+    expect(result.scheduleOneADeductions).toEqual({ tips: 0, overtime: 0, vehicleLoanInterest: 0, senior: 0 });
+  });
+
+  it("adds the senior deduction back to AMTI", () => {
+    // AMTI = 35,850 + 18,150 + 6,000 + 300,000 = 360,000; tentative 63,570 + 25,400 x 28% = 70,682.
+    // Regular tax on $35,850 = 4,054.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 60000, w2Income: 60000, age65OrOlder: true,
+      isoExerciseSpread: 300000,
+    });
+    expect(result.amt).toBeCloseTo(66628, 2);
   });
 });

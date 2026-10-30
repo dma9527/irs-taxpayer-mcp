@@ -4,7 +4,7 @@
  */
 
 import { calculateTax, type TaxInput } from "./tax-calculator.js";
-import type { FilingStatus } from "../data/tax-brackets.js";
+import { getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
 
 export interface W4Input {
   taxYear: number;
@@ -86,11 +86,13 @@ export function calculateW4(input: W4Input): W4Result {
   // Step 3: Dependents
   const dependentCount = input.dependents ?? 0;
   if (dependentCount > 0) {
-    const creditAmount = dependentCount * 2000;
+    // Form W-4 Step 3(a) uses the year's per-child CTC amount ($2,200 on the 2026 form).
+    const perChildCredit = getTaxYearData(input.taxYear)?.childTaxCredit.amount ?? 0;
+    const creditAmount = dependentCount * perChildCredit;
     recommendations.push({
       field: "Step 3: Claim Dependents",
       value: `$${creditAmount.toLocaleString()}`,
-      explanation: `${dependentCount} qualifying child(ren) × $2,000 = $${creditAmount.toLocaleString()}. Enter this amount.`,
+      explanation: `${dependentCount} qualifying child(ren) × $${perChildCredit.toLocaleString()} = $${creditAmount.toLocaleString()}. Enter this amount.`,
     });
   }
 

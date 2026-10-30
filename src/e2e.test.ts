@@ -104,7 +104,7 @@ describe("E2E Smoke Test", () => {
       expect(toolNames).toContain("generate_tax_plan");
       expect(toolNames).toContain("simulate_tax_scenario");
       expect(toolNames).toContain("assess_audit_risk");
-      expect(toolNames.length).toBe(44);
+      expect(toolNames.length).toBe(45);
       for (const tool of toolsResult.tools) {
         expect(tool.outputSchema).toBeDefined();
         expect(tool.annotations).toEqual({

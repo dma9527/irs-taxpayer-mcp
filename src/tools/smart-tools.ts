@@ -262,7 +262,7 @@ export function registerSmartTools(server: McpServer): void {
         },
         "gift tax": {
           title: "Gift Tax Rules",
-          answer: `**Annual exclusion (TY2024):** $18,000 per recipient ($19,000 for TY2025)\n**Annual exclusion MFJ:** $36,000 per recipient (gift splitting)\n**Lifetime exemption:** $13.61M (TY2024), $15M+ (TY2026+ per OBBB)\n\n**Key points:**\n- Gifts below the annual exclusion require no reporting\n- Gifts above the annual exclusion require Form 709 but usually no tax (uses lifetime exemption)\n- Gifts to spouse (US citizen): unlimited, no tax\n- Gifts for tuition/medical paid directly to institution: unlimited, no tax\n- The recipient does NOT pay tax on gifts received\n- Cost basis for gifted assets: donor's basis (carryover basis)`,
+          answer: `**Annual exclusion:** $18,000 per recipient (TY2024), $19,000 (TY2025 and TY2026)\n**Annual exclusion with gift splitting:** $38,000 per recipient (TY2026)\n**Lifetime exemption:** $13.61M (TY2024), $13.99M (TY2025), $15M (TY2026 per OBBB, indexed after 2026)\n\n**Key points:**\n- Gifts below the annual exclusion require no reporting\n- Gifts above the annual exclusion require Form 709 but usually no tax (uses lifetime exemption)\n- Gifts to spouse (US citizen): unlimited, no tax\n- Gifts for tuition/medical paid directly to institution: unlimited, no tax\n- The recipient does NOT pay tax on gifts received\n- Cost basis for gifted assets: donor's basis (carryover basis)`,
           irsRef: "IRC §2503, IRS Form 709",
         },
         "estimated tax penalty": {
@@ -287,7 +287,7 @@ export function registerSmartTools(server: McpServer): void {
         },
         "dependent rules": {
           title: "Who Qualifies as a Dependent?",
-          answer: `**Qualifying Child:**\n- Under age 19 (or under 24 if full-time student)\n- Lived with you more than half the year\n- Did not provide more than half their own support\n- Must have SSN for CTC\n\n**Qualifying Relative:**\n- Gross income < $5,050 (TY2024)\n- You provide more than half their support\n- Not a qualifying child of another taxpayer\n- Can be any age\n\n**Both types:** Must be US citizen/resident, cannot file joint return (with exceptions), cannot be claimed by someone else.`,
+          answer: `**Qualifying Child:**\n- Under age 19 (or under 24 if full-time student)\n- Lived with you more than half the year\n- Did not provide more than half their own support\n- Must have SSN for CTC\n\n**Qualifying Relative:**\n- Gross income < $5,050 (TY2024), $5,200 (TY2025), $5,300 (TY2026)\n- You provide more than half their support\n- Not a qualifying child of another taxpayer\n- Can be any age\n\n**Both types:** Must be US citizen/resident, cannot file joint return (with exceptions), cannot be claimed by someone else.`,
           irsRef: "IRC §152, IRS Publication 501",
         },
         "capital loss": {
@@ -464,7 +464,7 @@ export function registerSmartTools(server: McpServer): void {
           sections: [
             { name: "Step 1", lines: "(a)-(c)", what: "Name, SSN, filing status", source: "Your personal info" },
             { name: "Step 2", lines: "Multiple Jobs", what: "Check box if you or spouse have multiple jobs", source: "Your employment situation" },
-            { name: "Step 3", lines: "Dependents", what: "Multiply qualifying children × $2,000 (TY2024) or $2,200 (TY2025)", source: "Number of qualifying children" },
+            { name: "Step 3", lines: "Dependents", what: "Multiply qualifying children × $2,000 (TY2024) or $2,200 (TY2025 and TY2026)", source: "Number of qualifying children" },
             { name: "Step 4(a)", lines: "Other Income", what: "Income not from jobs (interest, dividends, retirement)", source: "Prior year 1099s as estimate" },
             { name: "Step 4(b)", lines: "Deductions", what: "Excess of itemized over standard deduction", source: "Prior year Schedule A" },
             { name: "Step 4(c)", lines: "Extra Withholding", what: "Additional amount to withhold per paycheck", source: "Use `calculate_w4_withholding` tool" },

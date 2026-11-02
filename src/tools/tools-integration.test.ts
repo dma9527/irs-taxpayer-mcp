@@ -393,6 +393,28 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("✅ **Residential Clean Energy Credit**");
     });
 
+    it("uses TY2026 Saver's Credit and student loan income limits", async () => {
+      const single = await callTool(server, "check_credit_eligibility", {
+        agi: 40000, filingStatus: "single", hasRetirementContributions: true,
+      });
+      expect(single.text).toContain("Saver's Credit");
+      const joint = await callTool(server, "check_credit_eligibility", {
+        agi: 200000, filingStatus: "married_filing_jointly", hasStudentLoans: true,
+      });
+      expect(joint.text).toContain("Student Loan Interest Deduction");
+    });
+
+    it("keeps TY2024 Saver's Credit and student loan income limits", async () => {
+      const single = await callTool(server, "check_credit_eligibility", {
+        taxYear: 2024, agi: 39000, filingStatus: "single", hasRetirementContributions: true,
+      });
+      expect(single.text).not.toContain("Saver's Credit");
+      const joint = await callTool(server, "check_credit_eligibility", {
+        taxYear: 2024, agi: 200000, filingStatus: "married_filing_jointly", hasStudentLoans: true,
+      });
+      expect(joint.text).not.toContain("Student Loan Interest Deduction");
+    });
+
     it("checks eligibility", async () => {
       const { text } = await callTool(server, "check_credit_eligibility", {
         agi: 50000, filingStatus: "single", hasChildren: true, numChildren: 1,
@@ -560,6 +582,17 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Education Tax Benefits");
       expect(text).toContain("AOTC");
       expect(text).toContain("Lifetime Learning");
+    });
+
+    it.each([
+      [2026, "single", 92500, "$1,250"],
+      [2024, "single", 87500, "$1,250"],
+      [2026, "married_filing_jointly", 190000, "$1,250"],
+    ])("phases out student loan interest with TY%i %s limits", async (taxYear, filingStatus, agi, deductible) => {
+      const { text } = await callTool(server, "analyze_education_tax_benefits", {
+        taxYear, filingStatus, agi, tuitionPaid: 0, isUndergrad: false, studentLoanInterest: 2500,
+      });
+      expect(text).toContain(`| Deductible Amount | ${deductible} |`);
     });
   });
 

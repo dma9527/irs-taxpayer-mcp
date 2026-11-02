@@ -2,7 +2,7 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**Servidor MCP con 44 herramientas de estimación y planificación fiscal para escenarios TY2024 a TY2026 expresamente modelados.**
+**Servidor MCP con 45 herramientas de estimación y planificación fiscal para escenarios TY2024 a TY2026 expresamente modelados.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -30,13 +30,13 @@ irs-taxpayer-mcp validate --facts taxpayer-facts.json
 irs-taxpayer-mcp plan --facts taxpayer-facts.json
 ```
 
-## 🛠️ Herramientas (44)
+## 🛠️ Herramientas (45)
 
 | Categoría           | Cant. | Descripción                                                                                                 |
 | ------------------- | ----- | ----------------------------------------------------------------------------------------------------------- |
 | Cálculos federales  | 6     | Impuesto federal, tramos, comparación de estados civiles, pagos trimestrales, federal+estatal, W-4          |
 | Deducciones         | 2     | Explorar deducciones, estándar vs detallada                                                                 |
-| Créditos            | 3     | 20+ créditos federales, elegibilidad, EITC preciso                                                          |
+| Créditos            | 4     | 20+ créditos federales, elegibilidad, EITC preciso, PTC TY2026 |
 | Jubilación          | 2     | Cuentas de jubilación, estrategias Backdoor Roth                                                            |
 | Planificación       | 7     | Plan local estructurado, fin de año, comparación anual, autónomos, hipoteca, educación, MFJ vs MFS           |
 | Impuestos estatales | 4     | Información estatal, estimación, comparación, estados sin impuesto                                          |

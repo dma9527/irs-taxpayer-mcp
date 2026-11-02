@@ -76,13 +76,17 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | Differential test | 41/41 synthetic scenarios match PSL Tax-Calculator 6.8.5 within $1 |
 | D8 W-4 Step 3 used $2,000 per child | Uses the year's amount ($2,200 on the 2026 Form W-4) |
 | Premium Tax Credit | TY2026 annual estimate added (Rev. Proc. 2025-25) |
-| Suite | 382 of 382 tests pass |
+| D9 Student loan interest and Saver's Credit screens used TY2024 limits | Year-keyed from Rev. Proc. 2023-34, 2024-40, 2025-32 and Notices 2023-75, 2024-80, 2025-67 |
+| D10 Stale reference text (gift exclusion, qualifying relative test, SALT, MFS comparisons) | TY2026 values added from Rev. Proc. 2025-32 and Notice 2025-67 |
+| D11 9 production dependency advisories, 1 critical | MCP SDK 1.32.2, zod 4.6.7, transitive refresh; `npm audit` reports 0 |
+| Differential script | Moved to `scripts/differential/` with pinned requirements; optional, not in CI |
+| Suite | 405 of 405 tests pass |
 
-### Remaining for TY2026 (priority order, updated 2026-10-30, second pass)
+### Remaining for TY2026 (priority order, updated 2026-11-01, third pass)
 
 | Priority | Item | Status | Blocker or next action |
 |----------|------|--------|------------------------|
-| P1 | Release 1.2.0 (version bump, tag, npm, MCP Registry) and upload the refreshed Agensi skill ZIP | Ready | Owner decision; work is uncommitted |
+| P1 | Upload the refreshed Agensi skill ZIP | Ready | 1.2.0 released 2026-11-01 |
 | P1 | New York TY2026 profile | Blocked | NY DTF has not published the TY2026 IT-201 rate schedule; withholding tables are not a filing source |
 | P2 | Confirm against final 2026 forms in January 2027: NC standard deduction, Form 6251 treatment of the non-itemizer charitable deduction, Publication 509 dates, CA Schedule Z and exemption credits | Waiting | Final forms publish January 2027 |
 | P2 | `generate_full_tax_report`, `simulate_tax_scenario`, `analyze_paycheck` cannot take the new TY2026 inputs | Open | They inherit engine fixes; route TY2026 questions with these facts to `calculate_federal_tax` or `generate_tax_plan` |

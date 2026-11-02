@@ -11,6 +11,7 @@ import { calculateEITC } from "../calculators/eitc-calculator.js";
 import { getTaxYearData, LATEST_TAX_YEAR } from "../data/tax-brackets.js";
 import { ERRORS, toolError } from "./error-handler.js";
 import { calculatePremiumTaxCredit } from "../calculators/premium-tax-credit.js";
+import { getSaversCreditAgiLimit, getStudentLoanInterestPhaseout } from "../data/phaseout-limits.js";
 
 export function registerCreditTools(server: McpServer): void {
   registerTaxTool(server,
@@ -130,8 +131,8 @@ export function registerCreditTools(server: McpServer): void {
       }
 
       if (params.hasStudentLoans) {
-        const slLimit = params.filingStatus === "married_filing_jointly" ? 195000 : 95000;
-        if (params.agi <= slLimit && params.filingStatus !== "married_filing_separately") {
+        const slPhaseout = getStudentLoanInterestPhaseout(taxYear, params.filingStatus);
+        if (slPhaseout && params.agi < slPhaseout.end) {
           eligible.push("✅ **Student Loan Interest Deduction**: Up to $2,500 above-the-line deduction");
         }
       }
@@ -162,11 +163,7 @@ export function registerCreditTools(server: McpServer): void {
 
       // Retirement
       if (params.hasRetirementContributions) {
-        const saverLimits: Record<string, number> = {
-          single: 38250, married_filing_jointly: 76500,
-          married_filing_separately: 38250, head_of_household: 57375,
-        };
-        if (params.agi <= (saverLimits[params.filingStatus] ?? 38250)) {
+        if (params.agi <= getSaversCreditAgiLimit(taxYear, params.filingStatus)) {
           eligible.push("✅ **Saver's Credit**: 10-50% of retirement contributions, up to $1,000 ($2,000 MFJ)");
         }
       }

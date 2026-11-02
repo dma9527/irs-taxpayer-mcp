@@ -10,9 +10,7 @@ export const FilingStatusSchema = z.enum(
     "head_of_household",
   ],
   {
-    errorMap: () => ({
-      message: "Filing status must be single, married_filing_jointly, married_filing_separately, or head_of_household",
-    }),
+    error: "Filing status must be single, married_filing_jointly, married_filing_separately, or head_of_household",
   },
 );
 

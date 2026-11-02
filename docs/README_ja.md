@@ -2,7 +2,7 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**明示的にモデル化されたTY2024からTY2026のシナリオ向けに、44の税額見積もり・計画ツールを提供するMCPサーバーです。**
+**明示的にモデル化されたTY2024からTY2026のシナリオ向けに、45の税額見積もり・計画ツールを提供するMCPサーバーです。**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -30,13 +30,13 @@ irs-taxpayer-mcp validate --facts taxpayer-facts.json
 irs-taxpayer-mcp plan --facts taxpayer-facts.json
 ```
 
-## 🛠️ ツール（44個）
+## 🛠️ ツール（45個）
 
 | カテゴリ   | 数  | 説明                                                                         |
 | ---------- | --- | ---------------------------------------------------------------------------- |
 | 連邦税計算 | 6   | 連邦税、税率表、申告ステータス比較、四半期予定納税、連邦+州税、W-4           |
 | 控除分析   | 2   | 控除項目閲覧、標準控除 vs 項目別控除                                         |
-| 税額控除   | 3   | 20以上の連邦控除、適格性チェック、EITC精密計算                               |
+| 税額控除   | 4   | 20以上の連邦控除、適格性チェック、EITC精密計算、TY2026 PTC |
 | 退職戦略   | 2   | 退職口座詳細、Backdoor Roth等の戦略                                          |
 | 税務計画   | 7   | ローカル構造化プラン、年末最適化、年度比較、自営業税、住宅ローン、教育、MFJ vs MFS |
 | 州税       | 4   | 州税情報、見積もり、州間比較、所得税なしの州                                 |

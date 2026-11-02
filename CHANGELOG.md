@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-01
+
 ### Fixed
 
 - AMT exemption phase-out now uses 50 cents per dollar from TY2026 (OBBB), instead of 25 cents for every year.
@@ -16,6 +18,16 @@ All notable changes to irs-taxpayer-mcp.
 - `get_tax_deadlines` failed by default because TY2026 had no deadline data.
 - `check_credit_eligibility` used TY2024 CTC and EITC limits for every year and still offered EV and home energy credits that OBBB ended for TY2026.
 - `calculate_w4_withholding` Step 3 used $2,000 per child for every year; the 2026 Form W-4 uses $2,200.
+- Student loan interest phase-outs used TY2024 ranges for every year. They are now year-keyed: TY2026 $85,000 to $100,000 ($175,000 to $205,000 MFJ) per Rev. Proc. 2025-32 sec. 3.29. `analyze_education_tax_benefits` accepts `taxYear`.
+- Saver's Credit screening used TY2024 AGI limits for every year. TY2026 limits are $40,250, $60,375 HoH, and $80,500 MFJ (Notice 2025-67).
+- Reference text now covers TY2026 values for the gift exclusion and lifetime exemption, the qualifying relative income test ($5,300), the SALT cap, MFS IRA and 0% bracket comparisons, and the W-4 child amount.
+- README state support list omitted California for TY2026; translated READMEs still listed 44 tools.
+
+### Security
+
+- Upgraded `@modelcontextprotocol/sdk` to 1.32.2 and `zod` to 4.6.7, and refreshed transitive packages. `npm audit` reported 9 production advisories, including a critical one in `proxy-addr`. It now reports 0.
+- Upgraded `vitest` to 4.1.12 for two moderate `@vitest/mocker` advisories (development only).
+- Under zod 4, published tool input schemas drop `additionalProperties: false` on non-strict objects and add safe-integer bounds to integer fields. Tool behavior is unchanged.
 
 ### Added
 
@@ -30,6 +42,7 @@ All notable changes to irs-taxpayer-mcp.
 - `estimate_premium_tax_credit` (tool 45): TY2026 Premium Tax Credit from Rev. Proc. 2025-25, 2025 HHS poverty guidelines, the 400% limit, and full repayment of excess advance payments.
 - Year-keyed law change registry (`src/data/law-changes.ts`). `what_changed_between_tax_years` now lists TY2025 and TY2026 rule changes in separate sections with citations, primary-source links, and whether each change is calculated, reference only, or not modeled.
 - New inputs on `calculate_federal_tax`, `standard_vs_itemized`, `generate_tax_plan`, and the local intake.
+- Optional differential test against PSL Tax-Calculator 6.8.5 (`scripts/differential/`). 41 synthetic TY2024 to TY2026 scenarios match within $1. It does not run in CI.
 
 ## [1.1.0] - 2026-09-18
 

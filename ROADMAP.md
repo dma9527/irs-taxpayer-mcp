@@ -1,10 +1,10 @@
 # irs-taxpayer-mcp Roadmap
 
-_Last updated: 2026-10-30._
+_Last updated: 2026-11-01._
 
 ## Current Baseline
 
-Version 1.1.0 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 44 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
+Version 1.2.0 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -97,6 +97,9 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] Add Schedule 1-A (tips, overtime, vehicle loan interest, senior) to the federal calculation.
 - [x] Add the TY2026 $400 minimum QBI deduction.
 - [x] Fix AMT Form 6251 Part III capital-gain stacking and line 40 cap.
+- [x] Year-key the student loan interest phase-out and Saver's Credit AGI limits.
+- [x] Clear production dependency advisories (MCP SDK 1.32.2, zod 4.6.7).
+- [x] Release 1.2.0 to npm and the MCP Registry.
 
 ## Phase 2: Forms and Schedules
 
@@ -120,7 +123,7 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 
 - [ ] Build IRS publication and worksheet fixtures for every supported path.
 - [ ] Add golden returns that reconcile every form line and worksheet intermediate.
-- [ ] Add differential checks against independent tax engines using non-sensitive synthetic cases.
+- [🔄] Add differential checks against independent tax engines using non-sensitive synthetic cases. Federal check against PSL Tax-Calculator lives in `scripts/differential/`; state engines not yet compared.
 - [ ] Add invariant, boundary, and rounding tests for all thresholds and phase-outs.
 - [ ] Publish a support matrix that identifies each implemented form, schedule, election, and known exclusion.
 - [ ] Require source citations and reviewer approval for every annual tax-data update.
@@ -176,4 +179,5 @@ This phase begins only after the filing-grade verification gates are met.
 | 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |
 | 1.0.1 | 2026-09-04 | First public 1.x release with npm 12-compatible OIDC automation. |
 | 1.0.2 | 2026-09-07 | Monthly feedback dashboard, AMT guidance correction, and independent TY2026/AMT regressions. |
+| 1.2.0 | 2026-11-01 | TY2026 readiness: AMT and EITC fixes, TY2026 limits and charitable rules, dependent care credit, Schedule 1-A in the engine, Premium Tax Credit tool, CA/MA/IL/PA/NC TY2026 profiles, law change registry, zero dependency advisories. |
 | 1.1.0 | 2026-09-18 | Direct no-model TaxpayerFacts onboarding, strict local JSON import, shared deterministic planner service, and corrected privacy boundaries. |

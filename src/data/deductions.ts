@@ -36,7 +36,7 @@ export const ITEMIZED_DEDUCTIONS: DeductionRule[] = [
     name: "State and Local Taxes (SALT)",
     category: "taxes",
     description: "State/local income or sales taxes plus property taxes",
-    limit: "TY2024: $10,000 cap ($5,000 MFS). TY2025: $40,000 cap ($20,000 MFS) for AGI ≤ $500K, phases down above. Per OBBB Act.",
+    limit: "TY2024: $10,000 cap ($5,000 MFS). TY2025: $40,000 cap ($20,000 MFS) for MAGI ≤ $500K. TY2026: $40,400 cap ($20,200 MFS) for MAGI ≤ $505K. Phases down above the threshold to the $10,000 floor. Per OBBB Act.",
     eligibility: "All taxpayers who itemize",
     form: "Schedule A",
     line: "Line 5d",

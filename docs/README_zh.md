@@ -2,7 +2,7 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**面向美国个人纳税人的 MCP 税务估算与规划服务器，包含 44 个工具，支持明确建模的 TY2024 至 TY2026 场景。**
+**面向美国个人纳税人的 MCP 税务估算与规划服务器，包含 45 个工具，支持明确建模的 TY2024 至 TY2026 场景。**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -30,13 +30,13 @@ irs-taxpayer-mcp validate --facts taxpayer-facts.json
 irs-taxpayer-mcp plan --facts taxpayer-facts.json
 ```
 
-## 🛠️ 工具（44 个）
+## 🛠️ 工具（45 个）
 
 | 分类       | 工具数 | 说明                                                          |
 | ---------- | ------ | ------------------------------------------------------------- |
 | 联邦税计算 | 6      | 联邦税、税率表、报税身份对比、季度预估税、联邦+州税合并、W-4  |
 | 扣除分析   | 2      | 扣除项浏览、标准 vs 逐项扣除                                  |
-| 税收抵免   | 3      | 20+ 联邦抵免、资格筛查、EITC 精确计算                         |
+| 税收抵免   | 4      | 20+ 联邦抵免、资格筛查、EITC 精确计算、TY2026 保费税收抵免    |
 | 退休策略   | 2      | 退休账户详情、Backdoor Roth 等策略                            |
 | 税务规划   | 7      | 本地结构化方案、年末优化、跨年对比、自雇税、房贷、教育、MFJ vs MFS |
 | 州税       | 4      | 州税信息、估算、多州对比、免税州                              |

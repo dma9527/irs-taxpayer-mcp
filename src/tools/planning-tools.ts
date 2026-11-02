@@ -8,8 +8,9 @@ import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
-import { getSaltCap, getTaxYearData, type FilingStatus } from "../data/tax-brackets.js";
+import { getSaltCap, getTaxYearData, LATEST_TAX_YEAR, type FilingStatus } from "../data/tax-brackets.js";
 import { calculateSelfEmployedSepLimit, getContributionLimits } from "../data/contribution-limits.js";
+import { getStudentLoanInterestPhaseout } from "../data/phaseout-limits.js";
 
 
 
@@ -429,6 +430,7 @@ export function registerPlanningTools(server: McpServer): void {
     "Compare education tax benefits: AOTC vs Lifetime Learning Credit, " +
     "student loan interest deduction, and 529 plan advantages.",
     {
+      taxYear: z.number().optional().describe(`Tax year (default: ${LATEST_TAX_YEAR})`),
       filingStatus: FilingStatusEnum,
       agi: z.number().min(0).describe("Adjusted Gross Income"),
       tuitionPaid: z.number().min(0).describe("Tuition and qualified expenses paid"),
@@ -507,18 +509,12 @@ export function registerPlanningTools(server: McpServer): void {
       const slInterest = params.studentLoanInterest ?? 0;
       if (slInterest > 0) {
         const slLimit = Math.min(slInterest, 2500);
-        const slPhaseout: Record<FilingStatus, [number, number]> = {
-          single: [80000, 95000],
-          married_filing_jointly: [165000, 195000],
-          married_filing_separately: [0, 0],
-          head_of_household: [80000, 95000],
-        };
-        const [slStart, slEnd] = slPhaseout[params.filingStatus];
+        const slPhaseout = getStudentLoanInterestPhaseout(params.taxYear ?? LATEST_TAX_YEAR, params.filingStatus);
         let deduction = slLimit;
-        if (params.agi > slEnd || params.filingStatus === "married_filing_separately") {
+        if (!slPhaseout || params.agi >= slPhaseout.end) {
           deduction = 0;
-        } else if (params.agi > slStart) {
-          deduction = Math.round(slLimit * (1 - (params.agi - slStart) / (slEnd - slStart)));
+        } else if (params.agi > slPhaseout.start) {
+          deduction = Math.round(slLimit * (1 - (params.agi - slPhaseout.start) / (slPhaseout.end - slPhaseout.start)));
         }
 
         lines.push(
@@ -684,12 +680,12 @@ export function registerPlanningTools(server: McpServer): void {
         restrictions.push("⚠️ **CTC Phase-out**: Starts at $200K (vs $400K for MFJ) — reduced by half");
       }
       if (params.hasIRAContributions) {
-        restrictions.push("⚠️ **IRA Deduction**: Phase-out range is $0-$10K if covered by employer plan (vs $123K-$143K for MFJ TY2024)");
+        restrictions.push("⚠️ **IRA Deduction**: Phase-out range is $0-$10K if covered by employer plan (vs $129K-$149K for MFJ TY2026)");
       }
 
       restrictions.push(
         "⚠️ **SALT Cap**: Reduced to $5K TY2024 / $20K TY2025 / $20.2K TY2026 (vs $10K/$40K/$40.4K for MFJ)",
-        "⚠️ **Capital Gains 0% Bracket**: Halved ($47,025 single vs $94,050 MFJ for TY2024)",
+        "⚠️ **Capital Gains 0% Bracket**: Halved ($49,450 MFS vs $98,900 MFJ for TY2026)",
         "⚠️ **Social Security**: Up to 85% of benefits may be taxable (lower threshold than MFJ)",
         "⚠️ **Itemizing**: If one spouse itemizes, the other MUST also itemize (cannot mix)",
       );

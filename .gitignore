@@ -12,3 +12,7 @@ dist/
 
 # Agensi skill build artifact
 irs-tax-calculator-skill.zip
+
+# Differential test environment
+.venv-taxcalc/
+__pycache__/

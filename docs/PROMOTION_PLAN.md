@@ -45,15 +45,11 @@ https://www.npmjs.com/package/irs-taxpayer-mcp
 
 ## 第二步：提交到 MCP 社区目录
 
-### 2.1 官方 MCP Server 列表（最重要）
+### 2.1 官方 MCP Registry（已完成）
 
-仓库：https://github.com/modelcontextprotocol/servers
+`modelcontextprotocol/servers` 不再收录第三方 server，改为指向 [MCP Registry](https://registry.modelcontextprotocol.io/)。本项目已由 release workflow 自动发布到 Registry，无需额外提交。
 
-操作：
-
-1. Fork 该仓库
-2. 在 README.md 的合适分类下添加一行
-3. 提交 PR
+以下 PR 模板保留给其他目录使用：
 
 PR 标题：
 
@@ -75,7 +71,7 @@ MCP server for US individual taxpayers with 45 tools covering:
 - Retirement strategies, withdrawal planning, and multi-year projections
 
 Boundary: This is estimation and planning software. It does not prepare, sign, or transmit tax returns.
-Privacy: Calculations run locally; no tax data is transmitted by the server.
+Privacy: The engine calculates locally and sends no tax data. The direct CLI calls no model; with a cloud MCP client, prompts and tool arguments reach that model provider.
 Data: TY2024 through TY2026 from annual IRS and SSA sources.
 
 npm: https://www.npmjs.com/package/irs-taxpayer-mcp
@@ -174,11 +170,11 @@ Show HN: Open-source MCP tax estimator - 45 local tools, TY2024 through TY2026
 ### 3.3 Twitter/X
 
 ```
-Built an open-source tax assistant that runs entirely on your machine 🔒
+Built an open-source tax planner with a local CLI that never sends your numbers to a model.
 
-45 tools: federal tax, state tax, credits, deductions, retirement planning, audit risk assessment
+45 MCP tools: federal tax, state tax, credits, deductions, retirement planning, audit risk assessment
 
-Updated for the One Big Beautiful Bill Act (2025)
+TY2024 through TY2026, including modeled OBBB provisions
 
 npx irs-taxpayer-mcp --help
 
@@ -221,9 +217,8 @@ github.com/dma9527/irs-taxpayer-mcp
 | 优先级 | 行动                                   | 预计时间 | 影响         |
 | ------ | -------------------------------------- | -------- | ------------ |
 | P0     | GitHub topics + description            | 5 分钟   | 搜索可发现性 |
-| P0     | 提交到官方 MCP servers 列表            | 30 分钟  | 最大曝光渠道 |
+| P0     | 提交到 awesome-mcp-servers             | 15 分钟  | 最大曝光渠道 |
 | P1     | 提交到 mcp.so + glama.ai               | 15 分钟  | MCP 用户发现 |
-| P1     | 提交到 awesome-mcp-servers             | 15 分钟  | GitHub 搜索  |
 | P2     | Reddit 发帖 (r/tax, r/personalfinance) | 30 分钟  | 目标用户     |
 | P2     | Hacker News Show HN                    | 15 分钟  | 技术社区     |
 | P3     | Twitter/X 发帖                         | 10 分钟  | 社交传播     |

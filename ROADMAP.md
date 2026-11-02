@@ -144,7 +144,7 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] TypeScript strict mode.
 - [x] Exact direct dependency versions.
 - [x] Stdio MCP smoke coverage.
-- [x] All 44 tools use `registerTool` with annotations, output schemas, and structured content.
+- [x] All 45 tools use `registerTool` with annotations, output schemas, and structured content.
 - [x] Tool contract snapshot and stable agent evaluation suite.
 - [x] Tag-driven release workflow with OIDC, exact-tarball smoke, and idempotent retry checks.
 - [x] Monthly privacy-safe feedback and filing-gate dashboard with manual rerun support.

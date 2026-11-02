@@ -4,6 +4,11 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Changed
+
+- Release workflow now waits up to 10 minutes for npm to finish processing a published tarball before failing. The 1.1.0 release exceeded the previous 2-minute window.
+- Updated stale 44-tool counts in the roadmap and promotion plan to 45.
+
 ## [1.2.2] - 2026-11-01
 
 ### Fixed

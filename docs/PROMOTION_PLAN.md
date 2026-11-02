@@ -2,9 +2,9 @@
 
 ## 项目现状
 
-- npm: `irs-taxpayer-mcp@0.6.0`
+- npm: `irs-taxpayer-mcp@1.2.2`
 - GitHub: https://github.com/dma9527/irs-taxpayer-mcp
-- 44 个工具，197 个测试
+- 45 个工具，424 个测试
 - TY2024 through TY2026
 - stdio + stateless Streamable HTTP transport
 - Docker 支持
@@ -28,7 +28,7 @@ tax-deductions, eitc, amt, capital-gains
 ### 1.2 设置 Description
 
 ```
-MCP server with 44 deterministic tax estimation and planning tools for supported US individual taxpayer scenarios. Calculations run locally. TY2024 through TY2026.
+MCP server with 45 deterministic tax estimation and planning tools for supported US individual taxpayer scenarios. Calculations run locally. TY2024 through TY2026.
 ```
 
 ### 1.3 设置 Website
@@ -58,7 +58,7 @@ https://www.npmjs.com/package/irs-taxpayer-mcp
 PR 标题：
 
 ```
-Add irs-taxpayer-mcp: US individual tax estimator (44 tools)
+Add irs-taxpayer-mcp: US individual tax estimator (45 tools)
 ```
 
 PR 描述：
@@ -66,7 +66,7 @@ PR 描述：
 ```
 ## irs-taxpayer-mcp
 
-MCP server for US individual taxpayers with 44 tools covering:
+MCP server for US individual taxpayers with 45 tools covering:
 - Federal tax estimates for supported TY2024 through TY2026 inputs
 - State reference data for all 50 states and DC, with fail-closed numeric estimates for supported paths
 - Federal credit reference data, screening, and modeled CTC and EITC calculations
@@ -85,7 +85,7 @@ GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 添加到 README 的行：
 
 ```markdown
-- [irs-taxpayer-mcp](https://github.com/dma9527/irs-taxpayer-mcp) - 44 local US tax estimation and planning tools for supported TY2024 through TY2026 scenarios.
+- [irs-taxpayer-mcp](https://github.com/dma9527/irs-taxpayer-mcp) - 45 local US tax estimation and planning tools for supported TY2024 through TY2026 scenarios.
 ```
 
 ### 2.2 mcp.so
@@ -122,7 +122,7 @@ GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 添加的行：
 
 ```markdown
-- [irs-taxpayer-mcp](https://github.com/dma9527/irs-taxpayer-mcp) - 44 local estimation and planning tools for supported US federal and state tax scenarios.
+- [irs-taxpayer-mcp](https://github.com/dma9527/irs-taxpayer-mcp) - 45 local estimation and planning tools for supported US federal and state tax scenarios.
 ```
 
 ---
@@ -134,14 +134,14 @@ GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 发帖到以下 subreddits：
 
 - r/ChatGPT 或 r/ClaudeAI: "I built a local MCP server for supported US tax estimates"
-- r/tax: "Open-source tax estimator with 44 tools, updated for modeled OBBB provisions"
+- r/tax: "Open-source tax estimator with 45 tools, updated for modeled OBBB provisions"
 - r/personalfinance: "Free deterministic tax planner with a direct local no-model CLI and an optional MCP adapter"
 - r/SideProject: 展示项目
 
 帖子模板：
 
 ```
-Title: I built an open-source MCP tax estimation assistant with 44 local tools
+Title: I built an open-source MCP tax estimation assistant with 45 local tools
 
 I built an MCP server for Claude, Kiro, and Cursor that produces deterministic tax estimates for explicitly supported TY2024 through TY2026 scenarios.
 
@@ -168,7 +168,7 @@ GitHub: https://github.com/dma9527/irs-taxpayer-mcp
 标题：
 
 ```
-Show HN: Open-source MCP tax estimator - 44 local tools, TY2024 through TY2026
+Show HN: Open-source MCP tax estimator - 45 local tools, TY2024 through TY2026
 ```
 
 ### 3.3 Twitter/X
@@ -176,7 +176,7 @@ Show HN: Open-source MCP tax estimator - 44 local tools, TY2024 through TY2026
 ```
 Built an open-source tax assistant that runs entirely on your machine 🔒
 
-44 tools: federal tax, state tax, credits, deductions, retirement planning, audit risk assessment
+45 tools: federal tax, state tax, credits, deductions, retirement planning, audit risk assessment
 
 Updated for the One Big Beautiful Bill Act (2025)
 

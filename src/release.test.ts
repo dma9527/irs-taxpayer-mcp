@@ -63,6 +63,14 @@ describe("secure release workflow", () => {
     expect(workflow).toContain("gh release create");
     expect(workflow).not.toContain("NPM_TOKEN");
   });
+
+  it("waits at least ten minutes for npm processing before failing", () => {
+    const workflow = readFileSync(".github/workflows/publish.yml", "utf8");
+    const loop = /for attempt in \$\(seq 1 (\d+)\); do[\s\S]*?sleep (\d+)/.exec(workflow);
+
+    expect(loop).not.toBeNull();
+    expect(Number(loop?.[1]) * Number(loop?.[2])).toBeGreaterThanOrEqual(600);
+  });
 });
 
 describe("npm pack metadata", () => {

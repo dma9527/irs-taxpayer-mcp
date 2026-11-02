@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { calculateTax } from "../calculators/tax-calculator.js";
+import { calculateTax, capitalLossDeductionLimit } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
 import { getTaxYearData, getSaltCap, LATEST_TAX_YEAR, type FilingStatus } from "../data/tax-brackets.js";
 import { ERRORS, wrapToolHandler } from "./error-handler.js";
@@ -273,18 +273,30 @@ export function registerAdvancedTools(server: McpServer): void {
         );
       }
 
-      // Tax-loss harvesting
+      // Tax-loss harvesting. Realized losses net against the top of the gain stack
+      // first, then against 0% gains, then up to the annual ordinary limit.
       if (totalLosses < 0) {
-        const offsetGains = Math.min(Math.abs(totalLosses), totalSTGains + totalLTGains);
-        const excessLoss = Math.abs(totalLosses) - offsetGains;
-        const ordinaryOffset = Math.min(excessLoss, 3000);
+        const lossAmount = Math.abs(totalLosses);
+        const spaceAfterShortTerm = Math.max(0, zeroBracketSpace - totalSTGains);
+        const zeroRateGains = Math.min(totalLTGains, spaceAfterShortTerm);
+        const taxedGains = totalSTGains + totalLTGains - zeroRateGains;
+        const offsetTaxedGains = Math.min(lossAmount, taxedGains);
+        const offsetZeroRateGains = Math.min(lossAmount - offsetTaxedGains, zeroRateGains);
+        const excessLoss = lossAmount - offsetTaxedGains - offsetZeroRateGains;
+        const lossLimit = capitalLossDeductionLimit(params.filingStatus);
+        const ordinaryOffset = Math.min(excessLoss, lossLimit);
 
         lines.push(
           `#### 📉 Tax-Loss Harvesting`,
-          `You have $${fmt(Math.abs(totalLosses))} in unrealized losses available.`,
-          offsetGains > 0 ? `- Offset $${fmt(offsetGains)} in gains (saves tax on those gains)` : "",
-          ordinaryOffset > 0 ? `- Deduct $${fmt(ordinaryOffset)} against ordinary income ($3K annual limit)` : "",
-          excessLoss > 3000 ? `- Carry forward $${fmt(excessLoss - 3000)} to future years` : "",
+          `You have $${fmt(lossAmount)} in unrealized losses available.`,
+          offsetTaxedGains > 0 ? `- Offset $${fmt(offsetTaxedGains)} of gains taxed above 0% (saves tax on those gains)` : "",
+          ordinaryOffset > 0 ? `- Deduct $${fmt(ordinaryOffset)} against ordinary income ($${fmt(lossLimit)} annual limit)` : "",
+          excessLoss > lossLimit ? `- Carry forward $${fmt(excessLoss - lossLimit)} to future years` : "",
+          offsetZeroRateGains > 0
+            ? `- ⚠️ $${fmt(offsetZeroRateGains)} of this loss would only offset gains taxed at 0% if you sell everything this year. ` +
+              `Realize the 0% gains and these losses in different tax years: harvest gains now and keep the losses for a year with taxable gains, ` +
+              `or harvest losses now to deduct up to $${fmt(lossLimit)} of ordinary income and harvest gains later.`
+            : "",
           "",
           `Best lots to harvest (largest losses):`,
           ...losses.slice(0, 3).map((l) => `- ${l.name}: $${fmt(Math.abs(l.gain))} loss (${l.isLongTerm ? "LT" : "ST"})`),

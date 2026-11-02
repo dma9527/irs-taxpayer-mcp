@@ -187,6 +187,11 @@ interface CapitalNettingResult {
   longTermCapitalLossCarryforward: number;
 }
 
+/** Annual net capital loss deduction against ordinary income (IRC 1211(b)). */
+export function capitalLossDeductionLimit(filingStatus: FilingStatus): number {
+  return filingStatus === "married_filing_separately" ? 1500 : 3000;
+}
+
 function calculateCapitalNetting(
   currentLongTermGainOrLoss: number,
   currentShortTermGainOrLoss: number,
@@ -209,7 +214,7 @@ function calculateCapitalNetting(
 
   const shortTermLoss = Math.max(0, -netShortTerm);
   const longTermLoss = Math.max(0, -netLongTerm);
-  const annualLossLimit = filingStatus === "married_filing_separately" ? 1500 : 3000;
+  const annualLossLimit = capitalLossDeductionLimit(filingStatus);
   const capitalLossDeduction = Math.min(
     annualLossLimit,
     shortTermLoss + longTermLoss,

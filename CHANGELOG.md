@@ -4,6 +4,11 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Fixed
+
+- `optimize_capital_gains` claimed that harvested losses always saved tax on gains. Losses now net against gains taxed above 0% first, and the tool warns when the rest would only offset 0% gains in the same year.
+- `optimize_capital_gains` used the $3,000 capital loss limit for married filing separately. It now uses $1,500, shared with the federal calculator.
+
 ### Changed
 
 - Release workflow now waits up to 10 minutes for npm to finish processing a published tarball before failing. The 1.1.0 release exceeded the previous 2-minute window.

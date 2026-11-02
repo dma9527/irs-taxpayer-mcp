@@ -1147,6 +1147,59 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("AAPL");
       expect(text).toContain("TSLA");
     });
+
+    it("warns that losses realized with 0% gains offset tax-free gains", async () => {
+      const { text } = await callTool(server, "optimize_capital_gains", {
+        taxYear: 2026, filingStatus: "single", ordinaryIncome: 30000,
+        lots: [
+          { name: "FUND-A", shares: 100, costBasis: 10000, currentValue: 25000, holdingMonths: 30 },
+          { name: "FUND-B", shares: 50, costBasis: 12000, currentValue: 9000, holdingMonths: 8 },
+        ],
+      });
+
+      expect(text).toContain("Tax-Gain Harvesting Opportunity");
+      expect(text).not.toContain("saves tax on those gains");
+      expect(text).toContain("$3,000 of this loss would only offset gains taxed at 0%");
+      expect(text).toContain("different tax years");
+    });
+
+    it("counts only gains above the 0% bracket as tax saved by losses", async () => {
+      const { text } = await callTool(server, "optimize_capital_gains", {
+        taxYear: 2026, filingStatus: "single", ordinaryIncome: 30000,
+        lots: [
+          { name: "FUND-A", shares: 100, costBasis: 10000, currentValue: 55000, holdingMonths: 30 },
+          { name: "FUND-B", shares: 50, costBasis: 12000, currentValue: 7000, holdingMonths: 8 },
+        ],
+      });
+
+      expect(text).toContain("Offset $5,000 of gains taxed above 0%");
+      expect(text).not.toContain("only offset gains taxed at 0%");
+    });
+
+    it("applies losses without gains to ordinary income and carries the rest forward", async () => {
+      const { text } = await callTool(server, "optimize_capital_gains", {
+        taxYear: 2026, filingStatus: "single", ordinaryIncome: 30000,
+        lots: [
+          { name: "FUND-B", shares: 50, costBasis: 12000, currentValue: 7000, holdingMonths: 8 },
+        ],
+      });
+
+      expect(text).toContain("Deduct $3,000 against ordinary income");
+      expect(text).toContain("Carry forward $2,000");
+      expect(text).not.toContain("only offset gains taxed at 0%");
+    });
+
+    it("uses the $1,500 married filing separately loss limit", async () => {
+      const { text } = await callTool(server, "optimize_capital_gains", {
+        taxYear: 2026, filingStatus: "married_filing_separately", ordinaryIncome: 30000,
+        lots: [
+          { name: "FUND-B", shares: 50, costBasis: 12000, currentValue: 7000, holdingMonths: 8 },
+        ],
+      });
+
+      expect(text).toContain("Deduct $1,500 against ordinary income ($1,500 annual limit)");
+      expect(text).toContain("Carry forward $3,500");
+    });
   });
 
   describe("plan_retirement_withdrawals", () => {

@@ -689,9 +689,76 @@ describe("MCP Tools Integration", () => {
         "Does not apply preferential capital gains rates under AMT",
       );
     });
+
+    it("adds back capped SALT for AMT (differential scenario: hoh SALT add-back triggers AMT)", async () => {
+      // SALT cap $40,400 - 30% x ($540,000 - $505,000) = $29,900.
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2026, filingStatus: "head_of_household", w2Income: 240000,
+        longTermCapitalGains: 300000, stateLocalTaxesPaid: 60000, mortgageInterest: 5000,
+      });
+      expect(text).toContain("| AMT | $1,945 |");
+    });
+
+    it("applies the TY2026 0.5% of AGI floor to itemized charitable gifts", async () => {
+      // $20,000 - 0.5% x $100,000 = $19,500; taxable $100,000 - $19,500 = $80,500.
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2026, filingStatus: "single", w2Income: 100000, charitableDonations: 20000,
+      });
+      expect(text).toContain("| Deduction Amount | $19,500 |");
+      expect(text).toContain("| **Taxable Income** | **$80,500** |");
+    });
+
+    it("takes the TY2026 non-itemizer, senior, and dependent care facts", async () => {
+      // $60,000 - ($16,100 + $2,050) - $1,000 non-itemizer - $6,000 senior = $34,850.
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2026, filingStatus: "single", w2Income: 60000, age65OrOlder: true,
+        charitableCashContributions: 1500,
+      });
+      expect(text).toContain("| Non-Itemizer Charitable Deduction | -$1,000 |");
+      expect(text).toContain("| Senior Deduction (65+) | -$6,000 |");
+      expect(text).toContain("| **Taxable Income** | **$34,850** |");
+
+      // Care credit 37% x $3,000 = $1,110 at AGI $40,000.
+      const care = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2026, filingStatus: "head_of_household", w2Income: 40000,
+        dependentCareExpenses: 4000, dependentCareQualifyingIndividuals: 1,
+      });
+      expect(care.text).toContain("| Child and Dependent Care Credit | -$1,110 |");
+    });
+
+    it("uses the selected year's QBI threshold in the QBI note", async () => {
+      const { text } = await callTool(server, "generate_full_tax_report", {
+        taxYear: 2026, filingStatus: "single", selfEmploymentIncome: 80000, qualifiedBusinessIncome: 70000,
+      });
+      expect(text).toContain("$201,750 (single) / $403,500 (MFJ)");
+    });
   });
 
   describe("generate_tax_plan", () => {
+    it("adds back itemized SALT for AMT (differential scenario: hoh SALT add-back triggers AMT)", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "head_of_household",
+        income: { w2: 240000, longTermCapitalGain: 300000 },
+        deductions: { itemized: 34900, itemizedStateAndLocalTaxes: 29900 },
+      });
+      const plan = z.object({
+        plan: z.object({ results: z.object({ amt: z.number() }) }),
+      }).parse(result.structuredContent);
+      expect(plan.plan.results.amt).toBe(1945);
+    });
+
+    it("rejects itemized SALT above the itemized total", async () => {
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026,
+        filingStatus: "single",
+        income: { w2: 100000 },
+        deductions: { itemized: 10000, itemizedStateAndLocalTaxes: 12000 },
+      });
+      expect(result.isError).toBe(true);
+      expect(result.text).toContain("Itemized state and local taxes cannot exceed");
+    });
+
     it("applies TY2026 non-itemizer charitable and dependent care facts", async () => {
       // Taxable $40,000 - $24,150 - $1,000 = $14,850; care credit 37% x $3,000 = $1,110.
       const result = await callTool(server, "generate_tax_plan", {
@@ -1011,6 +1078,14 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("W-2");
       expect(text).toContain("1098");
     });
+
+    it("does not request EV or new solar credit forms for TY2026", async () => {
+      const { text } = await callTool(server, "get_tax_document_checklist", {
+        taxYear: 2026, hasW2: true, boughtEV: true, installedSolar: true,
+      });
+      expect(text).not.toContain("Form 8936");
+      expect(text).toContain("unused 25D credit carryforward");
+    });
   });
 
   describe("optimize_capital_gains", () => {
@@ -1126,6 +1201,24 @@ describe("MCP Tools Integration", () => {
       });
       expect(text).toContain("Tax Health Check");
       expect(text).toContain("401(k)");
+    });
+
+    it("does not offer EV or solar credits that OBBB ended for TY2026", async () => {
+      const { text } = await callTool(server, "run_tax_health_check", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 80000,
+        w2Income: 80000, boughtEV: true, installedSolar: true,
+      });
+      expect(text).not.toContain("EV Credit Available");
+      expect(text).not.toContain("Solar Credit Available");
+      expect(text).toContain("acquired after September 30, 2025");
+    });
+
+    it("adds back capped SALT for AMT (differential scenario: hoh SALT add-back triggers AMT)", async () => {
+      const { text } = await callTool(server, "run_tax_health_check", {
+        taxYear: 2026, filingStatus: "head_of_household", grossIncome: 540000, w2Income: 240000,
+        capitalGains: 300000, stateLocalTaxes: 60000, mortgageInterest: 5000,
+      });
+      expect(text).toContain("AMT of $1,945");
     });
   });
 

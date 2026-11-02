@@ -364,6 +364,7 @@ export function registerPlanningTools(server: McpServer): void {
         filingStatus: params.filingStatus,
         grossIncome: params.grossIncome,
         itemizedDeductions: totalItemized,
+        stateTaxDeducted: saltCapped,
       });
 
       // With standard deduction

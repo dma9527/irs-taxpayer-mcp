@@ -2962,6 +2962,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "age65OrOlder": {
+          "description": "Taxpayer is 65 or older",
+          "type": "boolean",
+        },
         "aotcRefundableAllowed": {
           "type": "boolean",
         },
@@ -2972,10 +2976,31 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           },
           "type": "array",
         },
+        "charitableCashContributions": {
+          "description": "TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction",
+          "minimum": 0,
+          "type": "number",
+        },
         "charitableDonations": {
           "description": "Charitable contributions",
           "minimum": 0,
           "type": "number",
+        },
+        "dependentCareBenefitsExcluded": {
+          "description": "Employer dependent care benefits excluded from wages (W-2 box 10)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependentCareExpenses": {
+          "description": "Form 2441 work-related care expenses paid",
+          "minimum": 0,
+          "type": "number",
+        },
+        "dependentCareQualifyingIndividuals": {
+          "description": "Qualifying individuals for the Child and Dependent Care Credit",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
         },
         "dependents": {
           "description": "Children already verified as CTC, ACTC, and EITC qualifying children",
@@ -3069,6 +3094,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         "qualifiedBusinessIsSstb": {
           "type": "boolean",
         },
+        "qualifiedBusinessMaterialParticipation": {
+          "description": "TY2026+: materially participates, enabling the $400 minimum QBI deduction",
+          "type": "boolean",
+        },
         "qualifiedBusinessPropertyBasis": {
           "minimum": 0,
           "type": "number",
@@ -3079,6 +3108,21 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "qualifiedDividends": {
           "description": "Qualified dividends (subset of dividends, taxed at CG rates)",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedOvertimeCompensation": {
+          "description": "TY2025+ Schedule 1-A: FLSA overtime premium",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedTips": {
+          "description": "TY2025+ Schedule 1-A: qualified tips",
+          "minimum": 0,
+          "type": "number",
+        },
+        "qualifiedVehicleLoanInterest": {
+          "description": "TY2025+ Schedule 1-A: interest on a new US-assembled personal vehicle loan",
           "minimum": 0,
           "type": "number",
         },
@@ -3108,6 +3152,15 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "socialSecurityTaxesPaid": {
           "description": "Schedule 8812 payroll-tax amount for 3-or-more-child ACTC method",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseAge65OrOlder": {
+          "description": "Spouse is 65 or older",
+          "type": "boolean",
+        },
+        "spouseEarnedIncome": {
+          "description": "MFJ only: spouse's earned income, already included in W-2 or self-employment income",
           "minimum": 0,
           "type": "number",
         },
@@ -3912,6 +3965,10 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         "soldHome": {
           "description": "Sold a home this year",
           "type": "boolean",
+        },
+        "taxYear": {
+          "description": "Tax year (default: 2026)",
+          "type": "number",
         },
       },
       "type": "object",
@@ -4849,6 +4906,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
             },
             "itemizedCharitable": {
               "description": "TY2026+: charitable portion of itemized, for the 0.5% of AGI floor",
+              "minimum": 0,
+              "type": "number",
+            },
+            "itemizedStateAndLocalTaxes": {
+              "description": "State and local taxes included in itemized after the SALT cap; added back for AMT (Form 6251 line 2a)",
               "minimum": 0,
               "type": "number",
             },

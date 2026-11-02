@@ -4,6 +4,23 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-01
+
+### Fixed
+
+- `generate_full_tax_report`, `run_tax_health_check`, and `analyze_mortgage_tax_benefit` did not add back capped SALT for AMT (Form 6251 line 2a). AMT was understated for itemizers; for example TY2026 HoH with $240,000 wages, $300,000 LTCG, and $60,000 SALT now shows $1,945 AMT, matching PSL Tax-Calculator.
+- `generate_full_tax_report` did not apply the TY2026 0.5% of AGI charitable floor and could not take TY2026 facts. It now accepts non-itemizer cash gifts, age 65 status, Schedule 1-A amounts, dependent care, and material participation, and shows the related deductions and credits.
+- `generate_full_tax_report` QBI note used TY2024 thresholds for every year.
+- `run_tax_health_check` and `get_tax_document_checklist` still suggested EV and new solar credits that OBBB ended for TY2026.
+
+### Added
+
+- `generate_tax_plan` and the local intake accept `deductions.itemizedStateAndLocalTaxes`, the capped SALT inside the itemized total, for the AMT add-back. Values above the itemized total are rejected.
+- `estimate_premium_tax_credit` supports the 2025 HHS Alaska and Hawaii poverty lines (90 FR 5917).
+- TY2026 numeric profiles for MI (4.25% per the Treasury notice of April 15, 2026; $5,900 exemption) and IN (2.95%; $1,000 exemption). City and county income taxes are not included.
+- `run_tax_health_check` reports AMT when it applies.
+- Two SALT add-back scenarios in the Tax-Calculator differential test (43 of 43 match).
+
 ## [1.2.0] - 2026-11-01
 
 ### Fixed

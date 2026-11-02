@@ -332,6 +332,25 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled",
       },
     ),
+    MI: createCalculationProfile(
+      "MI",
+      2026,
+      "Michigan Treasury notice of April 15, 2026 (4.25% under MCL 206.51) and 2026 Form 446 personal exemption ($5,900)",
+      {
+        personalExemption: { single: 5900, married: 11800 },
+        notes: "Dependent, special, and senior exemptions, retirement subtractions, and city income taxes are not modeled. Confirm the exemption against the 2026 MI-1040 instructions",
+      },
+    ),
+    IN: createCalculationProfile(
+      "IN",
+      2026,
+      "Indiana DOR 2026 rate 2.95% (IC 6-3-2-1) and $1,000 personal exemption per spouse (IC 6-3-1-3.5)",
+      {
+        topRate: 0.0295,
+        personalExemption: { single: 1000, married: 2000 },
+        notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled",
+      },
+    ),
   },
 };
 

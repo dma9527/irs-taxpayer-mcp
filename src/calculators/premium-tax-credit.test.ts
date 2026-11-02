@@ -60,13 +60,36 @@ describe("calculatePremiumTaxCredit (TY2026, Rev. Proc. 2025-25)", () => {
     expect(result.reason).toContain("100%");
   });
 
-  it("fails closed for years, states, and filing statuses that are not modeled", () => {
+  it("uses the 2025 HHS Alaska and Hawaii poverty lines", () => {
+    // Alaska $19,550; $39,100 is 200%; contribution 39,100 x 6.60% = 2,581; PTC min(8,000, 9,000 - 2,581).
+    const alaska = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "single", householdIncome: 39100, familySize: 1,
+      annualEnrollmentPremium: 8000, annualBenchmarkPremium: 9000, advancePayments: 6000,
+      povertyLineRegion: "alaska",
+    });
+    expect(alaska.povertyLine).toBe(19550);
+    expect(alaska.povertyLinePercent).toBe(200);
+    expect(alaska.premiumTaxCredit).toBe(6419);
+    expect(alaska.netPremiumTaxCredit).toBe(419);
+
+    // Hawaii family of 2: $17,990 + $6,330 = $24,320; $48,640 is 200%; contribution 3,210.
+    const hawaii = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "married_filing_jointly", householdIncome: 48640, familySize: 2,
+      annualEnrollmentPremium: 12000, annualBenchmarkPremium: 12000, advancePayments: 8790,
+      povertyLineRegion: "hawaii",
+    });
+    expect(hawaii.povertyLine).toBe(24320);
+    expect(hawaii.annualContribution).toBe(3210);
+    expect(hawaii.premiumTaxCredit).toBe(8790);
+    expect(hawaii.excessAdvanceRepayment).toBe(0);
+  });
+
+  it("fails closed for years and filing statuses that are not modeled", () => {
     const base = {
       filingStatus: "single" as const, householdIncome: 40000, familySize: 1,
       annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 0,
     };
     expect(() => calculatePremiumTaxCredit({ ...base, taxYear: 2025 })).toThrow("TY2025");
-    expect(() => calculatePremiumTaxCredit({ ...base, taxYear: 2026, povertyLineRegion: "alaska" })).toThrow("Alaska");
     expect(() => calculatePremiumTaxCredit({ ...base, taxYear: 2026, filingStatus: "married_filing_separately" }))
       .toThrow("married filing separately");
   });

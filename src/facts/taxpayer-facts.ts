@@ -42,6 +42,9 @@ const DeductionsSchema = z.object({
   itemizedCharitable: z.number().min(0).optional().describe(
     "TY2026+: charitable portion of itemized, for the 0.5% of AGI floor",
   ),
+  itemizedStateAndLocalTaxes: z.number().min(0).optional().describe(
+    "State and local taxes included in itemized after the SALT cap; added back for AMT (Form 6251 line 2a)",
+  ),
   nonItemizerCashCharitable: z.number().min(0).optional().describe(
     "TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction",
   ),

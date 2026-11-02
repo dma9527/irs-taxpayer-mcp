@@ -8,7 +8,7 @@ import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax } from "../calculators/tax-calculator.js";
 import { calculateStateTax } from "../calculators/state-tax-calculator.js";
-import { getTaxYearData, getSaltCap, type FilingStatus } from "../data/tax-brackets.js";
+import { getTaxYearData, getSaltCap, LATEST_TAX_YEAR, type FilingStatus } from "../data/tax-brackets.js";
 import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 
@@ -20,6 +20,7 @@ export function registerAdvancedTools(server: McpServer): void {
     "Generate a personalized checklist of tax documents you need to gather for filing. " +
     "Based on your income sources, deductions, and life events.",
     {
+      taxYear: z.number().optional().describe(`Tax year (default: ${LATEST_TAX_YEAR})`),
       hasW2: z.boolean().optional().describe("Have W-2 employment"),
       hasSelfEmployment: z.boolean().optional().describe("Have self-employment/freelance income"),
       hasInvestments: z.boolean().optional().describe("Have investment accounts (stocks, bonds, crypto)"),
@@ -114,11 +115,15 @@ export function registerAdvancedTools(server: McpServer): void {
       if (params.hasRetirementContributions) {
         mayNeed.push({ doc: "5498 (IRA Contributions)", form: "5498", deadline: "May 31", notes: "Confirms IRA contributions. May arrive after filing deadline" });
       }
-      if (params.boughtEV) {
-        required.push({ doc: "EV purchase documentation", form: "Form 8936", deadline: "—", notes: "VIN, purchase date, MSRP, dealer confirmation of credit transfer" });
+      // OBBB ended 30D/25E for vehicles acquired after 2025-09-30 and 25D for expenditures after 2025.
+      const taxYear = params.taxYear ?? LATEST_TAX_YEAR;
+      if (params.boughtEV && taxYear < 2026) {
+        required.push({ doc: "EV purchase documentation", form: "Form 8936", deadline: "—", notes: "VIN, purchase date, MSRP, dealer confirmation of credit transfer. Vehicles acquired after September 30, 2025 do not qualify" });
       }
-      if (params.installedSolar) {
+      if (params.installedSolar && taxYear < 2026) {
         required.push({ doc: "Solar installation receipts", form: "Form 5695", deadline: "—", notes: "Total cost, date placed in service, contractor info" });
+      } else if (params.installedSolar) {
+        mayNeed.push({ doc: "Prior-year Form 5695", form: "Form 5695", deadline: "—", notes: "Only for an unused 25D credit carryforward; 2026 solar expenditures do not qualify" });
       }
 
       // Life events

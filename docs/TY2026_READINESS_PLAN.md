@@ -72,7 +72,7 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | D6 `get_tax_deadlines` errored by default | TY2026 deadlines added |
 | D7 `check_credit_eligibility` used TY2024 CTC/EITC limits and offered expired EV and energy credits | Now year-aware |
 | G1 to G5 | Done, plus Schedule 1-A in the engine and the $400 minimum QBI deduction |
-| G6 states | CA, MA, IL, PA, NC added for TY2026 |
+| G6 states | CA, IL, IN, MA, MI, NC, PA added for TY2026 |
 | Differential test | 41/41 synthetic scenarios match PSL Tax-Calculator 6.8.5 within $1 |
 | D8 W-4 Step 3 used $2,000 per child | Uses the year's amount ($2,200 on the 2026 Form W-4) |
 | Premium Tax Credit | TY2026 annual estimate added (Rev. Proc. 2025-25) |
@@ -80,18 +80,23 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | D10 Stale reference text (gift exclusion, qualifying relative test, SALT, MFS comparisons) | TY2026 values added from Rev. Proc. 2025-32 and Notice 2025-67 |
 | D11 9 production dependency advisories, 1 critical | MCP SDK 1.32.2, zod 4.6.7, transitive refresh; `npm audit` reports 0 |
 | Differential script | Moved to `scripts/differential/` with pinned requirements; optional, not in CI |
-| Suite | 405 of 405 tests pass |
+| D12 SALT not added back for AMT in the full report, health check, mortgage tool, and planner | Fixed; planner takes `itemizedStateAndLocalTaxes`; 2 differential scenarios added |
+| D13 Full report ignored the TY2026 charitable floor and could not take TY2026 facts | Fixed |
+| D14 Health check and document checklist offered expired EV and solar credits for TY2026 | Fixed |
+| PTC Alaska and Hawaii | 2025 HHS poverty lines added |
+| G6 states, third batch | MI and IN added for TY2026 |
+| Suite | All tests pass; differential 43 of 43 |
 
-### Remaining for TY2026 (priority order, updated 2026-11-01, third pass)
+### Remaining for TY2026 (priority order, updated 2026-11-01, fourth pass)
 
 | Priority | Item | Status | Blocker or next action |
 |----------|------|--------|------------------------|
 | P1 | Upload the refreshed Agensi skill ZIP | Ready | 1.2.0 released 2026-11-01 |
 | P1 | New York TY2026 profile | Blocked | NY DTF has not published the TY2026 IT-201 rate schedule; withholding tables are not a filing source |
 | P2 | Confirm against final 2026 forms in January 2027: NC standard deduction, Form 6251 treatment of the non-itemizer charitable deduction, Publication 509 dates, CA Schedule Z and exemption credits | Waiting | Final forms publish January 2027 |
-| P2 | `generate_full_tax_report`, `simulate_tax_scenario`, `analyze_paycheck` cannot take the new TY2026 inputs | Open | They inherit engine fixes; route TY2026 questions with these facts to `calculate_federal_tax` or `generate_tax_plan` |
-| P2 | Premium Tax Credit: monthly allocation, Alaska and Hawaii poverty lines, below-100% APTC exception, MFS exceptions | Open | Annual contiguous-states estimate shipped; these paths fail closed |
-| P3 | MI, IN, and other state profiles | Open | TY2026 amounts not yet confirmed from each revenue department |
+| P2 | `simulate_tax_scenario` and `analyze_paycheck` cannot take the new TY2026 inputs | Open | `generate_full_tax_report` now takes them; route other TY2026 questions to `calculate_federal_tax` or `generate_tax_plan` |
+| P2 | Premium Tax Credit: monthly allocation, below-100% APTC exception, MFS exceptions | Open | Annual estimate for all 50 states and DC shipped; these paths fail closed |
+| P3 | Other state profiles (GA, AZ, CO, OH, VA, NJ, and others) | Open | TY2026 amounts not yet confirmed from each revenue department |
 | P3 | 50 hand-worked golden worksheet cases | Open | 41-scenario differential test against Tax-Calculator covers the oracle check today |
 | P3 | Trump Accounts, scholarship credit (TY2027), adoption credit refundability | Reference only | Listed in the law change registry; not calculated |
 

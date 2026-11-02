@@ -257,6 +257,7 @@ export function buildTaxpayerFactsFromAnswers(
     aboveTheLine: optionalNumber(answers.aboveTheLine),
     itemized: optionalNumber(answers.itemized),
     itemizedCharitable: optionalNumber(answers.itemizedCharitable),
+    itemizedStateAndLocalTaxes: optionalNumber(answers.itemizedStateAndLocalTaxes),
     nonItemizerCashCharitable: optionalNumber(answers.nonItemizerCashCharitable),
     qualifiedTips: optionalNumber(answers.qualifiedTips),
     qualifiedOvertimeCompensation: optionalNumber(answers.qualifiedOvertimeCompensation),
@@ -357,6 +358,7 @@ async function collectIntakeAnswers(io: LocalCommandIO) {
   await ask("aboveTheLine", "Above-the-line deductions", "0");
   await ask("itemized", "Eligible itemized deduction total", "0");
   await ask("itemizedCharitable", "Charitable gifts included in the itemized total", "0");
+  await ask("itemizedStateAndLocalTaxes", "State and local taxes included in the itemized total, after the SALT cap", "0");
   await ask("nonItemizerCashCharitable", "Cash gifts to public charities if you take the standard deduction (TY2026+)", "0");
   await ask("qualifiedTips", "Qualified tips (TY2025+)", "0");
   await ask("qualifiedOvertimeCompensation", "Qualified overtime premium (TY2025+)", "0");

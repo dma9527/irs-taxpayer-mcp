@@ -3,7 +3,7 @@
  *
  * Sources:
  *   Applicable Percentage Table: Rev. Proc. 2025-25 section 3.01
- *   Federal poverty line: HHS 2025 poverty guidelines (prior-year guidelines apply, Form 8962 line 4)
+ *   Federal poverty line: HHS 2025 poverty guidelines for the 48 states and DC, Alaska, and Hawaii (prior-year guidelines apply, Form 8962 line 4)
  *   Repayment caps removed for tax years beginning after 2025: Public Law 119-21
  */
 
@@ -54,7 +54,12 @@ const APPLICABLE_PERCENTAGE_2026: ApplicablePercentageBand[] = [
   { lowPercent: 300, highPercent: 400, initial: 0.0996, final: 0.0996 },
 ];
 
-const POVERTY_LINE_2025_CONTIGUOUS = { first: 15650, additional: 5500 };
+// HHS 2025 poverty guidelines, 90 FR 5917 (January 17, 2025).
+const POVERTY_LINES_2025: Record<PovertyLineRegion, { first: number; additional: number }> = {
+  contiguous: { first: 15650, additional: 5500 },
+  alaska: { first: 19550, additional: 6880 },
+  hawaii: { first: 17990, additional: 6330 },
+};
 
 function applicableFigure(povertyLinePercent: number): number {
   const band = APPLICABLE_PERCENTAGE_2026.find(({ lowPercent, highPercent }) =>
@@ -70,9 +75,6 @@ export function calculatePremiumTaxCredit(input: PremiumTaxCreditInput): Premium
     throw new Error(`Premium Tax Credit for TY${input.taxYear} is not supported. Only TY2026 is modeled.`);
   }
   const region = input.povertyLineRegion ?? "contiguous";
-  if (region !== "contiguous") {
-    throw new Error(`${region === "alaska" ? "Alaska" : "Hawaii"} poverty lines are not modeled.`);
-  }
   if (input.filingStatus === "married_filing_separately") {
     throw new Error("The Premium Tax Credit for married filing separately requires an exception that is not modeled.");
   }
@@ -80,8 +82,9 @@ export function calculatePremiumTaxCredit(input: PremiumTaxCreditInput): Premium
     throw new Error("familySize must be a positive integer.");
   }
 
-  const povertyLine = POVERTY_LINE_2025_CONTIGUOUS.first
-    + POVERTY_LINE_2025_CONTIGUOUS.additional * (input.familySize - 1);
+  const povertyLineTable = POVERTY_LINES_2025[region];
+  const povertyLine = povertyLineTable.first
+    + povertyLineTable.additional * (input.familySize - 1);
   // Form 8962 Worksheet 2: multiply by 100 and drop decimals; do not round.
   const povertyLinePercent = Math.floor((input.householdIncome / povertyLine) * 100);
   const ineligible = (reason: string): PremiumTaxCreditResult => ({

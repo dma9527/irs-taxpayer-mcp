@@ -53,6 +53,8 @@ SCENARIOS = [
     sc("mfj overtime 310k", 2026, MFJ, 200000, 110000, overtime=30000),
     sc("single auto interest 100.5k", 2026, S, 100500, auto_interest=3000),
     sc("single 2025 senior tips 70k", 2025, S, 70000, age=66, tips=8000),
+    sc("hoh SALT add-back triggers AMT", 2026, HOH, 240000, ltcg=300000, salt=60000, mortgage=5000),
+    sc("single SALT add-back with LTCG", 2026, S, 300000, ltcg=300000, salt=60000, mortgage=5000),
 ]
 
 if __name__ == "__main__":

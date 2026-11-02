@@ -138,9 +138,27 @@ describe("TY2026 state profiles", () => {
     expect(result?.tax).toBe(129000);
   });
 
+  it("applies the Michigan 4.25% rate after the $5,900 exemption per person", () => {
+    // (100,000 - 5,900) x 4.25% = 3,999.25; (200,100 - 11,800) x 4.25% = 8,002.75.
+    const single = calculateStateTax({ stateCode: "MI", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "MI", taxYear: 2026, incomeBeforeDeductions: 200100, filingStatus: "married" });
+    expect(single?.tax).toBe(3999);
+    expect(married?.tax).toBe(8003);
+    expect(single?.hasLocalTaxes).toBe(true);
+  });
+
+  it("applies the Indiana 2.95% rate after the $1,000 exemption per person", () => {
+    // (100,200 - 1,000) x 2.95% = 2,926.40; (150,000 - 2,000) x 2.95% = 4,366.
+    const single = calculateStateTax({ stateCode: "IN", taxYear: 2026, incomeBeforeDeductions: 100200, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "IN", taxYear: 2026, incomeBeforeDeductions: 150000, filingStatus: "married" });
+    expect(single?.tax).toBe(2926);
+    expect(married?.tax).toBe(4366);
+    expect(single?.hasLocalTaxes).toBe(true);
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
-      calculateStateTax({ stateCode: "MI", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),
-    ).toThrow("Michigan TY2026 calculation data are not available");
+      calculateStateTax({ stateCode: "GA", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),
+    ).toThrow("Georgia TY2026 calculation data are not available");
   });
 });

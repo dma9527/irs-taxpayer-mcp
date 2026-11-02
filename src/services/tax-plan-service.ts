@@ -198,6 +198,14 @@ export function buildTaxPlan(
     );
   }
 
+  if ((params.deductions?.itemizedStateAndLocalTaxes ?? 0) > (params.deductions?.itemized ?? 0)) {
+    fail(
+      "INVALID_INPUT",
+      "Itemized state and local taxes cannot exceed the itemized deduction total.",
+      "Include capped SALT in deductions.itemized and enter only that portion in itemizedStateAndLocalTaxes.",
+    );
+  }
+
   if (params.business
     && (params.business.isSstb === undefined
       || params.business.w2Wages === undefined
@@ -263,6 +271,7 @@ export function buildTaxPlan(
       aboveTheLineDeductions: params.deductions?.aboveTheLine,
       itemizedDeductions: params.deductions?.itemized,
       itemizedCharitableContributions: params.deductions?.itemizedCharitable,
+      stateTaxDeducted: params.deductions?.itemizedStateAndLocalTaxes,
       charitableCashContributions: params.deductions?.nonItemizerCashCharitable,
       qualifiedTips: params.deductions?.qualifiedTips,
       qualifiedOvertimeCompensation: params.deductions?.qualifiedOvertimeCompensation,

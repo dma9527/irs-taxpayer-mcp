@@ -79,6 +79,8 @@ export function registerSmartTools(server: McpServer): void {
         capitalGains: params.capitalGains,
         capitalGainsLongTerm: true,
         itemizedDeductions: totalItemized > 0 ? totalItemized : undefined,
+        itemizedCharitableContributions: charity,
+        stateTaxDeducted: Math.min(saltPaid, saltCap),
         dependents: params.dependents,
       });
 
@@ -97,6 +99,14 @@ export function registerSmartTools(server: McpServer): void {
           emoji: "⚠️",
           title: "SALT Cap Limiting Your Deduction",
           detail: `You paid $${fmt(saltPaid)} in state/local taxes but can only deduct $${fmt(saltCap)} (SALT cap). You're losing $${fmt(saltPaid - saltCap)} in deductions.`,
+        });
+      }
+
+      if (result.amt > 0) {
+        findings.push({
+          emoji: "⚠️",
+          title: "Alternative Minimum Tax",
+          detail: `This estimate includes AMT of $${fmt(result.amt)}. Itemized state and local taxes are added back for AMT (Form 6251 line 2a), so prepaying them does not lower this amount.`,
         });
       }
 
@@ -171,11 +181,16 @@ export function registerSmartTools(server: McpServer): void {
         }
       }
 
-      if (params.boughtEV) {
+      // OBBB ended 30D/25E for vehicles acquired after 2025-09-30 and 25D for expenditures after 2025.
+      if (params.boughtEV && params.taxYear >= 2026) {
+        findings.push({ emoji: "🚗", title: "No EV Credit for TY2026", detail: "The Clean Vehicle Credit is not available for vehicles acquired after September 30, 2025 (OBBB)." });
+      } else if (params.boughtEV) {
         findings.push({ emoji: "🚗", title: "EV Credit Available", detail: "You may qualify for up to $7,500 Clean Vehicle Credit. Check income limits and vehicle eligibility." });
       }
 
-      if (params.installedSolar) {
+      if (params.installedSolar && params.taxYear >= 2026) {
+        findings.push({ emoji: "☀️", title: "No Solar Credit for TY2026", detail: "The Residential Clean Energy Credit ended for expenditures after December 31, 2025 (OBBB). Only an unused credit carryforward from earlier years remains." });
+      } else if (params.installedSolar) {
         findings.push({ emoji: "☀️", title: "Solar Credit Available", detail: "Residential Clean Energy Credit: 30% of system cost with no cap. File Form 5695." });
       }
 

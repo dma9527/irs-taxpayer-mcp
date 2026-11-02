@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -62,6 +62,21 @@ describe("secure release workflow", () => {
     expect(workflow).toContain("mcp-publisher publish");
     expect(workflow).toContain("gh release create");
     expect(workflow).not.toContain("NPM_TOKEN");
+  });
+
+  it("pins every workflow action to a full commit SHA", () => {
+    const workflowDirectory = ".github/workflows";
+    const unpinned = readdirSync(workflowDirectory)
+      .filter((fileName) => fileName.endsWith(".yml"))
+      .flatMap((fileName) => {
+        const workflow = readFileSync(`${workflowDirectory}/${fileName}`, "utf8");
+        return [...workflow.matchAll(/uses:\s*(\S+)/g)]
+          .map((match) => match[1] ?? "")
+          .filter((reference) => !/@[0-9a-f]{40}$/.test(reference))
+          .map((reference) => `${fileName}: ${reference}`);
+      });
+
+    expect(unpinned).toEqual([]);
   });
 
   it("waits at least ten minutes for npm processing before failing", () => {

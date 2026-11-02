@@ -8,6 +8,8 @@ All notable changes to irs-taxpayer-mcp.
 
 - Release workflow now waits up to 10 minutes for npm to finish processing a published tarball before failing. The 1.1.0 release exceeded the previous 2-minute window.
 - Updated stale 44-tool counts in the roadmap and promotion plan to 45.
+- CI now pins `actions/checkout` and `actions/setup-node` to the same Node 24 commit SHAs as the release workflow and runs with read-only repository permissions.
+- The monthly dashboard now uploads its snapshot with `actions/upload-artifact` v6.0.0, which runs on Node 24 instead of the deprecated Node 20 runtime.
 
 ## [1.2.2] - 2026-11-01
 

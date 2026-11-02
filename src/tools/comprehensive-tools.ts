@@ -683,6 +683,12 @@ export function registerComprehensiveTools(server: McpServer): void {
       retirement401k: z.number().min(0).optional().describe("401k/403b pre-tax contribution this period"),
       hsaContribution: z.number().min(0).optional().describe("HSA contribution this period"),
       stateCode: z.string().length(2).optional(),
+      qualifyingChildrenForCtc: z.number().int().min(0).optional().describe("Children verified for the Child Tax Credit"),
+      otherDependentsForOdc: z.number().int().min(0).optional().describe("Dependents verified for the Credit for Other Dependents"),
+      age65OrOlder: z.boolean().optional().describe("Taxpayer is 65 or older"),
+      spouseAge65OrOlder: z.boolean().optional().describe("Spouse is 65 or older"),
+      annualQualifiedTips: z.number().min(0).optional().describe("TY2025+ Schedule 1-A: expected annual qualified tips"),
+      annualQualifiedOvertimeCompensation: z.number().min(0).optional().describe("TY2025+ Schedule 1-A: expected annual FLSA overtime premium"),
     },
     async (params) => {
       const periods: Record<string, number> = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12 };
@@ -698,6 +704,12 @@ export function registerComprehensiveTools(server: McpServer): void {
         filingStatus: params.filingStatus,
         grossIncome: annualTaxableIncome,
         w2Income: annualTaxableIncome,
+        qualifyingChildrenForCtc: params.qualifyingChildrenForCtc,
+        otherDependentsForOdc: params.otherDependentsForOdc,
+        age65OrOlder: params.age65OrOlder,
+        spouseAge65OrOlder: params.spouseAge65OrOlder,
+        qualifiedTips: params.annualQualifiedTips,
+        qualifiedOvertimeCompensation: params.annualQualifiedOvertimeCompensation,
       });
 
       const expectedPerPeriod = Math.round(expected.totalFederalTax / periodsPerYear);
@@ -794,10 +806,40 @@ export function registerComprehensiveTools(server: McpServer): void {
       whatIfAdditional401k: z.number().min(0).optional().describe("Additional 401k contribution"),
       whatIfNewDependents: z.number().int().min(0).optional().describe("New number of dependents"),
       whatIfItemizedChange: z.number().optional().describe("Change in itemized deductions"),
+      // Facts applied to both scenarios
+      itemizedStateAndLocalTaxes: z.number().min(0).optional().describe("Capped SALT inside currentItemizedDeductions; added back for AMT (Form 6251 line 2a)"),
+      itemizedCharitableContributions: z.number().min(0).optional().describe("TY2026+: charitable portion of itemized deductions, for the 0.5% of AGI floor"),
+      charitableCashContributions: z.number().min(0).optional().describe("TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction"),
+      age65OrOlder: z.boolean().optional().describe("Taxpayer is 65 or older"),
+      spouseAge65OrOlder: z.boolean().optional().describe("Spouse is 65 or older"),
+      qualifiedTips: z.number().min(0).optional().describe("TY2025+ Schedule 1-A: qualified tips"),
+      qualifiedOvertimeCompensation: z.number().min(0).optional().describe("TY2025+ Schedule 1-A: FLSA overtime premium"),
+      qualifiedVehicleLoanInterest: z.number().min(0).optional().describe("TY2025+ Schedule 1-A: interest on a new US-assembled personal vehicle loan"),
+      dependentCareExpenses: z.number().min(0).optional().describe("Form 2441 work-related care expenses paid"),
+      dependentCareQualifyingIndividuals: z.number().int().min(0).optional().describe("Qualifying individuals for the Child and Dependent Care Credit"),
     },
     wrapToolHandler(async (params) => {
+      if ((params.itemizedStateAndLocalTaxes ?? 0) > (params.currentItemizedDeductions ?? 0)) {
+        return {
+          content: [{ type: "text", text: "Itemized state and local taxes cannot exceed currentItemizedDeductions." }],
+          isError: true,
+        };
+      }
+      const sharedFacts = {
+        itemizedCharitableContributions: params.itemizedCharitableContributions,
+        charitableCashContributions: params.charitableCashContributions,
+        stateTaxDeducted: params.itemizedStateAndLocalTaxes,
+        age65OrOlder: params.age65OrOlder,
+        spouseAge65OrOlder: params.spouseAge65OrOlder,
+        qualifiedTips: params.qualifiedTips,
+        qualifiedOvertimeCompensation: params.qualifiedOvertimeCompensation,
+        qualifiedVehicleLoanInterest: params.qualifiedVehicleLoanInterest,
+        dependentCareExpenses: params.dependentCareExpenses,
+        dependentCareQualifyingIndividuals: params.dependentCareQualifyingIndividuals,
+      };
       // --- Current scenario ---
       const currentFederal = calculateTax({
+        ...sharedFacts,
         taxYear: params.taxYear,
         filingStatus: params.filingStatus,
         grossIncome: params.currentIncome,
@@ -834,6 +876,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           : undefined;
 
       const whatIfFederal = calculateTax({
+        ...sharedFacts,
         taxYear: params.taxYear,
         filingStatus: newFilingStatus,
         grossIncome: newIncome,
@@ -885,6 +928,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         `| Gross Income | $${fmt(params.currentIncome)} | $${fmt(newIncome)} | ${newIncome - params.currentIncome >= 0 ? "+" : ""}$${fmt(newIncome - params.currentIncome)} |`,
         `| Filing Status | ${params.filingStatus.replace(/_/g, " ")} | ${newFilingStatus.replace(/_/g, " ")} | ${params.whatIfFilingStatus ? "changed" : "—"} |`,
         `| Federal Tax | $${fmt(currentFederal.totalFederalTax)} | $${fmt(whatIfFederal.totalFederalTax)} | ${federalDiff >= 0 ? "+" : ""}$${fmt(federalDiff)} |`,
+        currentFederal.amt > 0 || whatIfFederal.amt > 0 ? `| AMT | $${fmt(currentFederal.amt)} | $${fmt(whatIfFederal.amt)} | ${whatIfFederal.amt - currentFederal.amt >= 0 ? "+" : ""}$${fmt(whatIfFederal.amt - currentFederal.amt)} |` : "",
         `| Effective Federal Rate | ${(currentFederal.effectiveRate * 100).toFixed(2)}% | ${(whatIfFederal.effectiveRate * 100).toFixed(2)}% | ${((whatIfFederal.effectiveRate - currentFederal.effectiveRate) * 100).toFixed(2)}pp |`,
         `| Marginal Rate | ${(currentFederal.marginalRate * 100).toFixed(0)}% | ${(whatIfFederal.marginalRate * 100).toFixed(0)}% | — |`,
         params.currentState || params.whatIfNewState ? `| State Tax | $${fmt(currentStateTax)} (${currentStateName}) | $${fmt(whatIfStateTax)} (${whatIfStateName}) | ${stateDiff >= 0 ? "+" : ""}$${fmt(stateDiff)} |` : "",

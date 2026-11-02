@@ -55,6 +55,16 @@ SCENARIOS = [
     sc("single 2025 senior tips 70k", 2025, S, 70000, age=66, tips=8000),
     sc("hoh SALT add-back triggers AMT", 2026, HOH, 240000, ltcg=300000, salt=60000, mortgage=5000),
     sc("single SALT add-back with LTCG", 2026, S, 300000, ltcg=300000, salt=60000, mortgage=5000),
+    sc("mfs SALT cap 2026", 2026, MFS, 150000, salt=30000, mortgage=12000),
+    sc("hoh 2 kids EITC 2026", 2026, HOH, 28000, ctc_kids=2, eitc_kids=2),
+    sc("mfj 3 kids EITC 2026", 2026, MFJ, 45000, ctc_kids=3, eitc_kids=3),
+    sc("single NIIT dividends 2026", 2026, S, 220000, qdiv=60000, odiv=80000),
+    sc("mfj itemized charity floor 2026", 2026, MFJ, 300000, salt=30000, mortgage=15000, charity=20000),
+    sc("mfj 37% bracket 2/37 limit 2026", 2026, MFJ, 1100000, salt=10000, mortgage=40000, charity=50000),
+    sc("mfj care 2 kids 2026", 2026, MFJ, 90000, 60000, ctc_kids=2, care_kids=2, care_expenses=8000),
+    sc("hoh care 1 kid 2026", 2026, HOH, 45000, ctc_kids=1, eitc_kids=1, care_kids=1, care_expenses=5000),
+    sc("single high LTCG 2026", 2026, S, 80000, ltcg=600000),
+    sc("mfj senior LTCG 2026", 2026, MFJ, 50000, 30000, ltcg=40000, qdiv=10000, odiv=10000, age=70, spouse_age=68),
 ]
 
 if __name__ == "__main__":

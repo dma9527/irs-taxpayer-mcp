@@ -291,7 +291,7 @@ Uses IRS Revenue Procedure 2025-32 and the SSA 2026 contribution and benefit bas
 This project is a deterministic estimation and planning engine, not tax preparation or filing software.
 
 - Federal estimates cover the modeled TY2024 through TY2026 inputs exposed by each tool. They do not implement every Form 1040 line, schedule, election, limitation, carryforward, or dependency rule.
-- State reference information covers all 50 states and DC. Numeric estimates require an exact tax-year profile: TY2024 supports AK, CA, FL, NV, SD, TN, TX, and WY; TY2025 supports AK, FL, NH, NV, SD, TN, TX, and WY; TY2026 supports those states plus CA, IL, IN, MA, MI, NC, and PA. City and county income taxes (IN, MI, PA) are not included. California supports single and married brackets only (HoH Schedule Z is not modeled). Other state-year and filing-status paths return an error.
+- State reference information covers all 50 states and DC. Numeric estimates require an exact tax-year profile: TY2024 supports AK, CA, FL, NV, SD, TN, TX, and WY; TY2025 supports AK, FL, NH, NV, SD, TN, TX, and WY; TY2026 supports those states plus CA, IL, IN, KY, MA, MI, NC, and PA. City and county income taxes (IN, KY, MI, PA) are not included. California supports single and married brackets only (HoH Schedule Z is not modeled). Other state-year and filing-status paths return an error.
 - State calculations do not yet model part-year or nonresident allocation, every local tax, or separate HoH and MFS brackets.
 - QBI, AMT, audit-risk, retirement, relocation, and multi-year outputs are planning estimates with documented simplifications.
 - Refund projections depend only on the inputs and refundable credits modeled by the selected tool. They are not an IRS refund determination.

@@ -4,7 +4,7 @@ _Last updated: 2026-11-01._
 
 ## Current Baseline
 
-Version 1.2.1 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
+Version 1.2.2 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -89,11 +89,11 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] Model the TY2026 non-itemizer charitable deduction and the 0.5% of AGI itemized charitable floor.
 - [x] Model the TY2026 IRC 68 2/37 itemized deduction limit.
 - [x] Calculate the Child and Dependent Care Credit, including the TY2026 OBBB schedule.
-- [🔄] Add TY2026 numeric profiles: CA, IL, IN, MA, MI, NC, and PA done; NY and remaining states pending official TY2026 sources.
+- [🔄] Add TY2026 numeric profiles: CA, IL, IN, KY, MA, MI, NC, and PA done; NY and remaining states pending official TY2026 sources.
 - [x] Add a TY2026 Premium Tax Credit estimate (Form 8962 annual method).
 - [x] Separate TY2025 and TY2026 law changes with primary-source citations in `what_changed_between_tax_years`.
 - [x] Use the 2026 Form W-4 Step 3 child amount ($2,200).
-- [🔄] Validate 50 golden TY2026 scenarios and run a differential test against an independent engine. 41 synthetic scenarios match PSL Tax-Calculator 6.8.5 (exact mode, credit take-up disabled) within $1; golden worksheet set still pending.
+- [🔄] Validate 50 golden TY2026 scenarios and run a differential test against an independent engine. 53 synthetic scenarios match PSL Tax-Calculator 6.8.5 (exact mode, credit take-up disabled) within $1; golden worksheet set still pending.
 - [x] Add Schedule 1-A (tips, overtime, vehicle loan interest, senior) to the federal calculation.
 - [x] Add the TY2026 $400 minimum QBI deduction.
 - [x] Fix AMT Form 6251 Part III capital-gain stacking and line 40 cap.
@@ -179,6 +179,7 @@ This phase begins only after the filing-grade verification gates are met.
 | 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |
 | 1.0.1 | 2026-09-04 | First public 1.x release with npm 12-compatible OIDC automation. |
 | 1.0.2 | 2026-09-07 | Monthly feedback dashboard, AMT guidance correction, and independent TY2026/AMT regressions. |
+| 1.2.2 | 2026-11-01 | Paycheck projection counts CTC and Schedule 1-A; scenario simulator takes TY2026 facts and the SALT AMT add-back; Kentucky TY2026 profile; 53 differential scenarios. |
 | 1.2.1 | 2026-11-01 | SALT add-back for AMT across report, health check, mortgage, and planner tools; TY2026 inputs and charitable floor in the full report; PTC Alaska and Hawaii; MI and IN TY2026 profiles. |
 | 1.2.0 | 2026-11-01 | TY2026 readiness: AMT and EITC fixes, TY2026 limits and charitable rules, dependent care credit, Schedule 1-A in the engine, Premium Tax Credit tool, CA/MA/IL/PA/NC TY2026 profiles, law change registry, zero dependency advisories. |
 | 1.1.0 | 2026-09-18 | Direct no-model TaxpayerFacts onboarding, strict local JSON import, shared deterministic planner service, and corrected privacy boundaries. |

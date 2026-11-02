@@ -1006,6 +1006,25 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Paycheck Analysis");
       expect(text).toContain("Annual Projection");
     });
+
+    it("counts qualifying children when projecting TY2026 tax", async () => {
+      // $78,000 - $24,150 = $53,850; $1,770 + 12% x $36,150 = $6,108; minus 2 x $2,200 CTC = $1,708.
+      const { text } = await callTool(server, "analyze_paycheck", {
+        taxYear: 2026, filingStatus: "head_of_household", payFrequency: "biweekly",
+        grossPay: 3000, federalWithheld: 66, qualifyingChildrenForCtc: 2,
+      });
+      expect(text).toContain("| Expected Annual Federal Tax | $1,708 |");
+      expect(text).toContain("Withholding looks accurate");
+    });
+
+    it("applies the TY2026 overtime deduction to the projection", async () => {
+      // $65,000 - $16,100 - $5,000 = $43,900; $1,240 + 12% x $31,500 = $5,020.
+      const { text } = await callTool(server, "analyze_paycheck", {
+        taxYear: 2026, filingStatus: "single", payFrequency: "biweekly",
+        grossPay: 2500, federalWithheld: 193, annualQualifiedOvertimeCompensation: 5000,
+      });
+      expect(text).toContain("| Expected Annual Federal Tax | $5,020 |");
+    });
   });
 
   describe("compare_mfj_vs_mfs", () => {
@@ -1045,6 +1064,33 @@ describe("MCP Tools Integration", () => {
       });
       expect(text).toContain("Roth Conversion Analysis");
       expect(text).toContain("Break-even");
+    });
+
+    it("adds back capped SALT for AMT (differential scenario: hoh SALT add-back triggers AMT)", async () => {
+      const { text } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2026, filingStatus: "head_of_household", currentIncome: 540000,
+        currentCapitalGains: 300000, currentItemizedDeductions: 34900, itemizedStateAndLocalTaxes: 29900,
+        whatIfAdditional401k: 0,
+      });
+      expect(text).toContain("| AMT | $1,945 |");
+    });
+
+    it("applies TY2026 non-itemizer charitable and senior deductions to both scenarios", async () => {
+      // $60,000 - ($16,100 + $2,050) - $1,000 - $6,000 = $34,850; $1,240 + 12% x $22,450 = $3,934.
+      const { text } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2026, filingStatus: "single", currentIncome: 60000, age65OrOlder: true,
+        charitableCashContributions: 1500, whatIfIncomeChange: 0,
+      });
+      expect(text).toContain("| Federal Tax | $3,934 | $3,934 |");
+    });
+
+    it("rejects itemized SALT above the current itemized total", async () => {
+      const { text, isError } = await callTool(server, "simulate_tax_scenario", {
+        taxYear: 2026, filingStatus: "single", currentIncome: 100000,
+        currentItemizedDeductions: 10000, itemizedStateAndLocalTaxes: 12000,
+      });
+      expect(isError).toBe(true);
+      expect(text).toContain("cannot exceed");
     });
   });
 

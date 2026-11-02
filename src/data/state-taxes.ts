@@ -351,6 +351,16 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled",
       },
     ),
+    KY: createCalculationProfile(
+      "KY",
+      2026,
+      "Kentucky DOR: 3.5% for tax years beginning on or after January 1, 2026 (KRS 141.020) and 2026 standard deduction $3,360 (KRS 141.081)",
+      {
+        topRate: 0.035,
+        standardDeduction: { single: 3360, married: 3360 },
+        notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled",
+      },
+    ),
   },
 };
 

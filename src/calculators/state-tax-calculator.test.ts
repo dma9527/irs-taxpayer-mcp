@@ -156,6 +156,14 @@ describe("TY2026 state profiles", () => {
     expect(single?.hasLocalTaxes).toBe(true);
   });
 
+  it("applies the Kentucky 3.5% rate after one $3,360 standard deduction per return", () => {
+    // (100,000 - 3,360) x 3.5% = 3,382.40; joint return takes one deduction: (80,000 - 3,360) x 3.5% = 2,682.40.
+    const single = calculateStateTax({ stateCode: "KY", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "KY", taxYear: 2026, incomeBeforeDeductions: 80000, filingStatus: "married" });
+    expect(single?.tax).toBe(3382);
+    expect(married?.tax).toBe(2682);
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
       calculateStateTax({ stateCode: "GA", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),

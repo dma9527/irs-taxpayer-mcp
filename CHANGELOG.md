@@ -4,6 +4,18 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-01
+
+### Fixed
+
+- `analyze_paycheck` ignored the Child Tax Credit and other credits when projecting annual tax, so parents were told they over-withheld. It now accepts qualifying children, other dependents, age 65 status, and annual Schedule 1-A tips and overtime.
+- `simulate_tax_scenario` could not take TY2026 facts and did not add back SALT for AMT. Both scenarios now share itemized SALT, charitable, senior, Schedule 1-A, and dependent care facts, and the comparison shows AMT when it applies.
+
+### Added
+
+- TY2026 Kentucky profile: 3.5% (KRS 141.020) and the $3,360 standard deduction (KRS 141.081), one deduction per joint return.
+- Ten more Tax-Calculator differential scenarios (MFS SALT cap, EITC with 2 and 3 children, NIIT, the 2026 charitable floor and 2/37 limit, dependent care, high LTCG, seniors). 53 of 53 match within $1.
+
 ## [1.2.1] - 2026-11-01
 
 ### Fixed

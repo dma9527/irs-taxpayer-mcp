@@ -2,9 +2,9 @@
 
 ## 项目现状
 
-- npm: `irs-taxpayer-mcp@1.2.2`
+- npm: `irs-taxpayer-mcp@1.2.3`
 - GitHub: https://github.com/dma9527/irs-taxpayer-mcp
-- 45 个工具，424 个测试
+- 45 个工具，429 个测试
 - TY2024 through TY2026
 - stdio + stateless Streamable HTTP transport
 - Docker 支持

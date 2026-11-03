@@ -2,7 +2,9 @@
 
 # 🏛️ irs-taxpayer-mcp
 
-**An open-source tax estimation and planning assistant for US individual taxpayers using Model Context Protocol.**
+**Exact US tax numbers for year-end decisions, without sending your finances to a chatbot.**
+
+Deterministic TY2024 to TY2026 estimates · local no-model CLI · 45 MCP tools
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/dma9527/irs-taxpayer-mcp/actions/workflows/ci.yml)
@@ -16,17 +18,57 @@
 
 ---
 
-> ⚠️ **Disclaimer**: This tool provides estimates for educational and informational purposes only. It does not constitute tax, legal, or financial advice. Always consult a qualified tax professional.
+> Estimates for planning and education only. Not tax, legal, or financial advice, and not filing software. See the [legal notice](#legal-notice).
 
-> **Legal Notice**: This software is provided "as is" without warranty of any kind. The authors and contributors are not tax professionals, CPAs, enrolled agents, or attorneys. No attorney-client, CPA-client, or fiduciary relationship is created by using this software. Tax laws change frequently and vary by jurisdiction. The calculations may contain errors, omissions, or may not reflect the most recent legislative changes. You are solely responsible for your tax filing decisions. The authors disclaim all liability for any damages arising from the use of this software. See [DISCLAIMER.md](DISCLAIMER.md) for full legal notice.
+## Know the number before December 31
 
-## Why This MCP?
+Should you convert $30,000 to Roth this year? Harvest gains in the 0% bracket? Top up your 401(k)? These decisions have deadlines, and a chatbot guess is not good enough when real money is on the line.
 
-Tax season is stressful. You're juggling W-2s, 1099s, deductions, credits, and trying to figure out if you should itemize or take the standard deduction. You Google "SALT deduction limit 2025" and get 10 conflicting articles.
+`irs-taxpayer-mcp` is a deterministic US individual tax engine for TY2024 through TY2026. It does the math from IRS annual tables, shows its work, and refuses to guess when a case is not supported.
 
-This package provides a deterministic local tax engine with two interfaces. Direct local CLI commands can collect, validate, import, and calculate supported tax facts without invoking an MCP client or model. The MCP server lets an AI assistant call the same engine, but tax facts entered into a cloud-hosted MCP client may be processed by that client's model provider. No IRS login or SSN is required.
+- 🔒 **Your numbers can stay on your machine.** The direct CLI calculates locally, starts no MCP connection, calls no model, and sends no tax data anywhere.
+- 🎯 **Deterministic, not generated.** The same inputs always give the same answer. A language model never does the arithmetic.
+- 🛑 **Fails closed.** Unsupported states, years, or missing required facts return an error instead of a rough estimate.
+- 🤖 **Works with your AI assistant too.** 45 MCP tools for Claude, Kiro, Cursor, and other MCP clients.
 
-It includes OBBB provisions modeled for TY2025, federal brackets, selected credits and deductions, and explicitly supported state-tax paths. Unsupported state calculations fail closed instead of applying a rough top-rate estimate.
+## 🚀 Try it in 30 seconds
+
+```bash
+npm install --global irs-taxpayer-mcp
+irs-taxpayer-mcp intake --output taxpayer-facts.json   # guided local questionnaire
+irs-taxpayer-mcp plan --facts taxpayer-facts.json
+```
+
+Example result for a synthetic TY2026 household (married filing jointly, $185,000 W-2, $12,000 long-term gains, two children):
+
+```text
+# Local Tax Plan for TY2026
+
+Adjusted gross income: $197,000
+Taxable income: $164,800
+Federal tax after refundable credits: $20,440
+Employee FICA: $14,122
+Total modeled tax: $34,562
+Take-home income: $162,438
+
+## Privacy
+Calculated directly by the local deterministic engine. No model, network request,
+persistence, or telemetry was used.
+```
+
+Add `--json` for structured output with assumptions, official sources, a calculation trace, and `privacy.modelInvoked: false`.
+
+## 💡 Decisions it helps with
+
+| Question | Tool | Example (synthetic, TY2026) |
+| --- | --- | --- |
+| What does a Roth conversion cost me this year? | `simulate_tax_scenario` | MFJ, $150,000 income: a $30,000 conversion adds $6,600 of federal tax, a flat 22% |
+| Can I sell winners at 0% tax? | `optimize_capital_gains` | Shows room left in the 0% bracket and warns when losses would only offset tax-free gains |
+| Should I itemize or take the standard deduction? | `standard_vs_itemized` | Applies the TY2026 SALT cap, charitable floor, and non-itemizer charitable deduction |
+| What are my quarterly estimates as a freelancer? | `estimate_quarterly_tax` | 1040-ES amounts with safe harbor guidance |
+| Is my paycheck withholding on track? | `analyze_paycheck` | Projects annual tax, including credits, and suggests W-4 changes |
+| Will moving states save money? | `analyze_relocation_taxes` | Compares exact-year state profiles; unsupported states fail closed |
+| What changed between tax years? | `what_changed_between_tax_years` | TY2025 and TY2026 rule changes with primary-source citations |
 
 ## 🔒 Privacy Architecture
 
@@ -153,8 +195,6 @@ npx irs-taxpayer-mcp --http \
 
 The legacy `--sse` flag remains a deprecated alias for `--http`. The old `/sse` and `/messages` endpoints are not exposed.
 
-</div>
-
 ## 🛠️ Tools (45)
 
 All tools use the current MCP `registerTool` API. Each advertises read-only annotations and an output schema, and returns both human-readable text and `structuredContent`. Error results include a stable error code, message, and recovery suggestion.
@@ -242,7 +282,7 @@ The 1.0 flagship `generate_tax_plan` workflow returns domain structured results,
 | `simulate_tax_scenario`         | What-if modeling: income changes, relocation, Roth conversion, 401k, filing status            |
 | `assess_audit_risk`             | IRS audit risk scoring with red flag identification and mitigation tips                       |
 | `get_tax_document_checklist`    | Personalized filing document checklist based on your income and life events                   |
-| `optimize_capital_gains`        | Investment lot analysis: 0% bracket harvesting, tax-loss harvesting, wash sale warnings       |
+| `optimize_capital_gains`        | Lot analysis: 0% bracket gain harvesting, loss harvesting that nets against taxed gains first, wash sale warnings |
 | `plan_retirement_withdrawals`   | Optimal withdrawal order (Traditional/Roth/Taxable), RMD calculation, Roth conversion         |
 | `plan_multi_year_taxes`         | 3-5 year tax projection with bracket management and age milestones                            |
 | `analyze_relocation_taxes`      | In-depth state relocation analysis with multi-year savings and SALT impact                    |
@@ -251,7 +291,7 @@ The 1.0 flagship `generate_tax_plan` workflow returns domain structured results,
 
 | Tool                    | What it does                                                        |
 | ----------------------- | ------------------------------------------------------------------- |
-| `run_tax_health_check`  | Report tool coverage and the freshness of built-in tax-year data   |
+| `run_tax_health_check`  | One-call check of a full financial picture with actionable findings |
 | `lookup_tax_rule`       | Search the built-in tax knowledge base                              |
 | `get_form_filing_guide` | Provide step-by-step guidance for supported IRS forms               |
 | `submit_feedback`       | Generate a prefilled GitHub issue link without transmitting tax data |
@@ -356,6 +396,10 @@ Contributions welcome. Please ensure:
 - Data changes include IRS source citations
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
+
+## Legal Notice
+
+This software is provided "as is" without warranty of any kind. The authors and contributors are not tax professionals, CPAs, enrolled agents, or attorneys. No attorney-client, CPA-client, or fiduciary relationship is created by using this software. Tax laws change frequently and vary by jurisdiction. The calculations may contain errors, omissions, or may not reflect the most recent legislative changes. You are solely responsible for your tax filing decisions. The authors disclaim all liability for any damages arising from the use of this software. See [DISCLAIMER.md](DISCLAIMER.md) for the full legal notice.
 
 ## 📄 License
 

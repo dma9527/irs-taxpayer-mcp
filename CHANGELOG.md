@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-11-03
+
 ### Fixed
 
 - `optimize_capital_gains` claimed that harvested losses always saved tax on gains. Losses now net against gains taxed above 0% first, and the tool warns when the rest would only offset 0% gains in the same year.
@@ -15,6 +17,7 @@ All notable changes to irs-taxpayer-mcp.
 - Updated stale 44-tool counts in the roadmap and promotion plan to 45.
 - CI now pins `actions/checkout` and `actions/setup-node` to the same Node 24 commit SHAs as the release workflow and runs with read-only repository permissions.
 - The monthly dashboard now uploads its snapshot with `actions/upload-artifact` v6.0.0, which runs on Node 24 instead of the deprecated Node 20 runtime.
+- Rewrote the README first screen around year-end decisions, a 30-second local quick start, a verified example plan, and a decision table. The legal notice moved to the end.
 
 ## [1.2.2] - 2026-11-01
 

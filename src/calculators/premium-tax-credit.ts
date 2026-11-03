@@ -24,6 +24,18 @@ export interface PremiumTaxCreditInput {
   /** Form 1095-A column C total. */
   advancePayments: number;
   povertyLineRegion?: PovertyLineRegion;
+  /** Form 1095-A lines 21 to 32 for part-year or changing coverage; replaces the annual totals. */
+  monthly?: MonthlyPolicyAmounts[];
+  /** Exception 2: MFS victim of domestic abuse or spousal abandonment who checks the Form 8962 box. */
+  marriedFilingSeparatelyException2?: boolean;
+  /** Below-100% exception: the Marketplace estimated at least 100% at enrollment (no intentional disregard). */
+  marketplaceEstimatedAtLeast100Percent?: boolean;
+}
+
+export interface MonthlyPolicyAmounts {
+  enrollmentPremium: number;
+  benchmarkPremium: number;
+  advancePayment: number;
 }
 
 export interface PremiumTaxCreditResult {
@@ -33,6 +45,9 @@ export interface PremiumTaxCreditResult {
   povertyLinePercent: number;
   applicableFigure: number;
   annualContribution: number;
+  /** Form 8962 line 8b; zero in annual mode. */
+  monthlyContribution: number;
+  advancePayments: number;
   premiumTaxCredit: number;
   netPremiumTaxCredit: number;
   excessAdvanceRepayment: number;
@@ -74,15 +89,17 @@ export function calculatePremiumTaxCredit(input: PremiumTaxCreditInput): Premium
   if (input.taxYear !== 2026) {
     throw new Error(`Premium Tax Credit for TY${input.taxYear} is not supported. Only TY2026 is modeled.`);
   }
-  const region = input.povertyLineRegion ?? "contiguous";
-  if (input.filingStatus === "married_filing_separately") {
-    throw new Error("The Premium Tax Credit for married filing separately requires an exception that is not modeled.");
-  }
   if (!Number.isInteger(input.familySize) || input.familySize < 1) {
     throw new Error("familySize must be a positive integer.");
   }
+  if (input.monthly && input.monthly.length !== 12) {
+    throw new Error("Monthly amounts must list all 12 months, January through December, with zeros for months without coverage.");
+  }
+  const sum = (pick: (month: MonthlyPolicyAmounts) => number) =>
+    (input.monthly ?? []).reduce((total, month) => total + pick(month), 0);
+  const advancePayments = input.monthly ? sum((month) => month.advancePayment) : input.advancePayments;
 
-  const povertyLineTable = POVERTY_LINES_2025[region];
+  const povertyLineTable = POVERTY_LINES_2025[input.povertyLineRegion ?? "contiguous"];
   const povertyLine = povertyLineTable.first
     + povertyLineTable.additional * (input.familySize - 1);
   // Form 8962 Worksheet 2: multiply by 100 and drop decimals; do not round.
@@ -94,12 +111,18 @@ export function calculatePremiumTaxCredit(input: PremiumTaxCreditInput): Premium
     povertyLinePercent,
     applicableFigure: 0,
     annualContribution: 0,
+    monthlyContribution: 0,
+    advancePayments,
     premiumTaxCredit: 0,
     netPremiumTaxCredit: 0,
-    excessAdvanceRepayment: Math.max(0, input.advancePayments),
+    excessAdvanceRepayment: Math.max(0, advancePayments),
   });
-  if (povertyLinePercent < 100) {
-    return ineligible("Household income is below 100% of the poverty line; the APTC exception for estimated income is not modeled.");
+  if (input.filingStatus === "married_filing_separately" && !input.marriedFilingSeparatelyException2) {
+    return ineligible("Married filing separately is not an applicable taxpayer unless Exception 2 (domestic abuse or spousal abandonment) applies. This assumes the policy covered only your tax family; a policy shared with your spouse's tax family repays half.");
+  }
+  const belowPovertyException = input.marketplaceEstimatedAtLeast100Percent === true && advancePayments > 0;
+  if (povertyLinePercent < 100 && !belowPovertyException) {
+    return ineligible("Household income is below 100% of the poverty line. The exception requires a Marketplace estimate of at least 100% at enrollment and APTC paid for at least one month.");
   }
   if (povertyLinePercent > 400) {
     return ineligible("Household income is above 400% of the poverty line, so no Premium Tax Credit is allowed for TY2026.");
@@ -107,19 +130,31 @@ export function calculatePremiumTaxCredit(input: PremiumTaxCreditInput): Premium
 
   const figure = applicableFigure(povertyLinePercent);
   const annualContribution = Math.round(input.householdIncome * figure);
-  const premiumTaxCredit = Math.max(0, Math.min(
-    input.annualEnrollmentPremium,
-    input.annualBenchmarkPremium - annualContribution,
-  ));
+  let premiumTaxCredit: number;
+  let monthlyContribution = 0;
+  if (input.monthly) {
+    monthlyContribution = Math.round(annualContribution / 12);
+    premiumTaxCredit = sum((month) => Math.min(
+      month.enrollmentPremium,
+      Math.max(0, month.benchmarkPremium - monthlyContribution),
+    ));
+  } else {
+    premiumTaxCredit = Math.max(0, Math.min(
+      input.annualEnrollmentPremium,
+      input.annualBenchmarkPremium - annualContribution,
+    ));
+  }
   return {
     eligible: premiumTaxCredit > 0,
     povertyLine,
     povertyLinePercent,
     applicableFigure: figure,
     annualContribution,
+    monthlyContribution,
+    advancePayments,
     premiumTaxCredit,
-    netPremiumTaxCredit: Math.max(0, premiumTaxCredit - input.advancePayments),
+    netPremiumTaxCredit: Math.max(0, premiumTaxCredit - advancePayments),
     // TY2026: excess advance payments are repaid in full (no IRC 36B(f)(2)(B) cap).
-    excessAdvanceRepayment: Math.max(0, input.advancePayments - premiumTaxCredit),
+    excessAdvanceRepayment: Math.max(0, advancePayments - premiumTaxCredit),
   };
 }

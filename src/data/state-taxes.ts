@@ -36,6 +36,10 @@ export interface StateInfo {
   personalExemption?: { single: number; married: number };
   /** Personal exemption is disallowed when income exceeds this amount. */
   exemptionIncomeLimit?: { single: number; married: number };
+  /** Per-person exemption chosen by income tier; first matching tier wins, no match means zero. */
+  personalExemptionTiers?: { maxIncome: number; inclusive: boolean; amountPerPerson: number }[];
+  /** Flat tax with a zero-tax threshold: none at or below threshold, else baseTax plus topRate on the excess. */
+  thresholdTax?: { threshold: number; baseTax: number };
   notes?: string;
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
@@ -234,6 +238,24 @@ const CA_2026_JOINT: StateBracket[] = [
   { min: 1536426, max: null, rate: 0.133 },
 ];
 
+// Virginia uses one schedule for every filing status (Code of Virginia 58.1-320).
+const VA_BRACKETS: StateBracket[] = [
+  { min: 0, max: 3000, rate: 0.02 }, { min: 3000, max: 5000, rate: 0.03 },
+  { min: 5000, max: 17000, rate: 0.05 }, { min: 17000, max: null, rate: 0.0575 },
+];
+
+// New Jersey 2026 Tax Rate Schedules: Table A (single, MFS) and Table B (MFJ, HoH, surviving spouse).
+const NJ_TABLE_A: StateBracket[] = [
+  { min: 0, max: 20000, rate: 0.014 }, { min: 20000, max: 35000, rate: 0.0175 }, { min: 35000, max: 40000, rate: 0.035 },
+  { min: 40000, max: 75000, rate: 0.05525 }, { min: 75000, max: 500000, rate: 0.0637 }, { min: 500000, max: 1000000, rate: 0.0897 },
+  { min: 1000000, max: null, rate: 0.1075 },
+];
+const NJ_TABLE_B: StateBracket[] = [
+  { min: 0, max: 20000, rate: 0.014 }, { min: 20000, max: 50000, rate: 0.0175 }, { min: 50000, max: 70000, rate: 0.0245 },
+  { min: 70000, max: 80000, rate: 0.035 }, { min: 80000, max: 150000, rate: 0.05525 }, { min: 150000, max: 500000, rate: 0.0637 },
+  { min: 500000, max: 1000000, rate: 0.0897 }, { min: 1000000, max: null, rate: 0.1075 },
+];
+
 // Massachusetts applies the 4% surtax to taxable income above one threshold for every filing status.
 const MA_2026_BRACKETS: StateBracket[] = [
   { min: 0, max: 1107750, rate: 0.05 },
@@ -359,6 +381,55 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.035,
         standardDeduction: { single: 3360, married: 3360 },
         notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled",
+      },
+    ),
+    GA: createCalculationProfile(
+      "GA",
+      2026,
+      "Georgia DOR Important Tax Updates: 2026 flat rate 4.99% and standard deduction $15,000 ($30,000 MFJ), laws signed May 11, 2026",
+      {
+        topRate: 0.0499,
+        standardDeduction: { single: 15000, married: 30000 },
+        notes: "Dependent exemptions, the retirement income exclusion, and Georgia adjustments are not modeled",
+      },
+    ),
+    OH: createCalculationProfile(
+      "OH",
+      2026,
+      "Ohio Rev. Code 5747.02(A)(3)(c) ($332 plus 2.75% above $26,050 for 2026) and 5747.025 exemptions, with indexing suspended for 2025 and 2026 by H.B. 96",
+      {
+        taxType: "flat",
+        topRate: 0.0275,
+        thresholdTax: { threshold: 26050, baseTax: 332 },
+        personalExemptionTiers: [
+          { maxIncome: 40000, inclusive: true, amountPerPerson: 2400 },
+          { maxIncome: 80000, inclusive: true, amountPerPerson: 2150 },
+          { maxIncome: 500000, inclusive: false, amountPerPerson: 1900 },
+        ],
+        notes: "Nonbusiness income only; the 3% business income rate and its deduction, dependent exemptions, the $20 exemption credit, the joint filing credit, and municipal and school district taxes are not modeled",
+      },
+    ),
+    VA: createCalculationProfile(
+      "VA",
+      2026,
+      "Code of Virginia 58.1-320 rate schedule, 58.1-322.03 standard deduction ($8,750 / $17,500 through 2026) and $930 personal exemption",
+      {
+        brackets: VA_BRACKETS,
+        marriedBrackets: VA_BRACKETS,
+        standardDeduction: { single: 8750, married: 17500 },
+        personalExemption: { single: 930, married: 1860 },
+        notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
+      },
+    ),
+    NJ: createCalculationProfile(
+      "NJ",
+      2026,
+      "NJ Division of Taxation 2026 Form NJ-1040-ES Tax Rate Schedules (Table A, Table B) and $1,000 personal exemption",
+      {
+        brackets: NJ_TABLE_A,
+        marriedBrackets: NJ_TABLE_B,
+        personalExemption: { single: 1000, married: 2000 },
+        notes: "Table B also applies to HoH. Dependent, age 65, and blind exemptions, NJ exclusions, and the property tax deduction are not modeled",
       },
     ),
   },

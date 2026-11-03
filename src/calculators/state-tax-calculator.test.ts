@@ -164,9 +164,48 @@ describe("TY2026 state profiles", () => {
     expect(married?.tax).toBe(2682);
   });
 
+  it("applies the Georgia 4.99% rate after the TY2026 $15,000 / $30,000 standard deduction", () => {
+    // (100,100 - 15,000) x 4.99% = 4,246.49; (150,000 - 30,000) x 4.99% = 5,988.
+    const single = calculateStateTax({ stateCode: "GA", taxYear: 2026, incomeBeforeDeductions: 100100, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "GA", taxYear: 2026, incomeBeforeDeductions: 150000, filingStatus: "married" });
+    expect(single?.tax).toBe(4246);
+    expect(married?.tax).toBe(5988);
+  });
+
+  it("applies the Virginia schedule after the standard deduction and $930 exemptions", () => {
+    // Single: 100,000 - 8,750 - 930 = 90,320; 60 + 60 + 600 + 5.75% x 73,320 = 4,935.90.
+    // MFJ: 150,000 - 17,500 - 1,860 = 130,640; 720 + 5.75% x 113,640 = 7,254.30.
+    const single = calculateStateTax({ stateCode: "VA", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "VA", taxYear: 2026, incomeBeforeDeductions: 150000, filingStatus: "married" });
+    expect(single?.deduction).toBe(9680);
+    expect(single?.tax).toBe(4936);
+    expect(married?.tax).toBe(7254);
+  });
+
+  it("uses New Jersey Table A for single and Table B for joint returns", () => {
+    // Table A: 99,000 x 6.37% - 2,126.25 = 4,180.05. Table B: 198,000 x 6.37% - 4,042.50 = 8,570.10.
+    const single = calculateStateTax({ stateCode: "NJ", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "NJ", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married" });
+    expect(single?.tax).toBe(4180);
+    expect(married?.tax).toBe(8570);
+  });
+
+  it.each([
+    // Exemption tier by income; tax is $332 + 2.75% over $26,050, or zero at or below $26,050.
+    ["single", 25000, 2400, 0],
+    ["single", 30000, 2400, 375],
+    ["single", 60100, 2150, 1209],
+    ["married", 120000, 3800, 2811],
+    ["single", 600000, 0, 16116],
+  ] as const)("applies the Ohio TY2026 schedule: %s at $%i", (filingStatus, income, deduction, tax) => {
+    const result = calculateStateTax({ stateCode: "OH", taxYear: 2026, incomeBeforeDeductions: income, filingStatus });
+    expect(result?.deduction).toBe(deduction);
+    expect(result?.tax).toBe(tax);
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
-      calculateStateTax({ stateCode: "GA", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),
-    ).toThrow("Georgia TY2026 calculation data are not available");
+      calculateStateTax({ stateCode: "AZ", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),
+    ).toThrow("Arizona TY2026 calculation data are not available");
   });
 });

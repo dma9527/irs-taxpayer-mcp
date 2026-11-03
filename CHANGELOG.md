@@ -4,6 +4,18 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-11-03
+
+### Fixed
+
+- Additional Medicare Tax used gross self-employment profit instead of SE net earnings (92.35%, Form 8959 line 8). It was overstated for anyone with SE income above the threshold; for example single with $190,000 wages and $30,000 SE profit now owes $159.35, not $180. Found by the new golden worksheet cases.
+
+### Added
+
+- 50 TY2026 golden worksheet cases (`scripts/golden/`, `src/golden/`) worked from the QDCG worksheet, Form 6251, Schedule 8812, Form 2441, Schedule SE, Forms 8959 and 8960, and Schedule 1-A by an independent standard-library script. They run in CI and match within $1.
+- TY2026 numeric profiles for GA (4.99%, $15,000 / $30,000 standard deduction per Georgia DOR), OH ($332 plus 2.75% above $26,050 under ORC 5747.02 with income-tiered exemptions), VA (58.1-320 schedule, $8,750 / $17,500 standard deduction, $930 exemption), and NJ (2026 Table A and Table B, $1,000 exemption).
+- `estimate_premium_tax_credit` handles monthly allocation for part-year or changing coverage (Form 8962 lines 12 to 23), the below-100% exception when the Marketplace estimated at least 100% and APTC was paid, and MFS Exception 2. MFS without the exception now returns full APTC repayment instead of an error.
+
 ## [1.2.3] - 2026-11-03
 
 ### Fixed

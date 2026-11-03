@@ -72,7 +72,7 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | D6 `get_tax_deadlines` errored by default | TY2026 deadlines added |
 | D7 `check_credit_eligibility` used TY2024 CTC/EITC limits and offered expired EV and energy credits | Now year-aware |
 | G1 to G5 | Done, plus Schedule 1-A in the engine and the $400 minimum QBI deduction |
-| G6 states | CA, IL, IN, KY, MA, MI, NC, PA added for TY2026 |
+| G6 states | CA, GA, IL, IN, KY, MA, MI, NC, NJ, OH, PA, VA added for TY2026 |
 | Differential test | 53/53 synthetic scenarios match PSL Tax-Calculator 6.8.5 within $1 |
 | D8 W-4 Step 3 used $2,000 per child | Uses the year's amount ($2,200 on the 2026 Form W-4) |
 | Premium Tax Credit | TY2026 annual estimate added (Rev. Proc. 2025-25) |
@@ -87,7 +87,10 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | G6 states, third batch | MI and IN added for TY2026 |
 | D15 `analyze_paycheck` ignored CTC and other credits | Fixed; takes dependents, age 65, and Schedule 1-A facts |
 | D16 `simulate_tax_scenario` lacked TY2026 facts and the SALT AMT add-back | Fixed |
-| Suite | All tests pass; differential 53 of 53 |
+| D17 Additional Medicare Tax used SE profit instead of net earnings | Found by golden cases and fixed |
+| Golden worksheet cases | 50 of 50 match within $1 in CI (`scripts/golden/`) |
+| PTC exceptions | Monthly allocation, below-100% exception, MFS Exception 2 added |
+| Suite | All tests pass; differential 53 of 53; golden 50 of 50 |
 
 ### Remaining for TY2026 (priority order, updated 2026-11-01, fourth pass)
 
@@ -96,9 +99,8 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | P1 | Upload the refreshed Agensi skill ZIP | Ready | 1.2.0 released 2026-11-01 |
 | P1 | New York TY2026 profile | Blocked | NY DTF has not published the TY2026 IT-201 rate schedule; withholding tables are not a filing source |
 | P2 | Confirm against final 2026 forms in January 2027: NC standard deduction, Form 6251 treatment of the non-itemizer charitable deduction, Publication 509 dates, CA Schedule Z and exemption credits | Waiting | Final forms publish January 2027 |
-| P2 | Premium Tax Credit: monthly allocation, below-100% APTC exception, MFS exceptions | Open | Annual estimate for all 50 states and DC shipped; these paths fail closed |
-| P3 | Other state profiles | Open | GA: 4.99% confirmed, 2026 standard deduction not yet confirmed. UT: needs the taxpayer credit model. AZ, CO, OH, VA, NJ, and others not yet sourced |
-| P3 | 50 hand-worked golden worksheet cases | Open | 53-scenario differential test against Tax-Calculator covers the oracle check today |
+| P3 | Premium Tax Credit: shared-policy allocation (Part IV) and year-of-marriage calculation (Part V) | Open | Not modeled; tool output says so |
+| P3 | Other state profiles | Open | AZ: ADOR says 2026 standard deduction is pending legislative conformity. CO: TABOR temporary rate cut for 2026 not yet certified, and CO taxes federal taxable income. UT: needs the taxpayer credit model and 2026 HB 210 changes. Others not yet sourced |
 | P3 | Trump Accounts, scholarship credit (TY2027), adoption credit refundability | Reference only | Listed in the law change registry; not calculated |
 
 ## TY2026 Law Changes Versus Earlier Years

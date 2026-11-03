@@ -1640,6 +1640,43 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "marketplaceEstimatedAtLeast100Percent": {
+          "description": "Below-100% exception: the Marketplace estimated household income of at least 100% of the poverty line at enrollment",
+          "type": "boolean",
+        },
+        "marriedFilingSeparatelyException2": {
+          "description": "MFS only: victim of domestic abuse or spousal abandonment living apart (Form 8962 Exception 2)",
+          "type": "boolean",
+        },
+        "monthly": {
+          "description": "Form 1095-A lines 21 to 32, January to December, for part-year or changing coverage; replaces the annual totals",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "advancePayment": {
+                "minimum": 0,
+                "type": "number",
+              },
+              "benchmarkPremium": {
+                "minimum": 0,
+                "type": "number",
+              },
+              "enrollmentPremium": {
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "enrollmentPremium",
+              "benchmarkPremium",
+              "advancePayment",
+            ],
+            "type": "object",
+          },
+          "maxItems": 12,
+          "minItems": 12,
+          "type": "array",
+        },
         "povertyLineRegion": {
           "description": "Poverty-line table (default: 48 contiguous states and DC)",
           "enum": [

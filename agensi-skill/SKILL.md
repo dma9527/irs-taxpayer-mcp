@@ -2,7 +2,7 @@
 name: irs-tax-calculator
 description: Use when the user asks about US federal or state income tax for tax year 2024, 2025, or 2026: calculating tax owed, tax brackets, standard vs itemized deductions, tax credits (Child Tax Credit, EITC, AOTC, retirement saver's credit), capital gains tax, self-employment tax, quarterly estimated payments, W-4 withholding, 1099 income, Roth conversions and backdoor Roth, retirement withdrawal order, relocation tax comparisons across states, paycheck withholding checks, audit risk, or a full year-end tax plan or tax report. Trigger phrases include "how much tax will I owe", "calculate my taxes", "should I itemize or take the standard deduction", "quarterly estimated tax", "EITC", "child tax credit", "backdoor Roth", "moving to Texas taxes", "W-4", "1099 taxes", "audit risk", "tax bracket", "OBBB tax deduction".
 summary: Calculates US federal and state income tax, deductions, credits (CTC, EITC, AOTC), capital gains, SE tax, quarterly payments, W-4 withholding, and full tax plans for TY2024-2026 through the open-source irs-taxpayer-mcp server. Local engine, no taxpayer data stored.
-version: 1.2.2
+version: 1.2.4
 tags: [tax, federal-tax, state-tax, tax-planning, irs, eitc, child-tax-credit, capital-gains, self-employment, mcp]
 keywords: [tax calculator, income tax, tax brackets, standard deduction, itemized deductions, quarterly estimated tax, W-4 withholding, Roth conversion, 1099, OBBB]
 use_cases: [Estimate federal income tax owed for a given income and filing status, Compare standard vs itemized deductions with the correct SALT cap, Calculate EITC and Child Tax Credit amounts, Plan quarterly estimated payments for freelancers, Check paycheck withholding and W-4 settings, Compare state income tax before relocating, Plan Roth conversions and retirement withdrawal order, Generate a full year-end tax plan with sources and assumptions]
@@ -106,7 +106,7 @@ either is ambiguous instead of guessing.
 | Deciding whether to relocate | `analyze_relocation_taxes` |
 
 Numeric support today: TY2024 AK, CA, FL, NV, SD, TN, TX, WY; TY2025 AK, FL, NH, NV, SD, TN, TX, WY; TY2026
-the same no-tax states plus CA, IL, IN, KY, MA, MI, NC, and PA. For every other state and year, say so plainly instead of
+the same no-tax states plus CA, GA, IL, IN, KY, MA, MI, NC, NJ, OH, PA, and VA. For every other state and year, say so plainly instead of
 estimating.
 
 ## Full reports, self-employment, and situational tools

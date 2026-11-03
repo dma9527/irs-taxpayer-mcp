@@ -88,11 +88,19 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   if (state.personalExemption && incomeBeforeDeductions <= exemptionIncomeLimit) {
     deduction += status === "married" ? state.personalExemption.married : state.personalExemption.single;
   }
+  if (state.personalExemptionTiers) {
+    const tier = state.personalExemptionTiers.find(({ maxIncome, inclusive }) =>
+      inclusive ? incomeBeforeDeductions <= maxIncome : incomeBeforeDeductions < maxIncome);
+    deduction += (tier?.amountPerPerson ?? 0) * (status === "married" ? 2 : 1);
+  }
 
   const adjustedIncome = Math.max(0, incomeBeforeDeductions - deduction);
   let tax = 0;
 
-  if (state.taxType === "flat") {
+  if (state.taxType === "flat" && state.thresholdTax) {
+    const { threshold, baseTax } = state.thresholdTax;
+    tax = adjustedIncome <= threshold ? 0 : baseTax + (adjustedIncome - threshold) * state.topRate;
+  } else if (state.taxType === "flat") {
     tax = adjustedIncome * state.topRate;
   } else {
     if (!state.brackets || state.brackets.length === 0) {

@@ -303,6 +303,13 @@ describe("calculateTax", () => {
   });
 
   describe("Additional Medicare Tax", () => {
+    it("uses SE net earnings (92.35%) on Form 8959 line 8", () => {
+      // Line 11: 200,000 - 190,000 = 10,000; line 12: 27,705 - 10,000 = 17,705; x 0.9% = 159.35.
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "single", grossIncome: 220000, w2Income: 190000, selfEmploymentIncome: 30000,
+      });
+      expect(result.additionalMedicareTax).toBeCloseTo(159.35, 2);
+    });
     it("applies 0.9% above threshold for single W-2 earner", () => {
       const result = calculateTax({
         taxYear: 2024,

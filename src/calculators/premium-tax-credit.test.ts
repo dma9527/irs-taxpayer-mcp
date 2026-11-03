@@ -84,13 +84,78 @@ describe("calculatePremiumTaxCredit (TY2026, Rev. Proc. 2025-25)", () => {
     expect(hawaii.excessAdvanceRepayment).toBe(0);
   });
 
-  it("fails closed for years and filing statuses that are not modeled", () => {
+  it("fails closed for years that are not modeled", () => {
     const base = {
       filingStatus: "single" as const, householdIncome: 40000, familySize: 1,
       annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 0,
     };
     expect(() => calculatePremiumTaxCredit({ ...base, taxYear: 2025 })).toThrow("TY2025");
-    expect(() => calculatePremiumTaxCredit({ ...base, taxYear: 2026, filingStatus: "married_filing_separately" }))
-      .toThrow("married filing separately");
+  });
+
+  it("requires full repayment for married filing separately without Exception 2", () => {
+    const result = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "married_filing_separately", householdIncome: 31300, familySize: 1,
+      annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 4500,
+    });
+    expect(result.eligible).toBe(false);
+    expect(result.premiumTaxCredit).toBe(0);
+    expect(result.excessAdvanceRepayment).toBe(4500);
+    expect(result.reason).toContain("Exception 2");
+  });
+
+  it("allows married filing separately under Exception 2 (domestic abuse or spousal abandonment)", () => {
+    const result = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "married_filing_separately", householdIncome: 31300, familySize: 1,
+      annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 4500,
+      marriedFilingSeparatelyException2: true,
+    });
+    expect(result.premiumTaxCredit).toBe(3934);
+    expect(result.excessAdvanceRepayment).toBe(566);
+  });
+
+  it("applies the below-100% exception when the Marketplace estimate was at least 100% and APTC was paid", () => {
+    // $12,000 / $15,650 = 76%; figure 2.10%; contribution 252; PTC min(5,000, 6,000 - 252).
+    const result = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "single", householdIncome: 12000, familySize: 1,
+      annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 3000,
+      marketplaceEstimatedAtLeast100Percent: true,
+    });
+    expect(result.eligible).toBe(true);
+    expect(result.applicableFigure).toBe(0.021);
+    expect(result.annualContribution).toBe(252);
+    expect(result.premiumTaxCredit).toBe(5000);
+    expect(result.netPremiumTaxCredit).toBe(2000);
+  });
+
+  it("does not apply the below-100% exception when no APTC was paid", () => {
+    const result = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "single", householdIncome: 12000, familySize: 1,
+      annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 0,
+      marketplaceEstimatedAtLeast100Percent: true,
+    });
+    expect(result.eligible).toBe(false);
+  });
+
+  it("allocates by month for part-year coverage (Form 8962 lines 12 to 23)", () => {
+    // Line 8a 2,066; line 8b 2,066 / 12 = 172; six months of min(500, 600 - 172) = 2,568.
+    const covered = { enrollmentPremium: 500, benchmarkPremium: 600, advancePayment: 420 };
+    const uncovered = { enrollmentPremium: 0, benchmarkPremium: 0, advancePayment: 0 };
+    const result = calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "single", householdIncome: 31300, familySize: 1,
+      annualEnrollmentPremium: 0, annualBenchmarkPremium: 0, advancePayments: 0,
+      monthly: [...Array<typeof covered>(6).fill(covered), ...Array<typeof uncovered>(6).fill(uncovered)],
+    });
+    expect(result.monthlyContribution).toBe(172);
+    expect(result.premiumTaxCredit).toBe(2568);
+    expect(result.advancePayments).toBe(2520);
+    expect(result.netPremiumTaxCredit).toBe(48);
+  });
+
+  it("rejects monthly amounts that do not cover 12 months", () => {
+    expect(() => calculatePremiumTaxCredit({
+      taxYear: 2026, filingStatus: "single", householdIncome: 31300, familySize: 1,
+      annualEnrollmentPremium: 0, annualBenchmarkPremium: 0, advancePayments: 0,
+      monthly: [{ enrollmentPremium: 500, benchmarkPremium: 600, advancePayment: 420 }],
+    })).toThrow("12 months");
   });
 });

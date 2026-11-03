@@ -231,10 +231,13 @@ function calculateCapitalNetting(
   };
 }
 
+/** Schedule SE line 4a: net earnings are 92.35% of SE profit. */
+const SE_NET_EARNINGS_FACTOR = 0.9235;
+
 function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData, w2Income: number = 0): number {
   if (seIncome <= 0) return 0;
 
-  const netEarnings = seIncome * 0.9235; // 92.35% of SE income
+  const netEarnings = seIncome * SE_NET_EARNINGS_FACTOR;
   // W-2 wages already used part of the SS wage base
   const remainingWageBase = Math.max(0, taxData.socialSecurity.wageBase - w2Income);
   const ssWages = Math.min(netEarnings, remainingWageBase);
@@ -929,8 +932,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     ?? Math.max(0, longTermGains + shortTermGains + qualifiedDividends);
   const niit = calculateNIIT(agi, netInvestmentIncome, input.filingStatus);
 
-  // Step 9: Additional Medicare Tax (0.9% on earned income above threshold)
-  const medicareEarnedIncome = (input.w2Income ?? 0) + (input.selfEmploymentIncome ?? 0);
+  // Step 9: Additional Medicare Tax; Form 8959 line 8 uses SE net earnings (Schedule SE line 6), not profit.
+  const medicareEarnedIncome = (input.w2Income ?? 0)
+    + Math.max(0, input.selfEmploymentIncome ?? 0) * SE_NET_EARNINGS_FACTOR;
   const additionalMedicareTax = calculateAdditionalMedicareTax(medicareEarnedIncome, input.filingStatus, taxData);
   const earlyRetirementDistributionSubjectToPenalty =
     input.earlyRetirementDistributionSubjectToPenalty ?? 0;

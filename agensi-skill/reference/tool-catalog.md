@@ -19,7 +19,7 @@ literal MCP tool name to call.
 - `list_tax_credits`: 20+ federal credits.
 - `check_credit_eligibility`: quick screening.
 - `calculate_eitc`: precise EITC with phase-in/plateau/phase-out for 0-3 children.
-- `estimate_premium_tax_credit`: TY2026 Premium Tax Credit (Form 8962) from Form 1095-A totals, 400% limit, full APTC repayment.
+- `estimate_premium_tax_credit`: TY2026 Premium Tax Credit (Form 8962) from Form 1095-A annual or monthly amounts, 400% limit, full APTC repayment, below-100% and MFS Exception 2 rules.
 
 ## Retirement and strategy
 - `get_retirement_accounts`: IRA, Roth, 401k, SEP, Solo 401k, HSA, 529 limits and treatment.

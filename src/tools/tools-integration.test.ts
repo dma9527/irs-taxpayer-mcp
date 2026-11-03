@@ -372,6 +372,29 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("TY2025");
     });
 
+    it("allocates the TY2026 Premium Tax Credit by month for part-year coverage", async () => {
+      const covered = { enrollmentPremium: 500, benchmarkPremium: 600, advancePayment: 420 };
+      const uncovered = { enrollmentPremium: 0, benchmarkPremium: 0, advancePayment: 0 };
+      const { text, isError } = await callTool(server, "estimate_premium_tax_credit", {
+        taxYear: 2026, filingStatus: "single", householdIncome: 31300, familySize: 1,
+        annualEnrollmentPremium: 0, annualBenchmarkPremium: 0, advancePayments: 0,
+        monthly: [...Array(6).fill(covered), ...Array(6).fill(uncovered)],
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("| Monthly contribution (line 8b) | $172 |");
+      expect(text).toContain("| Premium Tax Credit | $2,568 |");
+      expect(text).toContain("| Advance payments received | $2,520 |");
+    });
+
+    it("requires full APTC repayment for MFS without Exception 2", async () => {
+      const { text, isError } = await callTool(server, "estimate_premium_tax_credit", {
+        taxYear: 2026, filingStatus: "married_filing_separately", householdIncome: 31300, familySize: 1,
+        annualEnrollmentPremium: 5000, annualBenchmarkPremium: 6000, advancePayments: 4500,
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("| Excess advance payment to repay | $4,500 |");
+    });
+
     it("uses TY2026 rules by default: $2,200 CTC and no expired energy or EV credits", async () => {
       const { text } = await callTool(server, "check_credit_eligibility", {
         agi: 90000, filingStatus: "married_filing_jointly", hasChildren: true, numChildren: 2,

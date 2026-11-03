@@ -280,6 +280,13 @@ export function registerCreditTools(server: McpServer): void {
       annualBenchmarkPremium: z.number().min(0).describe("Form 1095-A column B annual total (SLCSP)"),
       advancePayments: z.number().min(0).describe("Form 1095-A column C annual total (APTC)"),
       povertyLineRegion: z.enum(["contiguous", "alaska", "hawaii"]).optional().describe("Poverty-line table (default: 48 contiguous states and DC)"),
+      monthly: z.array(z.object({
+        enrollmentPremium: z.number().min(0),
+        benchmarkPremium: z.number().min(0),
+        advancePayment: z.number().min(0),
+      }).strict()).length(12).optional().describe("Form 1095-A lines 21 to 32, January to December, for part-year or changing coverage; replaces the annual totals"),
+      marriedFilingSeparatelyException2: z.boolean().optional().describe("MFS only: victim of domestic abuse or spousal abandonment living apart (Form 8962 Exception 2)"),
+      marketplaceEstimatedAtLeast100Percent: z.boolean().optional().describe("Below-100% exception: the Marketplace estimated household income of at least 100% of the poverty line at enrollment"),
     },
     async (params) => {
       try {
@@ -293,14 +300,16 @@ export function registerCreditTools(server: McpServer): void {
           `| Household income as % of poverty line | ${result.povertyLinePercent}% |`,
           `| Applicable figure | ${(result.applicableFigure * 100).toFixed(2)}% |`,
           `| Required annual contribution | $${fmt(result.annualContribution)} |`,
+          params.monthly ? `| Monthly contribution (line 8b) | $${fmt(result.monthlyContribution)} |` : "",
           `| Premium Tax Credit | $${fmt(result.premiumTaxCredit)} |`,
-          `| Advance payments received | $${fmt(params.advancePayments)} |`,
+          `| Advance payments received | $${fmt(result.advancePayments)} |`,
           `| Net Premium Tax Credit (refundable) | $${fmt(result.netPremiumTaxCredit)} |`,
           `| Excess advance payment to repay | $${fmt(result.excessAdvanceRepayment)} |`,
           "",
           result.reason ? `> ⚠ ${result.reason}` : "",
           "> TY2026 changes: the 400% poverty-line limit applies again and excess advance payments are repaid in full (repayment caps removed by Public Law 119-21).",
-          "> Annual estimate only; monthly allocation, shared policies, and alternative marriage calculations are not modeled.",
+          params.monthly ? "> Monthly allocation per Form 8962 lines 12 to 23." : "> Annual totals assume the same coverage all 12 months; pass `monthly` for part-year or changing coverage.",
+          "> Shared-policy allocation (Part IV) and the year-of-marriage alternative calculation (Part V) are not modeled.",
           "> Sources: Rev. Proc. 2025-25 (applicable percentages), HHS 2025 poverty guidelines, IRS Instructions for Form 8962.",
         ].filter(Boolean);
         return { content: [{ type: "text", text: lines.join("\n") }] };
@@ -309,7 +318,7 @@ export function registerCreditTools(server: McpServer): void {
         return toolError({
           code: params.taxYear !== 2026 ? "UNSUPPORTED_TAX_YEAR" : "NOT_AVAILABLE",
           message,
-          suggestion: "Use taxYear 2026 with a supported filing status and the contiguous-states poverty line.",
+          suggestion: "Use taxYear 2026, and pass monthly amounts for all 12 months when using monthly allocation.",
         });
       }
     }

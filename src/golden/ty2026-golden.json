@@ -1,0 +1,1365 @@
+{
+  "taxYear": 2026,
+  "cases": [
+    {
+      "name": "single wages 20k",
+      "facts": {
+        "status": "single",
+        "wages": 20000,
+        "eitc_kids": 0
+      },
+      "expected": {
+        "adjustedGrossIncome": 20000.0,
+        "taxableIncome": 3900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 390.0,
+        "eitc": 0.0
+      },
+      "worksheet": [
+        "AGI 20,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 3,900.00",
+        "Regular tax 390.00, AMTI 20,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 390.00"
+      ]
+    },
+    {
+      "name": "single wages 55k",
+      "facts": {
+        "status": "single",
+        "wages": 55000
+      },
+      "expected": {
+        "adjustedGrossIncome": 55000.0,
+        "taxableIncome": 38900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 4420.0
+      },
+      "worksheet": [
+        "AGI 55,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 38,900.00",
+        "Regular tax 4,420.00, AMTI 55,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 4,420.00"
+      ]
+    },
+    {
+      "name": "single wages 120k",
+      "facts": {
+        "status": "single",
+        "wages": 120000
+      },
+      "expected": {
+        "adjustedGrossIncome": 120000.0,
+        "taxableIncome": 103900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 17570.0
+      },
+      "worksheet": [
+        "AGI 120,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 103,900.00",
+        "Regular tax 17,570.00, AMTI 120,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 17,570.00"
+      ]
+    },
+    {
+      "name": "single wages 250k",
+      "facts": {
+        "status": "single",
+        "wages": 250000
+      },
+      "expected": {
+        "adjustedGrossIncome": 250000.0,
+        "taxableIncome": 233900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 450.0,
+        "niit": 0.0,
+        "totalFederalTax": 51754.0
+      },
+      "worksheet": [
+        "AGI 250,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 233,900.00",
+        "Regular tax 51,304.00, AMTI 250,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 450.00, NIIT 0.00, total 51,754.00"
+      ]
+    },
+    {
+      "name": "single wages 700k",
+      "facts": {
+        "status": "single",
+        "wages": 700000
+      },
+      "expected": {
+        "adjustedGrossIncome": 700000.0,
+        "taxableIncome": 683900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 4500.0,
+        "niit": 0.0,
+        "totalFederalTax": 213500.25
+      },
+      "worksheet": [
+        "AGI 700,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 683,900.00",
+        "Regular tax 209,000.25, AMTI 700,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 4,500.00, NIIT 0.00, total 213,500.25"
+      ]
+    },
+    {
+      "name": "mfj wages 40k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 40000
+      },
+      "expected": {
+        "adjustedGrossIncome": 40000.0,
+        "taxableIncome": 7800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 780.0
+      },
+      "worksheet": [
+        "AGI 40,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 7,800.00",
+        "Regular tax 780.00, AMTI 40,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 780.00"
+      ]
+    },
+    {
+      "name": "mfj wages 130k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 130000
+      },
+      "expected": {
+        "adjustedGrossIncome": 130000.0,
+        "taxableIncome": 97800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 11240.0
+      },
+      "worksheet": [
+        "AGI 130,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 97,800.00",
+        "Regular tax 11,240.00, AMTI 130,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 11,240.00"
+      ]
+    },
+    {
+      "name": "mfj wages 300k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 300000
+      },
+      "expected": {
+        "adjustedGrossIncome": 300000.0,
+        "taxableIncome": 267800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 450.0,
+        "niit": 0.0,
+        "totalFederalTax": 49918.0
+      },
+      "worksheet": [
+        "AGI 300,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 267,800.00",
+        "Regular tax 49,468.00, AMTI 300,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 450.00, NIIT 0.00, total 49,918.00"
+      ]
+    },
+    {
+      "name": "mfj wages 600k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 600000
+      },
+      "expected": {
+        "adjustedGrossIncome": 600000.0,
+        "taxableIncome": 567800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 3150.0,
+        "niit": 0.0,
+        "totalFederalTax": 139418.5
+      },
+      "worksheet": [
+        "AGI 600,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 567,800.00",
+        "Regular tax 136,268.50, AMTI 600,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 3,150.00, NIIT 0.00, total 139,418.50"
+      ]
+    },
+    {
+      "name": "mfj wages 900k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 900000
+      },
+      "expected": {
+        "adjustedGrossIncome": 900000.0,
+        "taxableIncome": 867800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 5850.0,
+        "niit": 0.0,
+        "totalFederalTax": 249100.5
+      },
+      "worksheet": [
+        "AGI 900,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 867,800.00",
+        "Regular tax 243,250.50, AMTI 900,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 5,850.00, NIIT 0.00, total 249,100.50"
+      ]
+    },
+    {
+      "name": "hoh wages 30k",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 30000
+      },
+      "expected": {
+        "adjustedGrossIncome": 30000.0,
+        "taxableIncome": 5850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 585.0
+      },
+      "worksheet": [
+        "AGI 30,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 5,850.00",
+        "Regular tax 585.00, AMTI 30,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 585.00"
+      ]
+    },
+    {
+      "name": "hoh wages 90k",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 90000
+      },
+      "expected": {
+        "adjustedGrossIncome": 90000.0,
+        "taxableIncome": 65850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 7548.0
+      },
+      "worksheet": [
+        "AGI 90,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 65,850.00",
+        "Regular tax 7,548.00, AMTI 90,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 7,548.00"
+      ]
+    },
+    {
+      "name": "hoh wages 300k",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 300000
+      },
+      "expected": {
+        "adjustedGrossIncome": 300000.0,
+        "taxableIncome": 275850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 900.0,
+        "niit": 0.0,
+        "totalFederalTax": 64408.5
+      },
+      "worksheet": [
+        "AGI 300,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 275,850.00",
+        "Regular tax 63,508.50, AMTI 300,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 900.00, NIIT 0.00, total 64,408.50"
+      ]
+    },
+    {
+      "name": "mfs wages 80k",
+      "facts": {
+        "status": "married_filing_separately",
+        "wages": 80000
+      },
+      "expected": {
+        "adjustedGrossIncome": 80000.0,
+        "taxableIncome": 63900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 8770.0
+      },
+      "worksheet": [
+        "AGI 80,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 63,900.00",
+        "Regular tax 8,770.00, AMTI 80,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 8,770.00"
+      ]
+    },
+    {
+      "name": "mfs wages 450k",
+      "facts": {
+        "status": "married_filing_separately",
+        "wages": 450000
+      },
+      "expected": {
+        "adjustedGrossIncome": 450000.0,
+        "taxableIncome": 433900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 2925.0,
+        "niit": 0.0,
+        "totalFederalTax": 124550.25
+      },
+      "worksheet": [
+        "AGI 450,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 433,900.00",
+        "Regular tax 121,625.25, AMTI 450,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 2,925.00, NIIT 0.00, total 124,550.25"
+      ]
+    },
+    {
+      "name": "single 0% band LTCG",
+      "facts": {
+        "status": "single",
+        "wages": 40000,
+        "ltcg": 10000
+      },
+      "expected": {
+        "adjustedGrossIncome": 50000.0,
+        "taxableIncome": 33900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 2620.0
+      },
+      "worksheet": [
+        "AGI 50,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 33,900.00",
+        "Regular tax 2,620.00, AMTI 50,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 2,620.00"
+      ]
+    },
+    {
+      "name": "single qualified dividends",
+      "facts": {
+        "status": "single",
+        "wages": 100000,
+        "odiv": 60000,
+        "qdiv": 50000
+      },
+      "expected": {
+        "adjustedGrossIncome": 160000.0,
+        "taxableIncome": 143900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 22870.0
+      },
+      "worksheet": [
+        "AGI 160,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 143,900.00",
+        "Regular tax 22,870.00, AMTI 160,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 22,870.00"
+      ]
+    },
+    {
+      "name": "mfj LTCG straddles 0% and 15%",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 80000,
+        "ltcg": 60000
+      },
+      "expected": {
+        "adjustedGrossIncome": 140000.0,
+        "taxableIncome": 107800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 6575.0
+      },
+      "worksheet": [
+        "AGI 140,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 107,800.00",
+        "Regular tax 6,575.00, AMTI 140,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 6,575.00"
+      ]
+    },
+    {
+      "name": "mfj LTCG at 20% with NIIT",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 500000,
+        "ltcg": 200000
+      },
+      "expected": {
+        "adjustedGrossIncome": 700000.0,
+        "taxableIncome": 667800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 2250.0,
+        "niit": 7600.0,
+        "totalFederalTax": 145163.0
+      },
+      "worksheet": [
+        "AGI 700,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 667,800.00",
+        "Regular tax 135,313.00, AMTI 700,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 2,250.00, NIIT 7,600.00, total 145,163.00"
+      ]
+    },
+    {
+      "name": "hoh LTCG",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 50000,
+        "ltcg": 30000
+      },
+      "expected": {
+        "adjustedGrossIncome": 80000.0,
+        "taxableIncome": 55850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 2748.0
+      },
+      "worksheet": [
+        "AGI 80,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 55,850.00",
+        "Regular tax 2,748.00, AMTI 80,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 2,748.00"
+      ]
+    },
+    {
+      "name": "single large LTCG",
+      "facts": {
+        "status": "single",
+        "wages": 30000,
+        "ltcg": 600000
+      },
+      "expected": {
+        "adjustedGrossIncome": 630000.0,
+        "taxableIncome": 613900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 16340.0,
+        "totalFederalTax": 105847.5
+      },
+      "worksheet": [
+        "AGI 630,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 613,900.00",
+        "Regular tax 89,507.50, AMTI 630,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 16,340.00, total 105,847.50"
+      ]
+    },
+    {
+      "name": "mfj 2 kids 60k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 60000,
+        "kids": 2,
+        "eitc_kids": 2
+      },
+      "expected": {
+        "adjustedGrossIncome": 60000.0,
+        "taxableIncome": 27800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 2840.0,
+        "additionalChildTaxCredit": 1560,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": -1560.0,
+        "eitc": 1242.3
+      },
+      "worksheet": [
+        "AGI 60,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 27,800.00",
+        "Regular tax 2,840.00, AMTI 60,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 2,840.00, ACTC 1,560.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total -1,560.00"
+      ]
+    },
+    {
+      "name": "hoh 2 kids 25k ACTC",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 25000,
+        "kids": 2,
+        "eitc_kids": 2
+      },
+      "expected": {
+        "adjustedGrossIncome": 25000.0,
+        "taxableIncome": 850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 85.0,
+        "additionalChildTaxCredit": 3375,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": -3375.0,
+        "eitc": 7082.23
+      },
+      "worksheet": [
+        "AGI 25,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 850.00",
+        "Regular tax 85.00, AMTI 25,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 85.00, ACTC 3,375.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total -3,375.00"
+      ]
+    },
+    {
+      "name": "single 1 kid 15k ACTC",
+      "facts": {
+        "status": "single",
+        "wages": 15000,
+        "kids": 1,
+        "eitc_kids": 1
+      },
+      "expected": {
+        "adjustedGrossIncome": 15000.0,
+        "taxableIncome": 0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0.0,
+        "additionalChildTaxCredit": 1700,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": -1700.0,
+        "eitc": 4426.8
+      },
+      "worksheet": [
+        "AGI 15,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 0.00",
+        "Regular tax 0.00, AMTI 16,100.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 1,700.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total -1,700.00"
+      ]
+    },
+    {
+      "name": "mfj 2 kids CTC phase-out",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 420000,
+        "kids": 2
+      },
+      "expected": {
+        "adjustedGrossIncome": 420000.0,
+        "taxableIncome": 387800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 3400,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 1530.0,
+        "niit": 0.0,
+        "totalFederalTax": 76398.0
+      },
+      "worksheet": [
+        "AGI 420,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 387,800.00",
+        "Regular tax 78,268.00, AMTI 420,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 3,400.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 1,530.00, NIIT 0.00, total 76,398.00"
+      ]
+    },
+    {
+      "name": "mfj 3 kids partial CTC",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 450500,
+        "kids": 3
+      },
+      "expected": {
+        "adjustedGrossIncome": 450500.0,
+        "taxableIncome": 418300.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 4050,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 1804.5,
+        "niit": 0.0,
+        "totalFederalTax": 84522.5
+      },
+      "worksheet": [
+        "AGI 450,500.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 418,300.00",
+        "Regular tax 86,768.00, AMTI 450,500.00, AMT 0.00",
+        "Care credit 0.00, CTC 4,050.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 1,804.50, NIIT 0.00, total 84,522.50"
+      ]
+    },
+    {
+      "name": "hoh 1 kid CTC fraction",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 210001,
+        "kids": 1
+      },
+      "expected": {
+        "adjustedGrossIncome": 210001.0,
+        "taxableIncome": 185851.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 1650,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 90.01,
+        "niit": 0.0,
+        "totalFederalTax": 33831.25
+      },
+      "worksheet": [
+        "AGI 210,001.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 185,851.00",
+        "Regular tax 35,391.24, AMTI 210,001.00, AMT 0.00",
+        "Care credit 0.00, CTC 1,650.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 90.01, NIIT 0.00, total 33,831.25"
+      ]
+    },
+    {
+      "name": "single SE 50k",
+      "facts": {
+        "status": "single",
+        "se": 50000
+      },
+      "expected": {
+        "adjustedGrossIncome": 46467.61,
+        "taxableIncome": 30367.61,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 7064.77,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 10460.89
+      },
+      "worksheet": [
+        "AGI 46,467.61 after half SE tax 3,532.39",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 30,367.61",
+        "Regular tax 3,396.11, AMTI 46,467.61, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 7,064.77, Additional Medicare 0.00, NIIT 0.00, total 10,460.89"
+      ]
+    },
+    {
+      "name": "single SE 200k",
+      "facts": {
+        "status": "single",
+        "se": 200000
+      },
+      "expected": {
+        "adjustedGrossIncome": 185882.85,
+        "taxableIncome": 169782.85,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 28234.3,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 61580.18
+      },
+      "worksheet": [
+        "AGI 185,882.85 after half SE tax 14,117.15",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 169,782.85",
+        "Regular tax 33,345.88, AMTI 185,882.85, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 28,234.30, Additional Medicare 0.00, NIIT 0.00, total 61,580.18"
+      ]
+    },
+    {
+      "name": "mfj W-2 150k SE 60k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 150000,
+        "se": 60000
+      },
+      "expected": {
+        "adjustedGrossIncome": 207057.55,
+        "taxableIncome": 174857.55,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 5884.89,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 33777.55
+      },
+      "worksheet": [
+        "AGI 207,057.55 after half SE tax 2,942.45",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 174,857.55",
+        "Regular tax 27,892.66, AMTI 207,057.55, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 5,884.89, Additional Medicare 0.00, NIIT 0.00, total 33,777.55"
+      ]
+    },
+    {
+      "name": "single W-2 190k SE 30k",
+      "facts": {
+        "status": "single",
+        "wages": 190000,
+        "se": 30000
+      },
+      "expected": {
+        "adjustedGrossIncome": 219598.28,
+        "taxableIncome": 203498.28,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 803.45,
+        "additionalMedicareTax": 159.34,
+        "niit": 0.0,
+        "totalFederalTax": 42538.24
+      },
+      "worksheet": [
+        "AGI 219,598.28 after half SE tax 401.72",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 203,498.28",
+        "Regular tax 41,575.45, AMTI 219,598.28, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 803.45, Additional Medicare 159.34, NIIT 0.00, total 42,538.24"
+      ]
+    },
+    {
+      "name": "single wages and interest NIIT",
+      "facts": {
+        "status": "single",
+        "wages": 260000,
+        "interest": 20000
+      },
+      "expected": {
+        "adjustedGrossIncome": 280000.0,
+        "taxableIncome": 263900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 540.0,
+        "niit": 760.0,
+        "totalFederalTax": 62434.25
+      },
+      "worksheet": [
+        "AGI 280,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 263,900.00",
+        "Regular tax 61,134.25, AMTI 280,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 540.00, NIIT 760.00, total 62,434.25"
+      ]
+    },
+    {
+      "name": "mfj wages 270k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 270000
+      },
+      "expected": {
+        "adjustedGrossIncome": 270000.0,
+        "taxableIncome": 237800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 180.0,
+        "niit": 0.0,
+        "totalFederalTax": 42448.0
+      },
+      "worksheet": [
+        "AGI 270,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 237,800.00",
+        "Regular tax 42,268.00, AMTI 270,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 180.00, NIIT 0.00, total 42,448.00"
+      ]
+    },
+    {
+      "name": "mfs wages 150k",
+      "facts": {
+        "status": "married_filing_separately",
+        "wages": 150000
+      },
+      "expected": {
+        "adjustedGrossIncome": 150000.0,
+        "taxableIncome": 133900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 225.0,
+        "niit": 0.0,
+        "totalFederalTax": 24959.0
+      },
+      "worksheet": [
+        "AGI 150,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 133,900.00",
+        "Regular tax 24,734.00, AMTI 150,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 225.00, NIIT 0.00, total 24,959.00"
+      ]
+    },
+    {
+      "name": "single senior 60k",
+      "facts": {
+        "status": "single",
+        "wages": 60000,
+        "age65": true
+      },
+      "expected": {
+        "adjustedGrossIncome": 60000.0,
+        "taxableIncome": 35850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 4054.0
+      },
+      "worksheet": [
+        "AGI 60,000.00",
+        "Deduction 18,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 6,000.00, taxable 35,850.00",
+        "Regular tax 4,054.00, AMTI 60,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 4,054.00"
+      ]
+    },
+    {
+      "name": "single senior 90k phase-out",
+      "facts": {
+        "status": "single",
+        "wages": 90000,
+        "age65": true
+      },
+      "expected": {
+        "adjustedGrossIncome": 90000.0,
+        "taxableIncome": 66750.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 9397.0
+      },
+      "worksheet": [
+        "AGI 90,000.00",
+        "Deduction 18,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 5,100.00, taxable 66,750.00",
+        "Regular tax 9,397.00, AMTI 90,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 9,397.00"
+      ]
+    },
+    {
+      "name": "mfj two seniors 100k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 100000,
+        "age65": true,
+        "spouse65": true
+      },
+      "expected": {
+        "adjustedGrossIncome": 100000.0,
+        "taxableIncome": 52500.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 5804.0
+      },
+      "worksheet": [
+        "AGI 100,000.00",
+        "Deduction 35,500.00 (standard), non-itemizer charity 0.00, Schedule 1-A 12,000.00, taxable 52,500.00",
+        "Regular tax 5,804.00, AMTI 100,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 5,804.00"
+      ]
+    },
+    {
+      "name": "single tips 50k",
+      "facts": {
+        "status": "single",
+        "wages": 50000,
+        "tips": 10000
+      },
+      "expected": {
+        "adjustedGrossIncome": 50000.0,
+        "taxableIncome": 23900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 2620.0
+      },
+      "worksheet": [
+        "AGI 50,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 10,000.00, taxable 23,900.00",
+        "Regular tax 2,620.00, AMTI 40,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 2,620.00"
+      ]
+    },
+    {
+      "name": "single overtime 160.5k",
+      "facts": {
+        "status": "single",
+        "wages": 160500,
+        "overtime": 5000
+      },
+      "expected": {
+        "adjustedGrossIncome": 160500.0,
+        "taxableIncome": 140400.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 26294.0
+      },
+      "worksheet": [
+        "AGI 160,500.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 4,000.00, taxable 140,400.00",
+        "Regular tax 26,294.00, AMTI 156,500.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 26,294.00"
+      ]
+    },
+    {
+      "name": "mfj overtime 200k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 200000,
+        "overtime": 25000
+      },
+      "expected": {
+        "adjustedGrossIncome": 200000.0,
+        "taxableIncome": 142800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 20840.0
+      },
+      "worksheet": [
+        "AGI 200,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 25,000.00, taxable 142,800.00",
+        "Regular tax 20,840.00, AMTI 175,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 20,840.00"
+      ]
+    },
+    {
+      "name": "single vehicle interest 100.5k",
+      "facts": {
+        "status": "single",
+        "wages": 100500,
+        "vehicle": 3000
+      },
+      "expected": {
+        "adjustedGrossIncome": 100500.0,
+        "taxableIncome": 81600.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 12664.0
+      },
+      "worksheet": [
+        "AGI 100,500.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 2,800.00, taxable 81,600.00",
+        "Regular tax 12,664.00, AMTI 97,700.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 12,664.00"
+      ]
+    },
+    {
+      "name": "single non-itemizer charity",
+      "facts": {
+        "status": "single",
+        "wages": 70000,
+        "cash_charity": 1500
+      },
+      "expected": {
+        "adjustedGrossIncome": 70000.0,
+        "taxableIncome": 52900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 6350.0
+      },
+      "worksheet": [
+        "AGI 70,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 1,000.00, Schedule 1-A 0.00, taxable 52,900.00",
+        "Regular tax 6,350.00, AMTI 69,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 6,350.00"
+      ]
+    },
+    {
+      "name": "mfj non-itemizer charity",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 120000,
+        "cash_charity": 2500
+      },
+      "expected": {
+        "adjustedGrossIncome": 120000.0,
+        "taxableIncome": 85800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 9800.0
+      },
+      "worksheet": [
+        "AGI 120,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 2,000.00, Schedule 1-A 0.00, taxable 85,800.00",
+        "Regular tax 9,800.00, AMTI 118,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 9,800.00"
+      ]
+    },
+    {
+      "name": "mfj itemized charity floor",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 300000,
+        "salt": 30000,
+        "mortgage": 20000,
+        "charity": 10000
+      },
+      "expected": {
+        "adjustedGrossIncome": 300000.0,
+        "taxableIncome": 241500.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 450.0,
+        "niit": 0.0,
+        "totalFederalTax": 43606.0
+      },
+      "worksheet": [
+        "AGI 300,000.00",
+        "Schedule A: SALT 30,000.00, charity floor 1,500.00, after 2/37 58,500.00",
+        "Deduction 58,500.00 (itemized), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 241,500.00",
+        "Regular tax 43,156.00, AMTI 271,500.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 450.00, NIIT 0.00, total 43,606.00"
+      ]
+    },
+    {
+      "name": "mfj SALT phase-down 600k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 600000,
+        "salt": 50000,
+        "mortgage": 30000
+      },
+      "expected": {
+        "adjustedGrossIncome": 600000.0,
+        "taxableIncome": 558100.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 3150.0,
+        "niit": 0.0,
+        "totalFederalTax": 136023.5
+      },
+      "worksheet": [
+        "AGI 600,000.00",
+        "Schedule A: SALT 11,900.00, charity floor 0.00, after 2/37 41,900.00",
+        "Deduction 41,900.00 (itemized), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 558,100.00",
+        "Regular tax 132,873.50, AMTI 570,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 3,150.00, NIIT 0.00, total 136,023.50"
+      ]
+    },
+    {
+      "name": "mfs SALT cap",
+      "facts": {
+        "status": "married_filing_separately",
+        "wages": 150000,
+        "salt": 30000,
+        "mortgage": 12000
+      },
+      "expected": {
+        "adjustedGrossIncome": 150000.0,
+        "taxableIncome": 117800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 225.0,
+        "niit": 0.0,
+        "totalFederalTax": 21095.0
+      },
+      "worksheet": [
+        "AGI 150,000.00",
+        "Schedule A: SALT 20,200.00, charity floor 0.00, after 2/37 32,200.00",
+        "Deduction 32,200.00 (itemized), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 117,800.00",
+        "Regular tax 20,870.00, AMTI 138,000.00, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 225.00, NIIT 0.00, total 21,095.00"
+      ]
+    },
+    {
+      "name": "mfj 2/37 limit 1.1M",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 1100000,
+        "salt": 10000,
+        "mortgage": 40000,
+        "charity": 50000
+      },
+      "expected": {
+        "adjustedGrossIncome": 1100000.0,
+        "taxableIncome": 1010608.11,
+        "amt": 0.0,
+        "dependentCareCredit": 0.0,
+        "childTaxCredit": 0,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 7650.0,
+        "niit": 0.0,
+        "totalFederalTax": 303739.5
+      },
+      "worksheet": [
+        "AGI 1,100,000.00",
+        "Schedule A: SALT 10,000.00, charity floor 5,500.00, after 2/37 89,391.89",
+        "Deduction 89,391.89 (itemized), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 1,010,608.11",
+        "Regular tax 296,089.50, AMTI 1,020,608.11, AMT 0.00",
+        "Care credit 0.00, CTC 0.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 7,650.00, NIIT 0.00, total 303,739.50"
+      ]
+    },
+    {
+      "name": "mfj care 2 kids 150k",
+      "facts": {
+        "status": "married_filing_jointly",
+        "wages": 150000,
+        "spouse_wages": 60000,
+        "kids": 2,
+        "care": 8000,
+        "care_kids": 2
+      },
+      "expected": {
+        "adjustedGrossIncome": 150000.0,
+        "taxableIncome": 117800.0,
+        "amt": 0.0,
+        "dependentCareCredit": 2100.0,
+        "childTaxCredit": 4400,
+        "additionalChildTaxCredit": 0,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": 8840.0
+      },
+      "worksheet": [
+        "AGI 150,000.00",
+        "Deduction 32,200.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 117,800.00",
+        "Regular tax 15,340.00, AMTI 150,000.00, AMT 0.00",
+        "Care credit 2,100.00, CTC 4,400.00, ACTC 0.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total 8,840.00"
+      ]
+    },
+    {
+      "name": "hoh care 1 kid 45k",
+      "facts": {
+        "status": "head_of_household",
+        "wages": 45000,
+        "kids": 1,
+        "care": 5000,
+        "care_kids": 1,
+        "eitc_kids": 1
+      },
+      "expected": {
+        "adjustedGrossIncome": 45000.0,
+        "taxableIncome": 20850.0,
+        "amt": 0.0,
+        "dependentCareCredit": 1050.0,
+        "childTaxCredit": 1098.0,
+        "additionalChildTaxCredit": 1102,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": -1102.0,
+        "eitc": 1053.62
+      },
+      "worksheet": [
+        "AGI 45,000.00",
+        "Deduction 24,150.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 20,850.00",
+        "Regular tax 2,148.00, AMTI 45,000.00, AMT 0.00",
+        "Care credit 1,050.00, CTC 1,098.00, ACTC 1,102.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total -1,102.00"
+      ]
+    },
+    {
+      "name": "single care 1 kid 30k",
+      "facts": {
+        "status": "single",
+        "wages": 30000,
+        "kids": 1,
+        "care": 3000,
+        "care_kids": 1
+      },
+      "expected": {
+        "adjustedGrossIncome": 30000.0,
+        "taxableIncome": 13900.0,
+        "amt": 0.0,
+        "dependentCareCredit": 1260.0,
+        "childTaxCredit": 160.0,
+        "additionalChildTaxCredit": 1700,
+        "selfEmploymentTax": 0.0,
+        "additionalMedicareTax": 0.0,
+        "niit": 0.0,
+        "totalFederalTax": -1700.0
+      },
+      "worksheet": [
+        "AGI 30,000.00",
+        "Deduction 16,100.00 (standard), non-itemizer charity 0.00, Schedule 1-A 0.00, taxable 13,900.00",
+        "Regular tax 1,420.00, AMTI 30,000.00, AMT 0.00",
+        "Care credit 1,260.00, CTC 160.00, ACTC 1,700.00",
+        "SE tax 0.00, Additional Medicare 0.00, NIIT 0.00, total -1,700.00"
+      ]
+    }
+  ]
+}

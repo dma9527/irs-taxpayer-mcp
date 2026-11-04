@@ -4,6 +4,16 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- Added a static landing page at https://dma9527.github.io/irs-taxpayer-mcp/ deployed by GitHub Pages from the `site/` directory only. It loads no scripts, fonts, trackers, or third-party resources, and tests keep its example numbers equal to the engine's output.
+- Added a share preview image for the landing page.
+
+### Changed
+
+- Rewrote the Chinese, Spanish, and Japanese READMEs to match the English structure: year-end framing, a 30-second local quick start with a verified example, a decision table, and an accurate privacy boundary. Added TY2026 details and scope limits.
+- Added a website link to the README language navigation.
+
 ## [1.2.4] - 2026-11-03
 
 ### Fixed

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>irs-taxpayer-mcp: know the number before December 31</title>
+<meta name="description" content="Deterministic US individual tax estimates for TY2024 to TY2026. A local command line planner that calls no model, plus 45 optional MCP tools. Open source, not filing software.">
+<link rel="canonical" href="https://dma9527.github.io/irs-taxpayer-mcp/">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNSIgZmlsbD0iIzBmNmIzZSIvPjxyZWN0IHg9IjUiIHk9IjgiIHdpZHRoPSIyMiIgaGVpZ2h0PSI1IiBmaWxsPSIjZDllYWQ4Ii8+PHJlY3QgeD0iNSIgeT0iMTkiIHdpZHRoPSIyMiIgaGVpZ2h0PSI1IiBmaWxsPSIjZDllYWQ4Ii8+PHJlY3QgeD0iNSIgeT0iMTMuNSIgd2lkdGg9IjIyIiBoZWlnaHQ9IjUiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=">
+<meta name="theme-color" content="#0f6b3e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Know the number before December 31">
+<meta property="og:description" content="Deterministic US tax estimates for year-end decisions. The local CLI calls no model and sends no tax data anywhere.">
+<meta property="og:url" content="https://dma9527.github.io/irs-taxpayer-mcp/">
+<meta property="og:image" content="https://dma9527.github.io/irs-taxpayer-mcp/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root {
+  --paper: #fbfcf7;
+  --band: #d9ead8;
+  --band-edge: #b9d4b9;
+  --ink: #12261a;
+  --ink-soft: #3d5646;
+  --green: #0f6b3e;
+  --green-deep: #0a4a2b;
+  --stamp: #b3261e;
+  --rule: #c9d8c8;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1.0625rem/1.6 var(--sans);
+}
+a { color: var(--green-deep); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--green); }
+a:focus-visible, summary:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; border-radius: 2px; }
+code, pre, .mono { font-family: var(--mono); }
+.wrap { max-width: 71rem; margin: 0 auto; padding: 0 1.5rem; }
+
+header.top { padding: 1.25rem 0; border-bottom: 1px solid var(--rule); }
+header.top .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; align-items: baseline; justify-content: space-between; }
+.brand { font-family: var(--mono); font-weight: 700; font-size: 1rem; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+nav.links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; font-size: 0.95rem; }
+nav.links a { color: var(--ink-soft); }
+
+.hero { padding: 4rem 0 3.5rem; }
+.hero .wrap { display: grid; gap: 3rem 4rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: start; }
+.eyebrow { font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--green); margin: 0 0 1rem; }
+h1 {
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: clamp(2.25rem, 4.6vw, 3.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  margin: 0 0 1.5rem;
+}
+.lede { font-size: 1.1875rem; color: var(--ink-soft); max-width: 34rem; margin: 0 0 1.75rem; }
+.lede strong { color: var(--ink); font-weight: 650; }
+
+.install { background: var(--ink); color: #eaf5ea; border-radius: 6px; padding: 1.1rem 1.25rem; font-size: 0.875rem; line-height: 1.75; overflow-x: auto; margin: 0 0 1rem; }
+.install .c { color: #8fb79b; }
+.install .p { color: #7fd29a; user-select: none; }
+.small { font-size: 0.9375rem; color: var(--ink-soft); margin: 0; }
+
+.printout { position: relative; background: #fff; border: 1px solid var(--band-edge); box-shadow: 0 1px 0 #fff inset, 0 18px 40px -22px rgba(10, 74, 43, 0.45); padding: 0 2.6rem; }
+.printout::before, .printout::after {
+  content: "";
+  position: absolute; top: 0; bottom: 0; width: 1.6rem;
+  background:
+    radial-gradient(circle at center, var(--paper) 0 0.34rem, var(--band-edge) 0.36rem 0.42rem, transparent 0.44rem) 0 0 / 100% 1.75rem repeat-y;
+}
+.printout::before { left: 0; border-right: 1px dashed var(--band-edge); }
+.printout::after { right: 0; border-left: 1px dashed var(--band-edge); }
+.printout h2 { font-family: var(--mono); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.03em; margin: 0; padding: 1rem 0 0.5rem; }
+.printout .case { font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-soft); margin: 0; padding: 0 0 0.75rem; }
+.lines { margin: 0; padding: 0; list-style: none; font-family: var(--mono); font-size: 0.9375rem; }
+.lines li { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.42rem 0.6rem; margin: 0 -0.6rem; }
+.lines li:nth-child(odd) { background: var(--band); }
+.lines .l { flex: 0 1 auto; }
+.lines .d { flex: 1 1 1rem; border-bottom: 1px dotted var(--ink-soft); transform: translateY(-0.22rem); min-width: 0.75rem; opacity: 0.6; }
+.lines .v { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 700; }
+.lines .total { font-weight: 800; }
+.printout .foot { font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-soft); padding: 0 0 1.1rem; margin: 0; }
+.privacy-row { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; justify-content: flex-start; padding: 0.9rem 0 1rem; margin-top: 0.6rem; border-top: 1px solid var(--band-edge); }
+.privacy-row p { margin: 0; flex: 1 1 100%; font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-soft); }
+.privacy-row b { color: var(--ink); }
+.stamp {
+  flex: 0 0 auto;
+  border: 3px solid var(--stamp); color: var(--stamp);
+  font-family: var(--mono); font-weight: 800; font-size: 0.9rem; letter-spacing: 0.01em;
+  padding: 0.35rem 0.7rem; border-radius: 4px; transform: rotate(-6deg);
+  line-height: 1.25; text-align: center; margin: 0.3rem 0 0.2rem 0.4rem;
+}
+.stamp small { display: block; font-size: 0.68rem; letter-spacing: 0.05em; font-weight: 700; text-transform: uppercase; }
+
+section { padding: 3.5rem 0; }
+section.alt { background: #f1f6ee; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+h2.sec { font-family: var(--mono); font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -0.025em; line-height: 1.15; margin: 0 0 0.75rem; }
+.sec-lede { color: var(--ink-soft); max-width: 40rem; margin: 0 0 2rem; }
+
+.decisions { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.decisions th { text-align: left; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); padding: 0.5rem 0.9rem; border-bottom: 2px solid var(--ink); }
+.decisions td { padding: 0.85rem 0.9rem; vertical-align: top; }
+.decisions tbody tr:nth-child(odd) { background: var(--band); }
+.decisions td:first-child { font-weight: 650; width: 30%; }
+.decisions code { font-size: 0.875rem; background: rgba(255,255,255,0.7); padding: 0.1rem 0.35rem; border-radius: 3px; white-space: nowrap; }
+.decisions td:nth-child(2) { width: 25%; }
+
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.card { background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 1.75rem; }
+.card.local { border-top: 5px solid var(--green); }
+.card.assistant { border-top: 5px solid var(--ink-soft); }
+.card h3 { font-family: var(--mono); font-size: 1.125rem; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
+.card .tag { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--green); margin: 0 0 0.9rem; }
+.card.assistant .tag { color: var(--ink-soft); }
+.card ul { padding-left: 1.15rem; margin: 0 0 1rem; }
+.card li { margin: 0.35rem 0; }
+.card pre { background: var(--ink); color: #eaf5ea; border-radius: 5px; padding: 0.9rem 1rem; font-size: 0.8125rem; line-height: 1.6; overflow-x: auto; margin: 0; }
+.honest { border-left: 4px solid var(--stamp); padding: 0.25rem 0 0.25rem 1rem; margin: 2rem 0 0; max-width: 46rem; }
+
+.bounds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+.bounds h3 { font-family: var(--mono); font-size: 1rem; margin: 0 0 0.4rem; letter-spacing: -0.015em; }
+.bounds p { margin: 0; color: var(--ink-soft); font-size: 1rem; }
+
+details { border-top: 1px solid var(--rule); padding: 0.9rem 0; }
+details:last-of-type { border-bottom: 1px solid var(--rule); }
+summary { cursor: pointer; font-weight: 650; }
+details p { margin: 0.6rem 0 0; color: var(--ink-soft); }
+
+.cta { background: var(--green-deep); color: #eaf5ea; padding: 3.5rem 0; }
+.cta h2 { font-family: var(--mono); font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: -0.025em; margin: 0 0 0.75rem; }
+.cta p { margin: 0 0 1.25rem; color: #cfe5d3; max-width: 38rem; }
+.cta a { color: #fff; }
+.cta .buttons { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.btn { display: inline-block; padding: 0.7rem 1.2rem; border-radius: 5px; font-weight: 650; text-decoration: none; border: 2px solid #fff; color: #fff; }
+.btn.primary { background: #fff; color: var(--green-deep); }
+.btn:hover { background: #eaf5ea; color: var(--green-deep); }
+
+footer { padding: 2rem 0 3rem; font-size: 0.9375rem; color: var(--ink-soft); }
+footer p { margin: 0 0 0.6rem; max-width: 52rem; }
+
+@media (max-width: 62rem) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); }
+  .bounds { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 46rem) {
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-top: 2.5rem; }
+  .printout { padding: 0 2.2rem; }
+  .install, .card pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .decisions thead { display: none; }
+  .decisions, .decisions tbody, .decisions tr, .decisions td { display: block; width: 100%; }
+  .decisions td:first-child, .decisions td:nth-child(2) { width: 100%; }
+  .decisions td { padding: 0.2rem 0.9rem; }
+  .decisions tr { padding: 0.7rem 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stamp { animation: press 0.4s cubic-bezier(.2,.8,.2,1) backwards; }
+  @keyframes press { from { opacity: 0; transform: rotate(-6deg) scale(1.45); } }
+}
+@media print { .install, .cta { background: none; color: #000; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./">irs-taxpayer-mcp</a>
+    <nav class="links" aria-label="Project links">
+      <a href="https://github.com/dma9527/irs-taxpayer-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/irs-taxpayer-mcp">npm</a>
+      <a href="https://github.com/dma9527/irs-taxpayer-mcp/blob/main/docs/PLANNER_CONTRACT.md">Planner contract</a>
+      <a href="https://github.com/dma9527/irs-taxpayer-mcp/issues/new/choose">Report a wrong number</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">US individual tax planning, TY2024 to TY2026</p>
+      <h1>Know the number before December&nbsp;31.</h1>
+      <p class="lede">Should you convert to Roth this year? Sell winners in the 0% bracket? Top up the 401(k)? <strong>Get the exact figure from IRS tables, with the work shown,</strong> and keep your finances out of a chatbot.</p>
+      <pre class="install" aria-label="Install and run"><span class="c"># one-time install, then everything runs locally</span>
+<span class="p">$ </span>npm install --global irs-taxpayer-mcp
+<span class="p">$ </span>irs-taxpayer-mcp intake --output facts.json
+<span class="p">$ </span>irs-taxpayer-mcp plan --facts facts.json</pre>
+      <p class="small">Open source (MIT). Estimates for planning, not filing software.</p>
+    </div>
+
+    <figure class="printout" style="margin:0" aria-label="Example plan output">
+      <h2>LOCAL TAX PLAN FOR TY2026</h2>
+      <p class="case">Synthetic household: married filing jointly, $185,000 W-2, $12,000 long-term gains, two children.</p>
+      <ul class="lines">
+        <li><span class="l">Adjusted gross income</span><span class="d"></span><span class="v">$197,000</span></li>
+        <li><span class="l">Taxable income</span><span class="d"></span><span class="v">$164,800</span></li>
+        <li><span class="l">Federal tax after refundable credits</span><span class="d"></span><span class="v">$20,440</span></li>
+        <li><span class="l">Employee FICA</span><span class="d"></span><span class="v">$14,122</span></li>
+        <li><span class="l">State tax</span><span class="d"></span><span class="v">$0</span></li>
+        <li class="total"><span class="l">Total modeled tax</span><span class="d"></span><span class="v">$34,562</span></li>
+        <li class="total"><span class="l">Take-home income</span><span class="d"></span><span class="v">$162,438</span></li>
+      </ul>
+      <div class="privacy-row">
+        <p><b>PRIVACY.</b> Calculated directly by the local deterministic engine. No model, network request, persistence, or telemetry was used.</p>
+        <div class="stamp" role="img" aria-label="modelInvoked false">modelInvoked: false<small>no model, no network</small></div>
+      </div>
+      <p class="foot">Add <code>--json</code> for assumptions, official sources, a calculation trace, and <code>privacy.modelInvoked</code>.</p>
+    </figure>
+  </div>
+</div>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="sec">Decisions it works out</h2>
+    <p class="sec-lede">Each answer comes from a calculation you can re-run and check. Examples use synthetic TY2026 numbers.</p>
+    <table class="decisions">
+      <thead><tr><th scope="col">Question</th><th scope="col">Tool</th><th scope="col">What you get</th></tr></thead>
+      <tbody>
+        <tr><td>What does a Roth conversion cost this year?</td><td><code>simulate_tax_scenario</code></td><td>Married filing jointly on $150,000: a $30,000 conversion raises federal tax from $15,340 to $21,940. That is $6,600, a flat 22%.</td></tr>
+        <tr><td>Can I sell winners at 0% tax?</td><td><code>optimize_capital_gains</code></td><td>Your room left in the 0% bracket, and a warning when a loss would only cancel tax-free gains.</td></tr>
+        <tr><td>Itemize or take the standard deduction?</td><td><code>standard_vs_itemized</code></td><td>The SALT cap, charitable floor, and non-itemizer charitable deduction applied for the year you pick.</td></tr>
+        <tr><td>What do I owe each quarter as a freelancer?</td><td><code>estimate_quarterly_tax</code></td><td>Form 1040-ES amounts with safe harbor guidance.</td></tr>
+        <tr><td>Is my paycheck withholding on track?</td><td><code>analyze_paycheck</code></td><td>A projected annual tax that counts credits, and suggested W-4 changes.</td></tr>
+        <tr><td>Will moving states save money?</td><td><code>analyze_relocation_taxes</code></td><td>Exact-year state comparison. A state without a verified profile returns an error, not a guess.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec">Two ways in, and the difference matters</h2>
+    <p class="sec-lede">Both run the same engine. They differ in who else sees your numbers.</p>
+    <div class="two">
+      <div class="card local">
+        <p class="tag">Direct command line</p>
+        <h3>Private by construction</h3>
+        <ul>
+          <li>Starts no MCP connection and calls no model.</li>
+          <li>Makes no tax-data network request and sends no telemetry.</li>
+          <li>Reads a strict, versioned JSON file. Names, SSNs, addresses, and account numbers are rejected.</li>
+          <li>New files are created with mode 0600 on macOS and Linux.</li>
+        </ul>
+        <pre>irs-taxpayer-mcp template --output facts.json
+irs-taxpayer-mcp validate --facts facts.json
+irs-taxpayer-mcp plan --facts facts.json --json</pre>
+      </div>
+      <div class="card assistant">
+        <p class="tag">MCP server, 45 tools</p>
+        <h3>For your AI assistant</h3>
+        <ul>
+          <li>Works with Claude, Kiro, Cursor, and other MCP clients.</li>
+          <li>The engine still calculates locally and stores nothing.</li>
+          <li>Plans report <code>modelInvoked: true</code>, because your assistant may have seen the facts.</li>
+          <li>Ask in plain language and get the same deterministic numbers.</li>
+        </ul>
+        <pre>{
+  "mcpServers": {
+    "irs-taxpayer": {
+      "command": "npx",
+      "args": ["-y", "irs-taxpayer-mcp"]
+    }
+  }
+}</pre>
+      </div>
+    </div>
+    <p class="honest"><strong>Be precise about privacy.</strong> With a cloud-hosted MCP client, your prompts and tool arguments go to that client's model provider. If that matters, use the direct command line.</p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="sec">Built to say "no"</h2>
+    <p class="sec-lede">A tax tool earns trust by what it refuses to do.</p>
+    <div class="bounds">
+      <div><h3>It fails closed</h3><p>An unsupported tax year, state, or missing required fact returns an error. It never falls back to a rough top-rate guess.</p></div>
+      <div><h3>It is not filing software</h3><p>It does not prepare, sign, or transmit a return, and it does not model every form, schedule, or election.</p></div>
+      <div><h3>It shows its work</h3><p>Every plan lists its assumptions, the official IRS and SSA sources it used, and a calculation trace. A model never does the arithmetic.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec">Questions</h2>
+    <details><summary>Which years and states are covered?</summary><p>Federal estimates cover TY2024 through TY2026 for the inputs each tool exposes. Reference data covers all 50 states and DC, but numeric state estimates need an exact tax-year profile. The README lists the supported state-year paths.</p></details>
+    <details><summary>Do I need an IRS login or my SSN?</summary><p>No. The tool needs no account and no identifying information. The facts file format rejects names, SSNs, addresses, employer IDs, and account numbers.</p></details>
+    <details><summary>Can I trust the numbers?</summary><p>Treat them as planning estimates. Tests cite IRS revenue procedures and Internal Revenue Code sections, and the same inputs always give the same answer. If you find a wrong number, report it with a rounded or synthetic example and no personal details.</p></details>
+    <details><summary>Does it replace a tax professional?</summary><p>No. It supports planning decisions and does not give tax, legal, or financial advice. Check important decisions with a qualified professional.</p></details>
+  </div>
+</section>
+</main>
+
+<div class="cta">
+  <div class="wrap">
+    <h2>Run it on your own numbers.</h2>
+    <p>Install takes one command. In direct mode your tax facts stay on your machine. Found a wrong number, or want a case supported? Tell us.</p>
+    <div class="buttons">
+      <a class="btn primary" href="https://www.npmjs.com/package/irs-taxpayer-mcp">Install from npm</a>
+      <a class="btn" href="https://github.com/dma9527/irs-taxpayer-mcp">View the source</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>irs-taxpayer-mcp is open source under the MIT license. This page loads no scripts, fonts, trackers, or third-party resources.</p>
+    <p>Estimates are for planning and education only. This software is provided as is, is not tax, legal, or financial advice, and is not tax preparation or filing software. See the full <a href="https://github.com/dma9527/irs-taxpayer-mcp/blob/main/DISCLAIMER.md">disclaimer</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

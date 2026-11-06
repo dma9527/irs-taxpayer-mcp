@@ -61,7 +61,7 @@ describe("state tax data integrity", () => {
     expect(getStateCalculationInfo("IN", 2025)).toBeUndefined();
     expect(getStateCalculationInfo("IA", 2025)).toBeUndefined();
     expect(getStateCalculationInfo("MS", 2025)).toBeUndefined();
-    expect(getStateCalculationInfo("MN", 2026)).toBeUndefined();
+    expect(getStateCalculationInfo("WI", 2026)).toBeUndefined();
     expect(getStateCalculationInfo("MS", 2026)?.source).toContain("Mississippi DOR");
     expect(getStateCalculationInfo("MN", 2024)).toBeUndefined();
   });

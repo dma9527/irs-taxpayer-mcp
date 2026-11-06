@@ -97,7 +97,7 @@ withdrawal planning
 **Limitations**
 - Covers TY2024-2026 only.
 - Numeric state tax estimates are limited to: TY2024 AK, CA, FL, NV, SD, TN, TX, WY; TY2025 AK, FL, NH, NV,
-  SD, TN, TX, WY; TY2026 the same no-tax states plus CA, GA, IL, IN, KY, MA, MI, MS, NC, NE, NJ, OH, PA, RI, VA. Every other state/year returns an error by
+  SD, TN, TX, WY; TY2026 the same no-tax states plus CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, NE, NJ, OH, PA, RI, VA. Every other state/year returns an error by
   design rather than a rough guess.
 - Not tax preparation or e-filing software. No Form 1040 generation or MeF transmission.
 

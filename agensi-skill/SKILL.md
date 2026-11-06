@@ -106,7 +106,7 @@ either is ambiguous instead of guessing.
 | Deciding whether to relocate | `analyze_relocation_taxes` |
 
 Numeric support today: TY2024 AK, CA, FL, NV, SD, TN, TX, WY; TY2025 AK, FL, NH, NV, SD, TN, TX, WY; TY2026
-the same no-tax states plus CA, GA, IL, IN, KY, MA, MI, MS, NC, NE, NJ, OH, PA, RI, and VA. For every other state and year, say so plainly instead of
+the same no-tax states plus CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, NE, NJ, OH, PA, RI, and VA. For every other state and year, say so plainly instead of
 estimating.
 
 ## Full reports, self-employment, and situational tools

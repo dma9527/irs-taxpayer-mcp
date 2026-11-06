@@ -258,6 +258,20 @@ const NE_2026_JOINT: StateBracket[] = [
   { min: 49530, max: 79800, rate: 0.0455 }, { min: 79800, max: null, rate: 0.0455 },
 ];
 
+// Minnesota 2026 brackets (DOR press release, December 16, 2025).
+const MN_2026_SINGLE: StateBracket[] = [
+  { min: 0, max: 33310, rate: 0.0535 }, { min: 33310, max: 109430, rate: 0.068 },
+  { min: 109430, max: 203150, rate: 0.0785 }, { min: 203150, max: null, rate: 0.0985 },
+];
+const MN_2026_JOINT: StateBracket[] = [
+  { min: 0, max: 48700, rate: 0.0535 }, { min: 48700, max: 193480, rate: 0.068 },
+  { min: 193480, max: 337930, rate: 0.0785 }, { min: 337930, max: null, rate: 0.0985 },
+];
+
+// Kansas K.S.A. 79-32,110 for tax year 2024 and after.
+const KS_SINGLE: StateBracket[] = [{ min: 0, max: 23000, rate: 0.052 }, { min: 23000, max: null, rate: 0.0558 }];
+const KS_JOINT: StateBracket[] = [{ min: 0, max: 46000, rate: 0.052 }, { min: 46000, max: null, rate: 0.0558 }];
+
 const VA_BRACKETS: StateBracket[] = [
   { min: 0, max: 3000, rate: 0.02 }, { min: 3000, max: 5000, rate: 0.03 },
   { min: 5000, max: 17000, rate: 0.05 }, { min: 17000, max: null, rate: 0.0575 },
@@ -438,6 +452,34 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 8750, married: 17500 },
         personalExemption: { single: 930, married: 1860 },
         notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
+      },
+    ),
+    MN: createCalculationProfile(
+      "MN",
+      2026,
+      "Minnesota DOR press release of December 16, 2025: 2026 brackets and standard deduction ($15,300 / $30,600); Minn. Stat. 290.0123 subd. 5 reduction",
+      {
+        taxType: "graduated",
+        topRate: 0.0985,
+        brackets: MN_2026_SINGLE,
+        marriedBrackets: MN_2026_JOINT,
+        standardDeduction: { single: 15300, married: 30600 },
+        maxModeledIncome: 220650,
+        notes: "Head of household uses the single amounts here (its brackets and $23,000 standard deduction differ); dependent exemptions, the Social Security subtraction, and Minnesota credits are not modeled. AGI above $220,650 (the 2023 base of the indexed standard deduction reduction) is not modeled",
+      },
+    ),
+    KS: createCalculationProfile(
+      "KS",
+      2026,
+      "Kansas DOR 2026 Form K-40ES: rate schedules and standard deduction ($3,605 / $8,240); K.S.A. 79-32,121 personal exemption ($9,160 / $18,320) per Notice 24-08",
+      {
+        taxType: "graduated",
+        topRate: 0.0558,
+        brackets: KS_SINGLE,
+        marriedBrackets: KS_JOINT,
+        standardDeduction: { single: 3605, married: 8240 },
+        personalExemption: { single: 9160, married: 18320 },
+        notes: "Head of household uses the single amounts here (its standard deduction is $6,180); the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled",
       },
     ),
     MS: createCalculationProfile(

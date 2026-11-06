@@ -246,6 +246,30 @@ describe("TY2026 state profiles", () => {
     expect(result?.tax).toBe(0);
   });
 
+  it("applies the Minnesota TY2026 brackets after the standard deduction", () => {
+    // Single: 100,000 - 15,300 = 84,700; 5.35% x 33,310 + 6.80% x 51,390 = 5,276.61.
+    // Joint: 200,000 - 30,600 = 169,400; 5.35% x 48,700 + 6.80% x 120,700 = 10,813.05.
+    const single = calculateStateTax({ stateCode: "MN", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "MN", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married" });
+    expect(single?.tax).toBe(5277);
+    expect(married?.tax).toBe(10813);
+  });
+
+  it("fails closed for Minnesota AGI above the standard deduction reduction threshold", () => {
+    expect(() =>
+      calculateStateTax({ stateCode: "MN", taxYear: 2026, incomeBeforeDeductions: 220651, filingStatus: "married" }),
+    ).toThrow("Minnesota");
+  });
+
+  it("applies the Kansas 5.2% and 5.58% schedule after the standard deduction and exemption", () => {
+    // Single: 75,000 - 3,605 - 9,160 = 62,235; 1,196 + 5.58% x 39,235 = 3,385.31.
+    // Joint: 120,000 - 8,240 - 18,320 = 93,440; 2,392 + 5.58% x 47,440 = 5,039.15.
+    const single = calculateStateTax({ stateCode: "KS", taxYear: 2026, incomeBeforeDeductions: 75000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "KS", taxYear: 2026, incomeBeforeDeductions: 120000, filingStatus: "married" });
+    expect(single?.tax).toBe(3385);
+    expect(married?.tax).toBe(5039);
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
       calculateStateTax({ stateCode: "AZ", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),

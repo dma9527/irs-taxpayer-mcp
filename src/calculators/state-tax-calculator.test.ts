@@ -203,6 +203,49 @@ describe("TY2026 state profiles", () => {
     expect(result?.tax).toBe(tax);
   });
 
+  it.each([
+    // Deductions are the exemption plus standard deduction; zero tax up to the first $10,000 of taxable income.
+    ["single", 50000, 8300, 1268],
+    ["married", 100000, 16600, 2936],
+    ["single", 15000, 8300, 0],
+  ] as const)("applies the Mississippi TY2026 rate above the first 10,000 of taxable income: %s at %i", (filingStatus, income, deduction, tax) => {
+    const result = calculateStateTax({ stateCode: "MS", taxYear: 2026, incomeBeforeDeductions: income, filingStatus });
+    expect(result?.deduction).toBe(deduction);
+    expect(result?.tax).toBe(tax);
+  });
+
+  it("applies the Rhode Island TY2026 uniform schedule after the standard deduction and exemption", () => {
+    // Single: 100,000 - 11,200 - 5,250 = 83,550; 3,076.88 + 4.75% x 1,500 = 3,148.13.
+    // Joint: 200,000 - 22,400 - 10,500 = 167,100; 3,076.88 + 4.75% x 85,050 = 7,116.75.
+    const single = calculateStateTax({ stateCode: "RI", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "RI", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married" });
+    expect(single?.tax).toBe(3148);
+    expect(married?.tax).toBe(7117);
+  });
+
+  it("fails closed for Rhode Island income inside the deduction phase-out range", () => {
+    expect(() =>
+      calculateStateTax({ stateCode: "RI", taxYear: 2026, incomeBeforeDeductions: 261001, filingStatus: "single" }),
+    ).toThrow("Rhode Island");
+    expect(
+      calculateStateTax({ stateCode: "RI", taxYear: 2026, incomeBeforeDeductions: 261000, filingStatus: "single" })?.tax,
+    ).toBeGreaterThan(0);
+  });
+
+  it("applies the Nebraska TY2026 schedule, standard deduction, and personal exemption credit", () => {
+    // Single: 100,000 - 8,850 = 91,150; 1,514.58 + 4.55% x 51,250 = 3,846.46; less 176 credit.
+    // Joint: 150,000 - 17,700 = 132,300; 3,029.16 + 4.55% x 52,500 = 5,417.91; less 352 credit.
+    const single = calculateStateTax({ stateCode: "NE", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "NE", taxYear: 2026, incomeBeforeDeductions: 150000, filingStatus: "married" });
+    expect(single?.tax).toBe(3670);
+    expect(married?.tax).toBe(5066);
+  });
+
+  it("never lets the Nebraska personal exemption credit make tax negative", () => {
+    const result = calculateStateTax({ stateCode: "NE", taxYear: 2026, incomeBeforeDeductions: 9000, filingStatus: "single" });
+    expect(result?.tax).toBe(0);
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
       calculateStateTax({ stateCode: "AZ", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),

@@ -6,6 +6,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ### Added
 
+- TY2026 numeric profiles for MS (4% above the first $10,000, exemptions and standard deduction from the Mississippi DOR), RI (Division of Taxation ADV 2025-22 schedule, $11,200 / $22,400 standard deduction, $5,250 exemption), and NE (Nebraska DOR Rate Chronologies Rev. 2-2026 brackets, 4.55% top rate, $8,850 / $17,700 standard deduction, $176 personal exemption credit).
+- State profiles can carry a nonrefundable personal credit (Nebraska) and a maximum modeled income. Rhode Island income above $261,000 returns an error because the standard deduction and exemption phase-out is not modeled.
 - Added a static landing page at https://dma9527.github.io/irs-taxpayer-mcp/ deployed by GitHub Pages from the `site/` directory only. It loads no scripts, fonts, trackers, or third-party resources, and tests keep its example numbers equal to the engine's output.
 - Added a share preview image for the landing page.
 

@@ -40,6 +40,10 @@ export interface StateInfo {
   personalExemptionTiers?: { maxIncome: number; inclusive: boolean; amountPerPerson: number }[];
   /** Flat tax with a zero-tax threshold: none at or below threshold, else baseTax plus topRate on the excess. */
   thresholdTax?: { threshold: number; baseTax: number };
+  /** Nonrefundable credit subtracted from computed tax, never below zero. */
+  personalCredit?: { single: number; married: number };
+  /** Income above this is not modeled (for example a deduction phase-out), so the calculation fails closed. */
+  maxModeledIncome?: number;
   notes?: string;
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
@@ -87,7 +91,7 @@ export const STATE_TAX_DATA: Record<string, StateInfo> = {
       { name: "Other MI cities (24 total)", rate: 0.01, nonResidentRate: 0.005, notes: "Standard rate for most MI cities" },
     ]
   },
-  MS: { code: "MS", name: "Mississippi", taxType: "flat", topRate: 0.04, saltDeductionOnFederal: true, notes: "TY2026 rate is 4% on taxable income above $10,000; numeric profile is unavailable until exemptions and deductions are modeled." },
+  MS: { code: "MS", name: "Mississippi", taxType: "flat", topRate: 0.04, saltDeductionOnFederal: true, notes: "TY2026 rate is 4% on taxable income above $10,000 after exemptions and the standard deduction." },
   NC: { code: "NC", name: "North Carolina", taxType: "flat", topRate: 0.045, saltDeductionOnFederal: true, standardDeduction: { single: 12750, married: 25500 } },
   ND: { code: "ND", name: "North Dakota", taxType: "flat", topRate: 0.0195, saltDeductionOnFederal: true },
   PA: {
@@ -239,6 +243,21 @@ const CA_2026_JOINT: StateBracket[] = [
 ];
 
 // Virginia uses one schedule for every filing status (Code of Virginia 58.1-320).
+// Rhode Island uniform schedule for every filing status (ADV 2025-22).
+const RI_2026_BRACKETS: StateBracket[] = [
+  { min: 0, max: 82050, rate: 0.0375 }, { min: 82050, max: 186450, rate: 0.0475 }, { min: 186450, max: null, rate: 0.0599 },
+];
+
+// Nebraska 2026 brackets (Rate Chronologies Rev. 2-2026); the rate is 4.55% above the third bracket start.
+const NE_2026_SINGLE: StateBracket[] = [
+  { min: 0, max: 4130, rate: 0.0246 }, { min: 4130, max: 24760, rate: 0.0351 },
+  { min: 24760, max: 39900, rate: 0.0455 }, { min: 39900, max: null, rate: 0.0455 },
+];
+const NE_2026_JOINT: StateBracket[] = [
+  { min: 0, max: 8250, rate: 0.0246 }, { min: 8250, max: 49530, rate: 0.0351 },
+  { min: 49530, max: 79800, rate: 0.0455 }, { min: 79800, max: null, rate: 0.0455 },
+];
+
 const VA_BRACKETS: StateBracket[] = [
   { min: 0, max: 3000, rate: 0.02 }, { min: 3000, max: 5000, rate: 0.03 },
   { min: 5000, max: 17000, rate: 0.05 }, { min: 17000, max: null, rate: 0.0575 },
@@ -419,6 +438,48 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 8750, married: 17500 },
         personalExemption: { single: 930, married: 1860 },
         notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
+      },
+    ),
+    MS: createCalculationProfile(
+      "MS",
+      2026,
+      "Mississippi DOR tax rates page: 4% of taxable income above $10,000 for tax year 2026; exemptions $6,000 single and $12,000 married; standard deduction $2,300 and $4,600",
+      {
+        taxType: "flat",
+        topRate: 0.04,
+        thresholdTax: { threshold: 10000, baseTax: 0 },
+        standardDeduction: { single: 2300, married: 4600 },
+        personalExemption: { single: 6000, married: 12000 },
+        notes: "Head of family, dependent, age 65, and blind exemptions are not modeled; a combined return with two working spouses calculates each spouse separately and can owe less; itemized deductions are not modeled",
+      },
+    ),
+    RI: createCalculationProfile(
+      "RI",
+      2026,
+      "Rhode Island Division of Taxation ADV 2025-22: TY2026 uniform schedule, standard deduction $11,200 / $22,400, and $5,250 exemption",
+      {
+        taxType: "graduated",
+        topRate: 0.0599,
+        brackets: RI_2026_BRACKETS,
+        marriedBrackets: RI_2026_BRACKETS,
+        standardDeduction: { single: 11200, married: 22400 },
+        personalExemption: { single: 5250, married: 10500 },
+        maxModeledIncome: 261000,
+        notes: "Head of household uses the single amounts here (its standard deduction is $16,800); dependent exemptions are not modeled; income above $261,000 starts the standard deduction and exemption phase-out and is not modeled",
+      },
+    ),
+    NE: createCalculationProfile(
+      "NE",
+      2026,
+      "Nebraska DOR Tax Rate Chronologies (Rev. 2-2026): 2026 brackets, 4.55% top rate, $8,850 / $17,700 standard deduction, and $176 personal exemption credit",
+      {
+        taxType: "graduated",
+        topRate: 0.0455,
+        brackets: NE_2026_SINGLE,
+        marriedBrackets: NE_2026_JOINT,
+        standardDeduction: { single: 8850, married: 17700 },
+        personalCredit: { single: 176, married: 352 },
+        notes: "Head of household uses the single brackets here; dependent credits and Nebraska adjustments such as the Social Security exemption are not modeled",
       },
     ),
     NJ: createCalculationProfile(

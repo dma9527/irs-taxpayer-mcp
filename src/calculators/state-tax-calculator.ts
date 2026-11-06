@@ -77,6 +77,11 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   }
 
   const status = input.filingStatus ?? "single";
+  if (state.maxModeledIncome !== undefined && incomeBeforeDeductions > state.maxModeledIncome) {
+    throw new UnsupportedStateTaxCalculationError(
+      `${state.name} TY${input.taxYear} income above $${state.maxModeledIncome.toLocaleString("en-US")} is not modeled`,
+    );
+  }
   let deduction = 0;
 
   if (state.standardDeduction) {
@@ -115,6 +120,10 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
       );
     }
     tax = calculateGraduatedTax(adjustedIncome, brackets);
+  }
+
+  if (state.personalCredit) {
+    tax = Math.max(0, tax - (status === "married" ? state.personalCredit.married : state.personalCredit.single));
   }
 
   return {

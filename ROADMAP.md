@@ -4,7 +4,7 @@ _Last updated: 2026-11-01._
 
 ## Current Baseline
 
-Version 1.2.4 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
+Version 1.2.5 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -179,6 +179,7 @@ This phase begins only after the filing-grade verification gates are met.
 | 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |
 | 1.0.1 | 2026-09-04 | First public 1.x release with npm 12-compatible OIDC automation. |
 | 1.0.2 | 2026-09-07 | Monthly feedback dashboard, AMT guidance correction, and independent TY2026/AMT regressions. |
+| 1.2.5 | 2026-11-06 | TY2026 state profiles for KS, MN, MS, ND, NE, RI; North Dakota runs on federal taxable income; landing page and localized READMEs. |
 | 1.2.4 | 2026-11-03 | Additional Medicare Tax on SE net earnings; 50 golden worksheet cases in CI; GA, OH, VA, NJ TY2026 profiles; PTC monthly allocation and exceptions. |
 | 1.2.3 | 2026-11-03 | Capital-gains optimizer nets losses against taxed gains first and warns about wasted losses; MFS $1,500 loss limit; SHA-pinned Node 24 CI; README rewrite. |
 | 1.2.2 | 2026-11-01 | Paycheck projection counts CTC and Schedule 1-A; scenario simulator takes TY2026 facts and the SALT AMT add-back; Kentucky TY2026 profile; 53 differential scenarios. |

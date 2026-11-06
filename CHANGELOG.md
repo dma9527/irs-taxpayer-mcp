@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-11-06
+
 ### Added
 
 - TY2026 numeric profiles for MS (4% above the first $10,000, exemptions and standard deduction from the Mississippi DOR), RI (Division of Taxation ADV 2025-22 schedule, $11,200 / $22,400 standard deduction, $5,250 exemption), and NE (Nebraska DOR Rate Chronologies Rev. 2-2026 brackets, 4.55% top rate, $8,850 / $17,700 standard deduction, $176 personal exemption credit).

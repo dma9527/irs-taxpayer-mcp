@@ -42,6 +42,8 @@ export interface StateInfo {
   thresholdTax?: { threshold: number; baseTax: number };
   /** Nonrefundable credit subtracted from computed tax, never below zero. */
   personalCredit?: { single: number; married: number };
+  /** Tax base: federal taxable income replaces the state deduction model when set. */
+  incomeBase?: "federal_taxable_income";
   /** Income above this is not modeled (for example a deduction phase-out), so the calculation fails closed. */
   maxModeledIncome?: number;
   notes?: string;
@@ -268,6 +270,14 @@ const MN_2026_JOINT: StateBracket[] = [
   { min: 193480, max: 337930, rate: 0.0785 }, { min: 337930, max: null, rate: 0.0985 },
 ];
 
+// North Dakota 2026 Forms ND-1 and ND-EZ tax rate schedules (2026 Form ND-1ES).
+const ND_2026_SINGLE: StateBracket[] = [
+  { min: 0, max: 49575, rate: 0 }, { min: 49575, max: 250400, rate: 0.0195 }, { min: 250400, max: null, rate: 0.025 },
+];
+const ND_2026_JOINT: StateBracket[] = [
+  { min: 0, max: 82800, rate: 0 }, { min: 82800, max: 304850, rate: 0.0195 }, { min: 304850, max: null, rate: 0.025 },
+];
+
 // Kansas K.S.A. 79-32,110 for tax year 2024 and after.
 const KS_SINGLE: StateBracket[] = [{ min: 0, max: 23000, rate: 0.052 }, { min: 23000, max: null, rate: 0.0558 }];
 const KS_JOINT: StateBracket[] = [{ min: 0, max: 46000, rate: 0.052 }, { min: 46000, max: null, rate: 0.0558 }];
@@ -480,6 +490,19 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 3605, married: 8240 },
         personalExemption: { single: 9160, married: 18320 },
         notes: "Head of household uses the single amounts here (its standard deduction is $6,180); the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled",
+      },
+    ),
+    ND: createCalculationProfile(
+      "ND",
+      2026,
+      "North Dakota Office of State Tax Commissioner 2026 Form ND-1ES: 2026 tax rate schedules applied to federal taxable income",
+      {
+        taxType: "graduated",
+        topRate: 0.025,
+        brackets: ND_2026_SINGLE,
+        marriedBrackets: ND_2026_JOINT,
+        incomeBase: "federal_taxable_income",
+        notes: "Starts from federal taxable income; head of household uses the single schedule here (its zero bracket is $66,400); North Dakota additions, subtractions, and credits are not modeled",
       },
     ),
     MS: createCalculationProfile(

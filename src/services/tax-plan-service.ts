@@ -357,6 +357,7 @@ export function buildTaxPlan(
         stateCode: params.stateCode,
         taxYear: params.taxYear,
         incomeBeforeDeductions: federalResult.adjustedGrossIncome,
+        federalTaxableIncome: federalResult.taxableIncome,
         filingStatus: params.filingStatus === "married_filing_jointly"
           ? "married"
           : "single",

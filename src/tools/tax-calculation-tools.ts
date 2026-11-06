@@ -373,6 +373,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           stateCode: params.stateCode,
           taxYear: params.taxYear,
           incomeBeforeDeductions: federal.adjustedGrossIncome,
+          federalTaxableIncome: federal.taxableIncome,
           filingStatus: stateFilingStatus,
         });
 

@@ -112,8 +112,9 @@ export function registerStateTaxTools(server: McpServer): void {
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("State income before the modeled state standard deduction and personal exemption"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
+      federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
     },
-    async ({ stateCode, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
+    async ({ stateCode, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {
       const state = getStateInfo(stateCode);
       if (!state) {
         return ERRORS.invalidState(stateCode);
@@ -147,6 +148,7 @@ export function registerStateTaxTools(server: McpServer): void {
           taxYear,
           incomeBeforeDeductions: stateIncome,
           filingStatus: status,
+          federalTaxableIncome,
         });
       } catch (error: unknown) {
         if (error instanceof UnsupportedStateTaxCalculationError) {
@@ -204,8 +206,9 @@ export function registerStateTaxTools(server: McpServer): void {
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("Annual income before modeled state deductions"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
+      federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
     },
-    async ({ states, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus }) => {
+    async ({ states, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {
       const hasExplicitIncome = incomeBeforeStateDeductions !== undefined;
       const hasLegacyIncome = taxableIncome !== undefined;
       if (hasExplicitIncome === hasLegacyIncome) {
@@ -246,6 +249,7 @@ export function registerStateTaxTools(server: McpServer): void {
             taxYear,
             incomeBeforeDeductions: stateIncome,
             filingStatus: status,
+            federalTaxableIncome,
           });
         } catch (error: unknown) {
           if (error instanceof UnsupportedStateTaxCalculationError) {

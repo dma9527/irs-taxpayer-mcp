@@ -252,6 +252,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           stateCode: params.stateCode,
           taxYear: params.taxYear,
           incomeBeforeDeductions: federalResult.adjustedGrossIncome,
+          federalTaxableIncome: federalResult.taxableIncome,
           filingStatus: stateFilingStatus,
         });
         if (stateResult) {
@@ -857,6 +858,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           stateCode: params.currentState,
           taxYear: params.taxYear,
           incomeBeforeDeductions: currentFederal.adjustedGrossIncome,
+          federalTaxableIncome: currentFederal.taxableIncome,
           filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
         });
         if (sr) { currentStateTax = sr.tax; currentStateName = sr.stateName; }
@@ -896,6 +898,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           stateCode: whatIfStateCode,
           taxYear: params.taxYear,
           incomeBeforeDeductions: whatIfFederal.adjustedGrossIncome,
+          federalTaxableIncome: whatIfFederal.taxableIncome,
           filingStatus: newFilingStatus === "married_filing_jointly" ? "married" : "single",
         });
         if (sr) { whatIfStateTax = sr.tax; whatIfStateName = sr.stateName; }

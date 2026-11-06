@@ -1917,6 +1917,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
+        "federalTaxableIncome": {
+          "description": "Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota",
+          "minimum": 0,
+          "type": "number",
+        },
         "filingStatus": {
           "description": "Filing status (default: single)",
           "enum": [
@@ -2007,6 +2012,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
+        "federalTaxableIncome": {
+          "description": "Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota",
+          "minimum": 0,
+          "type": "number",
+        },
         "filingStatus": {
           "description": "Filing status (default: single)",
           "enum": [

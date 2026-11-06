@@ -270,6 +270,23 @@ describe("TY2026 state profiles", () => {
     expect(married?.tax).toBe(5039);
   });
 
+  it("applies the North Dakota TY2026 schedule to federal taxable income", () => {
+    // Single: 1.95% x (100,000 - 49,575) = 983.29. Joint: 4,329.98 + 2.50% x (400,000 - 304,850) = 6,708.73.
+    const single = calculateStateTax({ stateCode: "ND", taxYear: 2026, incomeBeforeDeductions: 120000, federalTaxableIncome: 100000, filingStatus: "single" });
+    const married = calculateStateTax({ stateCode: "ND", taxYear: 2026, incomeBeforeDeductions: 430000, federalTaxableIncome: 400000, filingStatus: "married" });
+    const low = calculateStateTax({ stateCode: "ND", taxYear: 2026, incomeBeforeDeductions: 55000, federalTaxableIncome: 40000, filingStatus: "single" });
+    expect(single?.tax).toBe(983);
+    expect(single?.adjustedIncome).toBe(100000);
+    expect(married?.tax).toBe(6709);
+    expect(low?.tax).toBe(0);
+  });
+
+  it("fails closed for North Dakota without federal taxable income", () => {
+    expect(() =>
+      calculateStateTax({ stateCode: "ND", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),
+    ).toThrow("federal taxable income");
+  });
+
   it("still fails closed for TY2026 states without a verified profile", () => {
     expect(() =>
       calculateStateTax({ stateCode: "AZ", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" }),

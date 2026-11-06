@@ -23,6 +23,8 @@ export interface StateTaxInput {
   /** @deprecated Use incomeBeforeDeductions. */
   taxableIncome?: number;
   filingStatus?: "single" | "married";
+  /** Federal taxable income (Form 1040 line 15), required by states whose base starts there. */
+  federalTaxableIncome?: number;
 }
 
 export interface StateTaxResult {
@@ -77,6 +79,31 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   }
 
   const status = input.filingStatus ?? "single";
+  if (state.incomeBase === "federal_taxable_income") {
+    if (input.federalTaxableIncome === undefined) {
+      throw new UnsupportedStateTaxCalculationError(
+        `${state.name} TY${input.taxYear} starts from federal taxable income, which was not provided`,
+      );
+    }
+    const brackets = status === "married" ? state.marriedBrackets : state.brackets;
+    if (!brackets || brackets.length === 0) {
+      throw new UnsupportedStateTaxCalculationError(`${state.name} brackets are not available`);
+    }
+    const adjustedIncome = Math.max(0, input.federalTaxableIncome);
+    const tax = calculateGraduatedTax(adjustedIncome, brackets);
+    return {
+      stateCode: state.code,
+      stateName: state.name,
+      taxType: state.taxType,
+      grossIncome: incomeBeforeDeductions,
+      deduction: Math.max(0, incomeBeforeDeductions - adjustedIncome),
+      adjustedIncome,
+      tax: Math.round(tax),
+      effectiveRate: incomeBeforeDeductions > 0 ? tax / incomeBeforeDeductions : 0,
+      hasLocalTaxes: state.localTaxes ?? false,
+      notes: state.notes,
+    };
+  }
   if (state.maxModeledIncome !== undefined && incomeBeforeDeductions > state.maxModeledIncome) {
     throw new UnsupportedStateTaxCalculationError(
       `${state.name} TY${input.taxYear} income above $${state.maxModeledIncome.toLocaleString("en-US")} is not modeled`,

@@ -226,6 +226,16 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Take-Home");
     });
 
+    it("passes federal taxable income to North Dakota for TY2026", async () => {
+      // Federal taxable income 100,000 - 16,100 = 83,900; ND 1.95% x (83,900 - 49,575) = 669.34.
+      const { text, isError } = await callTool(server, "calculate_total_tax", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000, stateCode: "ND",
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("North Dakota");
+      expect(text).toContain("$669");
+    });
+
     it("handles no-tax state", async () => {
       const { text } = await callTool(server, "calculate_total_tax", {
         taxYear: 2024, filingStatus: "single", grossIncome: 100000, stateCode: "TX",
@@ -524,6 +534,19 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Estimated State Tax");
     });
 
+    it("estimates North Dakota TY2026 tax from federal taxable income", async () => {
+      const { text, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "ND", taxYear: 2026, incomeBeforeStateDeductions: 120000, federalTaxableIncome: 100000,
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("$983");
+      const missing = await callTool(server, "estimate_state_tax", {
+        stateCode: "ND", taxYear: 2026, incomeBeforeStateDeductions: 120000,
+      });
+      expect(missing.isError).toBe(true);
+      expect(missing.text).toContain("federal taxable income");
+    });
+
     it("shows zero for no-tax state", async () => {
       const { text } = await callTool(server, "estimate_state_tax", {
         stateCode: "TX", taxYear: 2024, taxableIncome: 100000,
@@ -758,6 +781,16 @@ describe("MCP Tools Integration", () => {
   });
 
   describe("generate_tax_plan", () => {
+    it("passes federal taxable income to North Dakota in the planner", async () => {
+      // 1.95% x (83,900 - 49,575) = 669.34.
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026, filingStatus: "single", income: { w2: 100000 }, stateCode: "ND",
+      });
+      const plan = z.object({
+        plan: z.object({ results: z.object({ stateTax: z.number() }) }),
+      }).parse(result.structuredContent);
+      expect(plan.plan.results.stateTax).toBe(669);
+    });
     it("adds back itemized SALT for AMT (differential scenario: hoh SALT add-back triggers AMT)", async () => {
       const result = await callTool(server, "generate_tax_plan", {
         taxYear: 2026,

@@ -89,7 +89,7 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] Model the TY2026 non-itemizer charitable deduction and the 0.5% of AGI itemized charitable floor.
 - [x] Model the TY2026 IRC 68 2/37 itemized deduction limit.
 - [x] Calculate the Child and Dependent Care Credit, including the TY2026 OBBB schedule.
-- [🔄] Add TY2026 numeric profiles: CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, NE, NJ, OH, PA, RI, and VA done; NY and remaining states pending official TY2026 sources.
+- [🔄] Add TY2026 numeric profiles: CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, ND, NE, NJ, OH, PA, RI, and VA done; NY and remaining states pending official TY2026 sources.
 - [x] Add a TY2026 Premium Tax Credit estimate (Form 8962 annual method).
 - [x] Separate TY2025 and TY2026 law changes with primary-source citations in `what_changed_between_tax_years`.
 - [x] Use the 2026 Form W-4 Step 3 child amount ($2,200).

@@ -358,9 +358,7 @@ export function buildTaxPlan(
         taxYear: params.taxYear,
         incomeBeforeDeductions: federalResult.adjustedGrossIncome,
         federalTaxableIncome: federalResult.taxableIncome,
-        filingStatus: params.filingStatus === "married_filing_jointly"
-          ? "married"
-          : "single",
+        filingStatus: params.filingStatus,
       });
     } catch (error) {
       if (error instanceof UnsupportedStateTaxCalculationError) {

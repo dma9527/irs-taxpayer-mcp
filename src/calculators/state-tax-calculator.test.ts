@@ -293,3 +293,77 @@ describe("TY2026 state profiles", () => {
     ).toThrow("Arizona TY2026 calculation data are not available");
   });
 });
+
+describe("TY2026 head of household and married filing separately", () => {
+  const tax = (stateCode: string, filingStatus: "head_of_household" | "married_filing_separately", income: number, federalTaxableIncome?: number) =>
+    calculateStateTax({ stateCode, taxYear: 2026, incomeBeforeDeductions: income, filingStatus, federalTaxableIncome })?.tax;
+
+  it.each([
+    // CA Schedule Z on 88,200: 2,483.29 + 8% x 1,546.
+    ["CA", 100000, 2607],
+    // MN HoH on 77,000: 5.35% x 41,010 + 6.80% x 35,990.
+    ["MN", 100000, 4641],
+    // KS: 100,000 - 6,180 - 9,160 = 84,660; 1,196 + 5.58% x 61,660.
+    ["KS", 100000, 4637],
+    // NE: 100,000 - 12,950 = 87,050; 2,198.88 + 4.55% x 27,890 - 176.
+    ["NE", 100000, 3292],
+    // NJ Table B on 99,000: 99,000 x 5.525% - 2,775.
+    ["NJ", 100000, 2695],
+    // MS: 50,000 - 8,000 - 3,400 = 38,600; 4% x 28,600.
+    ["MS", 50000, 1144],
+    // RI: 100,000 - 16,800 - 5,250 = 77,950; 3.75%.
+    ["RI", 100000, 2923],
+    // NC: (100,000 - 19,125) x 3.99%.
+    ["NC", 100000, 3227],
+    // MA: (100,000 - 6,800) x 5%.
+    ["MA", 100000, 4660],
+  ] as const)("uses the %s head of household rules", (stateCode, income, expected) => {
+    expect(tax(stateCode, "head_of_household", income)).toBe(expected);
+  });
+
+  it.each([
+    // CA Schedule X and $5,900, same as single.
+    ["CA", 100000, 5069],
+    // MN MFS on 84,700: 5.35% x 24,350 + 6.80% x 60,350.
+    ["MN", 100000, 5407],
+    // KS: 100,000 - 4,120 - 9,160 = 86,720; 1,196 + 5.58% x 63,720.
+    ["KS", 100000, 4752],
+    // NE MFS uses the single schedule and $8,850.
+    ["NE", 100000, 3670],
+    // NJ Table A, same as single.
+    ["NJ", 100000, 4180],
+    // MS MFS exemption $6,000 and $2,300, same as single.
+    ["MS", 50000, 1268],
+  ] as const)("uses the %s married filing separately rules", (stateCode, income, expected) => {
+    expect(tax(stateCode, "married_filing_separately", income)).toBe(expected);
+  });
+
+  it("uses the North Dakota head of household and separate schedules on federal taxable income", () => {
+    // HoH: 1.95% x (100,000 - 66,400) = 655.20. MFS: 1.95% x (100,000 - 41,400) = 1,142.70.
+    expect(tax("ND", "head_of_household", 120000, 100000)).toBe(655);
+    expect(tax("ND", "married_filing_separately", 120000, 100000)).toBe(1143);
+  });
+
+  it("halves the Minnesota modeled income limit for married filing separately", () => {
+    expect(tax("MN", "married_filing_separately", 110325)).toBeGreaterThan(0);
+    expect(() => tax("MN", "married_filing_separately", 110326)).toThrow("Minnesota");
+  });
+
+  it.each(["GA", "IL", "IN", "KY", "MI", "OH", "PA", "VA"])("applies single amounts to %s head of household and separate filers", (stateCode) => {
+    const single = calculateStateTax({ stateCode, taxYear: 2026, incomeBeforeDeductions: 90000, filingStatus: "single" })?.tax;
+    expect(tax(stateCode, "head_of_household", 90000)).toBe(single);
+    expect(tax(stateCode, "married_filing_separately", 90000)).toBe(single);
+  });
+
+  it("accepts married filing jointly as an alias of married", () => {
+    const married = calculateStateTax({ stateCode: "MN", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married" })?.tax;
+    const joint = calculateStateTax({ stateCode: "MN", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married_filing_jointly" })?.tax;
+    expect(joint).toBe(married);
+  });
+
+  it("keeps TY2024 head of household on the single schedule", () => {
+    const single = calculateStateTax({ stateCode: "CA", taxYear: 2024, incomeBeforeDeductions: 100000, filingStatus: "single" })?.tax;
+    const head = calculateStateTax({ stateCode: "CA", taxYear: 2024, incomeBeforeDeductions: 100000, filingStatus: "head_of_household" })?.tax;
+    expect(head).toBe(single);
+  });
+});

@@ -247,7 +247,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       let stateTax = 0;
       let stateName = "N/A";
       if (params.stateCode) {
-        const stateFilingStatus = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
+        const stateFilingStatus = params.filingStatus;
         const stateResult = calculateStateTax({
           stateCode: params.stateCode,
           taxYear: params.taxYear,
@@ -859,7 +859,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           taxYear: params.taxYear,
           incomeBeforeDeductions: currentFederal.adjustedGrossIncome,
           federalTaxableIncome: currentFederal.taxableIncome,
-          filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
+          filingStatus: params.filingStatus,
         });
         if (sr) { currentStateTax = sr.tax; currentStateName = sr.stateName; }
       }
@@ -899,7 +899,7 @@ export function registerComprehensiveTools(server: McpServer): void {
           taxYear: params.taxYear,
           incomeBeforeDeductions: whatIfFederal.adjustedGrossIncome,
           federalTaxableIncome: whatIfFederal.taxableIncome,
-          filingStatus: newFilingStatus === "married_filing_jointly" ? "married" : "single",
+          filingStatus: newFilingStatus,
         });
         if (sr) { whatIfStateTax = sr.tax; whatIfStateName = sr.stateName; }
       }

@@ -526,7 +526,7 @@ export function registerAdvancedTools(server: McpServer): void {
             taxYear: yr.year,
             incomeBeforeDeductions: federal.adjustedGrossIncome,
             federalTaxableIncome: federal.taxableIncome,
-            filingStatus: params.filingStatus === "married_filing_jointly" ? "married" : "single",
+            filingStatus: params.filingStatus,
           });
           if (sr) { stateTax = sr.tax; stateName = sr.stateName; }
         }
@@ -655,7 +655,7 @@ export function registerAdvancedTools(server: McpServer): void {
         dependents: params.dependents,
       });
 
-      const stateFS = params.filingStatus === "married_filing_jointly" ? "married" as const : "single" as const;
+      const stateFS = params.filingStatus;
 
       const fromResult = calculateStateTax({ stateCode: params.fromState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, federalTaxableIncome: federal.taxableIncome, filingStatus: stateFS });
       const toResult = calculateStateTax({ stateCode: params.toState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, federalTaxableIncome: federal.taxableIncome, filingStatus: stateFS });

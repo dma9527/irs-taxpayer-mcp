@@ -55,6 +55,15 @@ describe("state tax data integrity", () => {
     expect(getStateInfo("XX")).toBeUndefined();
   });
 
+  it("defines head of household and separate rules for every TY2026 profile with income tax", () => {
+    for (const code of Object.keys(STATE_TAX_DATA)) {
+      const profile = getStateCalculationInfo(code, 2026);
+      if (!profile || profile.taxType === "none") continue;
+      expect(profile.filingStatusOverrides?.head_of_household, `${code} HoH`).toBeDefined();
+      expect(profile.filingStatusOverrides?.married_filing_separately, `${code} MFS`).toBeDefined();
+    }
+  });
+
   it("versions audited numeric calculation profiles by tax year", () => {
     expect(getStateCalculationInfo("CA", 2024)?.taxYear).toBe(2024);
     expect(getStateCalculationInfo("CA", 2025)).toBeUndefined();

@@ -1923,10 +1923,13 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "type": "number",
         },
         "filingStatus": {
-          "description": "Filing status (default: single)",
+          "description": "Filing status (default: single; married means married filing jointly)",
           "enum": [
             "single",
             "married",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
           ],
           "type": "string",
         },
@@ -2018,10 +2021,13 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "type": "number",
         },
         "filingStatus": {
-          "description": "Filing status (default: single)",
+          "description": "Filing status (default: single; married means married filing jointly)",
           "enum": [
             "single",
             "married",
+            "married_filing_jointly",
+            "married_filing_separately",
+            "head_of_household",
           ],
           "type": "string",
         },

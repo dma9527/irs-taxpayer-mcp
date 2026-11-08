@@ -42,6 +42,8 @@ export interface StateInfo {
   thresholdTax?: { threshold: number; baseTax: number };
   /** Nonrefundable credit subtracted from computed tax, never below zero. */
   personalCredit?: { single: number; married: number };
+  /** TY2026+: verified HoH and MFS rules. A missing key makes those statuses fail closed; {} means single amounts apply. */
+  filingStatusOverrides?: Partial<Record<"head_of_household" | "married_filing_separately", FilingStatusOverride>>;
   /** Tax base: federal taxable income replaces the state deduction model when set. */
   incomeBase?: "federal_taxable_income";
   /** Income above this is not modeled (for example a deduction phase-out), so the calculation fails closed. */
@@ -50,6 +52,16 @@ export interface StateInfo {
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
   localTaxData?: LocalTaxInfo[];
+}
+
+/** Head of household or married filing separately rules; unset fields use the single amounts. */
+export interface FilingStatusOverride {
+  brackets?: StateBracket[];
+  standardDeduction?: number;
+  personalExemption?: number;
+  exemptionIncomeLimit?: number;
+  personalCredit?: number;
+  maxModeledIncome?: number;
 }
 
 export interface StateCalculationInfo extends StateInfo {
@@ -278,9 +290,30 @@ const ND_2026_JOINT: StateBracket[] = [
   { min: 0, max: 82800, rate: 0 }, { min: 82800, max: 304850, rate: 0.0195 }, { min: 304850, max: null, rate: 0.025 },
 ];
 
+const ND_2026_HEAD: StateBracket[] = [
+  { min: 0, max: 66400, rate: 0 }, { min: 66400, max: 277600, rate: 0.0195 }, { min: 277600, max: null, rate: 0.025 },
+];
+const ND_2026_SEPARATE: StateBracket[] = [
+  { min: 0, max: 41400, rate: 0 }, { min: 41400, max: 152425, rate: 0.0195 }, { min: 152425, max: null, rate: 0.025 },
+];
+
 // Kansas K.S.A. 79-32,110 for tax year 2024 and after.
+const MN_2026_HEAD: StateBracket[] = [
+  { min: 0, max: 41010, rate: 0.0535 }, { min: 41010, max: 164800, rate: 0.068 },
+  { min: 164800, max: 270060, rate: 0.0785 }, { min: 270060, max: null, rate: 0.0985 },
+];
+const MN_2026_SEPARATE: StateBracket[] = [
+  { min: 0, max: 24350, rate: 0.0535 }, { min: 24350, max: 96740, rate: 0.068 },
+  { min: 96740, max: 168965, rate: 0.0785 }, { min: 168965, max: null, rate: 0.0985 },
+];
+
 const KS_SINGLE: StateBracket[] = [{ min: 0, max: 23000, rate: 0.052 }, { min: 23000, max: null, rate: 0.0558 }];
 const KS_JOINT: StateBracket[] = [{ min: 0, max: 46000, rate: 0.052 }, { min: 46000, max: null, rate: 0.0558 }];
+
+const NE_2026_HEAD: StateBracket[] = [
+  { min: 0, max: 7700, rate: 0.0246 }, { min: 7700, max: 39620, rate: 0.0351 },
+  { min: 39620, max: 59160, rate: 0.0455 }, { min: 59160, max: null, rate: 0.0455 },
+];
 
 const VA_BRACKETS: StateBracket[] = [
   { min: 0, max: 3000, rate: 0.02 }, { min: 3000, max: 5000, rate: 0.03 },
@@ -297,6 +330,14 @@ const NJ_TABLE_B: StateBracket[] = [
   { min: 0, max: 20000, rate: 0.014 }, { min: 20000, max: 50000, rate: 0.0175 }, { min: 50000, max: 70000, rate: 0.0245 },
   { min: 70000, max: 80000, rate: 0.035 }, { min: 80000, max: 150000, rate: 0.05525 }, { min: 150000, max: 500000, rate: 0.0637 },
   { min: 500000, max: 1000000, rate: 0.0897 }, { min: 1000000, max: null, rate: 0.1075 },
+];
+
+// FTB 2026 Schedule Z (head of household) with the 1% Mental Health Services Tax above $1,000,000.
+const CA_2026_HEAD: StateBracket[] = [
+  { min: 0, max: 22927, rate: 0.01 }, { min: 22927, max: 54316, rate: 0.02 }, { min: 54316, max: 70018, rate: 0.04 },
+  { min: 70018, max: 86654, rate: 0.06 }, { min: 86654, max: 102356, rate: 0.08 }, { min: 102356, max: 522385, rate: 0.093 },
+  { min: 522385, max: 626864, rate: 0.103 }, { min: 626864, max: 1000000, rate: 0.113 }, { min: 1000000, max: 1044771, rate: 0.123 },
+  { min: 1044771, max: null, rate: 0.133 },
 ];
 
 // Massachusetts applies the 4% surtax to taxable income above one threshold for every filing status.
@@ -353,7 +394,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         brackets: CA_2026_SINGLE,
         marriedBrackets: CA_2026_JOINT,
         standardDeduction: { single: 5900, married: 11800 },
-        notes: "TY2026 FTB Schedules X and Y; 1% Mental Health Services Tax above $1,000,000. Exemption credits and the HoH Schedule Z are not modeled",
+        notes: "TY2026 FTB Schedules X, Y, and Z; 1% Mental Health Services Tax above $1,000,000; MFS uses Schedule X and $5,900; exemption credits are not modeled",
+        filingStatusOverrides: { head_of_household: { brackets: CA_2026_HEAD, standardDeduction: 11800 }, married_filing_separately: {} },
       },
     ),
     MA: createCalculationProfile(
@@ -367,6 +409,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: MA_2026_BRACKETS,
         personalExemption: { single: 4400, married: 8800 },
         notes: "Part A short-term gains (8.5%), dependent and age exemptions, and MA-specific deductions are not modeled",
+        filingStatusOverrides: { head_of_household: { personalExemption: 6800 }, married_filing_separately: {} },
       },
     ),
     IL: createCalculationProfile(
@@ -377,6 +420,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         personalExemption: { single: 2925, married: 5850 },
         exemptionIncomeLimit: { single: 250000, married: 500000 },
         notes: "Dependent and age 65 or blind exemptions and Illinois subtractions such as retirement income are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     PA: createCalculationProfile(
@@ -385,6 +429,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       "Pennsylvania Department of Revenue, 3.07% flat rate (REV-414(I) 2026)",
       {
         notes: "PA taxes eight income classes without federal adjustments; local earned income taxes and Tax Forgiveness are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     NC: createCalculationProfile(
@@ -395,6 +440,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0399,
         standardDeduction: { single: 12750, married: 25500 },
         notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled",
+        filingStatusOverrides: { head_of_household: { standardDeduction: 19125 }, married_filing_separately: {} },
       },
     ),
     MI: createCalculationProfile(
@@ -404,6 +450,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       {
         personalExemption: { single: 5900, married: 11800 },
         notes: "Dependent, special, and senior exemptions, retirement subtractions, and city income taxes are not modeled. Confirm the exemption against the 2026 MI-1040 instructions",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     IN: createCalculationProfile(
@@ -414,6 +461,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0295,
         personalExemption: { single: 1000, married: 2000 },
         notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     KY: createCalculationProfile(
@@ -424,6 +472,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.035,
         standardDeduction: { single: 3360, married: 3360 },
         notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     GA: createCalculationProfile(
@@ -434,6 +483,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0499,
         standardDeduction: { single: 15000, married: 30000 },
         notes: "Dependent exemptions, the retirement income exclusion, and Georgia adjustments are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     OH: createCalculationProfile(
@@ -450,6 +500,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
           { maxIncome: 500000, inclusive: false, amountPerPerson: 1900 },
         ],
         notes: "Nonbusiness income only; the 3% business income rate and its deduction, dependent exemptions, the $20 exemption credit, the joint filing credit, and municipal and school district taxes are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     VA: createCalculationProfile(
@@ -462,6 +513,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 8750, married: 17500 },
         personalExemption: { single: 930, married: 1860 },
         notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
+        filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
     MN: createCalculationProfile(
@@ -475,7 +527,11 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: MN_2026_JOINT,
         standardDeduction: { single: 15300, married: 30600 },
         maxModeledIncome: 220650,
-        notes: "Head of household uses the single amounts here (its brackets and $23,000 standard deduction differ); dependent exemptions, the Social Security subtraction, and Minnesota credits are not modeled. AGI above $220,650 (the 2023 base of the indexed standard deduction reduction) is not modeled",
+        notes: "Head of household and married filing separately use their own brackets; dependent exemptions, the Social Security subtraction, and Minnesota credits are not modeled. AGI above $220,650 ($110,325 MFS), the 2023 base of the indexed standard deduction reduction, is not modeled",
+        filingStatusOverrides: {
+          head_of_household: { brackets: MN_2026_HEAD, standardDeduction: 23000 },
+          married_filing_separately: { brackets: MN_2026_SEPARATE, maxModeledIncome: 110325 },
+        },
       },
     ),
     KS: createCalculationProfile(
@@ -489,7 +545,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: KS_JOINT,
         standardDeduction: { single: 3605, married: 8240 },
         personalExemption: { single: 9160, married: 18320 },
-        notes: "Head of household uses the single amounts here (its standard deduction is $6,180); the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled",
+        notes: "Head of household ($6,180) and married filing separately ($4,120) use their own standard deductions; the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled",
+        filingStatusOverrides: { head_of_household: { standardDeduction: 6180 }, married_filing_separately: { standardDeduction: 4120 } },
       },
     ),
     ND: createCalculationProfile(
@@ -502,7 +559,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         brackets: ND_2026_SINGLE,
         marriedBrackets: ND_2026_JOINT,
         incomeBase: "federal_taxable_income",
-        notes: "Starts from federal taxable income; head of household uses the single schedule here (its zero bracket is $66,400); North Dakota additions, subtractions, and credits are not modeled",
+        notes: "Starts from federal taxable income; head of household and married filing separately use their own schedules; North Dakota additions, subtractions, and credits are not modeled",
+        filingStatusOverrides: { head_of_household: { brackets: ND_2026_HEAD }, married_filing_separately: { brackets: ND_2026_SEPARATE } },
       },
     ),
     MS: createCalculationProfile(
@@ -515,7 +573,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         thresholdTax: { threshold: 10000, baseTax: 0 },
         standardDeduction: { single: 2300, married: 4600 },
         personalExemption: { single: 6000, married: 12000 },
-        notes: "Head of family, dependent, age 65, and blind exemptions are not modeled; a combined return with two working spouses calculates each spouse separately and can owe less; itemized deductions are not modeled",
+        notes: "Head of family uses the $8,000 exemption and $3,400 standard deduction; dependent, age 65, and blind exemptions are not modeled; a combined return with two working spouses calculates each spouse separately and can owe less; itemized deductions are not modeled",
+        filingStatusOverrides: { head_of_household: { standardDeduction: 3400, personalExemption: 8000 }, married_filing_separately: {} },
       },
     ),
     RI: createCalculationProfile(
@@ -530,7 +589,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 11200, married: 22400 },
         personalExemption: { single: 5250, married: 10500 },
         maxModeledIncome: 261000,
-        notes: "Head of household uses the single amounts here (its standard deduction is $16,800); dependent exemptions are not modeled; income above $261,000 starts the standard deduction and exemption phase-out and is not modeled",
+        notes: "Head of household uses the $16,800 standard deduction; dependent exemptions are not modeled; income above $261,000 starts the standard deduction and exemption phase-out and is not modeled",
+        filingStatusOverrides: { head_of_household: { standardDeduction: 16800 }, married_filing_separately: {} },
       },
     ),
     NE: createCalculationProfile(
@@ -544,7 +604,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: NE_2026_JOINT,
         standardDeduction: { single: 8850, married: 17700 },
         personalCredit: { single: 176, married: 352 },
-        notes: "Head of household uses the single brackets here; dependent credits and Nebraska adjustments such as the Social Security exemption are not modeled",
+        notes: "Head of household uses its own brackets and the $12,950 standard deduction (draft 2026 Form 1040N); dependent credits and Nebraska adjustments such as the Social Security exemption are not modeled",
+        filingStatusOverrides: { head_of_household: { brackets: NE_2026_HEAD, standardDeduction: 12950 }, married_filing_separately: {} },
       },
     ),
     NJ: createCalculationProfile(
@@ -555,7 +616,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         brackets: NJ_TABLE_A,
         marriedBrackets: NJ_TABLE_B,
         personalExemption: { single: 1000, married: 2000 },
-        notes: "Table B also applies to HoH. Dependent, age 65, and blind exemptions, NJ exclusions, and the property tax deduction are not modeled",
+        notes: "Table B applies to HoH and Table A to MFS. Dependent, age 65, and blind exemptions, NJ exclusions, and the property tax deduction are not modeled",
+        filingStatusOverrides: { head_of_household: { brackets: NJ_TABLE_B }, married_filing_separately: {} },
       },
     ),
   },

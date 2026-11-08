@@ -111,7 +111,7 @@ export function registerStateTaxTools(server: McpServer): void {
       taxYear: z.number().int().describe("Tax year for the versioned state calculation profile"),
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("State income before the modeled state standard deduction and personal exemption"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
-      filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
+      filingStatus: z.enum(["single", "married", "married_filing_jointly", "married_filing_separately", "head_of_household"]).optional().describe("Filing status (default: single; married means married filing jointly)"),
       federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
     },
     async ({ stateCode, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {
@@ -205,7 +205,7 @@ export function registerStateTaxTools(server: McpServer): void {
       taxYear: z.number().int().describe("Tax year for all versioned state calculation profiles"),
       incomeBeforeStateDeductions: z.number().min(0).optional().describe("Annual income before modeled state deductions"),
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
-      filingStatus: z.enum(["single", "married"]).optional().describe("Filing status (default: single)"),
+      filingStatus: z.enum(["single", "married", "married_filing_jointly", "married_filing_separately", "head_of_household"]).optional().describe("Filing status (default: single; married means married filing jointly)"),
       federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
     },
     async ({ states, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {

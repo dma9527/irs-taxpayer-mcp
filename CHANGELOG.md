@@ -4,6 +4,13 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-11-08
+
+### Fixed
+
+- State tax for head of household and married filing separately filers used the single schedule for every state. TY2026 profiles now apply each state's own rules from official sources: CA Schedule Z, MA ($6,800 HoH exemption), NC ($19,125 HoH), NJ (Table B for HoH), MS (head of family $8,000 exemption and $3,400 deduction), RI ($16,800 HoH), NE (HoH schedule and $12,950), MN (HoH and MFS schedules, $23,000 HoH deduction, $110,325 MFS limit), KS ($6,180 HoH, $4,120 MFS), and ND (HoH and MFS schedules). For example a Minnesota HoH with $100,000 AGI now owes $4,641 instead of $5,277. A TY2026 state profile without verified HoH or MFS rules returns an error instead of falling back to single.
+- Tools now pass the real federal filing status to the state calculator, and `estimate_state_tax` and `compare_state_taxes` accept `married_filing_jointly`, `married_filing_separately`, and `head_of_household` (`married` still means joint).
+
 ## [1.2.5] - 2026-11-06
 
 ### Added

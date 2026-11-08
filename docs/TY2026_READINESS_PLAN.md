@@ -73,6 +73,7 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | D7 `check_credit_eligibility` used TY2024 CTC/EITC limits and offered expired EV and energy credits | Now year-aware |
 | G1 to G5 | Done, plus Schedule 1-A in the engine and the $400 minimum QBI deduction |
 | G6 states | CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, ND, NE, NJ, OH, PA, RI, VA added for TY2026 |
+| D18 HoH and MFS state filers used the single schedule | TY2026 profiles carry verified HoH and MFS rules; an independent oracle matches 2,016 state checks and 72 planner runs |
 | Differential test | 53/53 synthetic scenarios match PSL Tax-Calculator 6.8.5 within $1 |
 | D8 W-4 Step 3 used $2,000 per child | Uses the year's amount ($2,200 on the 2026 Form W-4) |
 | Premium Tax Credit | TY2026 annual estimate added (Rev. Proc. 2025-25) |
@@ -98,7 +99,7 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 |----------|------|--------|------------------------|
 | P1 | Upload the refreshed Agensi skill ZIP | Ready | 1.2.0 released 2026-11-01 |
 | P1 | New York TY2026 profile | Blocked | NY DTF has not published the TY2026 IT-201 rate schedule; withholding tables are not a filing source |
-| P2 | Confirm against final 2026 forms in January 2027: NC standard deduction, Form 6251 treatment of the non-itemizer charitable deduction, Publication 509 dates, CA Schedule Z and exemption credits | Waiting | Final forms publish January 2027 |
+| P2 | Confirm against final 2026 forms in January 2027: NE HoH standard deduction ($12,950 from the draft 1040N), RI phase-out range for HoH and MFS, NC standard deduction, Form 6251 treatment of the non-itemizer charitable deduction, Publication 509 dates, CA Schedule Z and exemption credits | Waiting | Final forms publish January 2027 |
 | P3 | Premium Tax Credit: shared-policy allocation (Part IV) and year-of-marriage calculation (Part V) | Open | Not modeled; tool output says so |
 | P3 | Other state profiles | Open | AZ: ADOR says 2026 standard deduction is pending legislative conformity. CO: taxes federal taxable income, which the state calculator now receives, but CO additions (for example the high-income deduction addback) still need sourcing. UT: needs the taxpayer credit model and 2026 HB 210 changes. IA: 2026 standard deduction not found in an IDR document. ID: 2026 rate schedule not published. LA: 2026 standard deduction only appears as a withholding assumption. AR: 3.9% in the withholding formula conflicts with 3.7% in SB1. WI: the standard deduction is a sliding scale that phases out from low income, which needs its own model. MD: county income tax applies to every resident and the exemption phases out above $100,000, so a state-only number would mislead. Others not yet sourced |
 | P3 | Trump Accounts, scholarship credit (TY2027), adoption credit refundability | Reference only | Listed in the law change registry; not calculated |

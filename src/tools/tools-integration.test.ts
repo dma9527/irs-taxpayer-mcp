@@ -226,6 +226,15 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Take-Home");
     });
 
+    it("uses the North Dakota separate schedule for married filing separately", async () => {
+      // Federal taxable income 100,000 - 16,100 = 83,900; ND MFS 1.95% x (83,900 - 41,400) = 828.75.
+      const { text, isError } = await callTool(server, "calculate_total_tax", {
+        taxYear: 2026, filingStatus: "married_filing_separately", grossIncome: 100000, w2Income: 100000, stateCode: "ND",
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("$829");
+    });
+
     it("passes federal taxable income to North Dakota for TY2026", async () => {
       // Federal taxable income 100,000 - 16,100 = 83,900; ND 1.95% x (83,900 - 49,575) = 669.34.
       const { text, isError } = await callTool(server, "calculate_total_tax", {
@@ -534,6 +543,15 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Estimated State Tax");
     });
 
+    it("accepts head of household in estimate_state_tax", async () => {
+      // CA Schedule Z on 100,000 - 11,800 = 88,200: 2,483.29 + 8% x 1,546.
+      const { text, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "CA", taxYear: 2026, incomeBeforeStateDeductions: 100000, filingStatus: "head_of_household",
+      });
+      expect(isError).toBeFalsy();
+      expect(text).toContain("$2,607");
+    });
+
     it("estimates North Dakota TY2026 tax from federal taxable income", async () => {
       const { text, isError } = await callTool(server, "estimate_state_tax", {
         stateCode: "ND", taxYear: 2026, incomeBeforeStateDeductions: 120000, federalTaxableIncome: 100000,
@@ -781,6 +799,17 @@ describe("MCP Tools Integration", () => {
   });
 
   describe("generate_tax_plan", () => {
+    it("uses the Minnesota head of household schedule in the planner", async () => {
+      // AGI 100,000; MN HoH: 5.35% x 41,010 + 6.80% x 35,990 = 4,641.35.
+      const result = await callTool(server, "generate_tax_plan", {
+        taxYear: 2026, filingStatus: "head_of_household", income: { w2: 100000 }, stateCode: "MN",
+      });
+      const plan = z.object({
+        plan: z.object({ results: z.object({ stateTax: z.number() }) }),
+      }).parse(result.structuredContent);
+      expect(plan.plan.results.stateTax).toBe(4641);
+    });
+
     it("passes federal taxable income to North Dakota in the planner", async () => {
       // 1.95% x (83,900 - 49,575) = 669.34.
       const result = await callTool(server, "generate_tax_plan", {

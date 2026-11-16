@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-11-16
+
 ### Added
 
 - 1,160 TY2026 state golden cases in CI (29 states, every filing status, 10 income levels), worked by an independent script in `scripts/golden/state_worksheet_ty2026.py`. Unmodeled paths must fail closed.

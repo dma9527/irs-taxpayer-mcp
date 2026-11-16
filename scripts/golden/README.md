@@ -21,3 +21,14 @@ npm test
 ```
 
 Each case in the JSON keeps its worksheet trace so a reviewer can follow the arithmetic.
+
+## TY2026 state cases
+
+`state_worksheet_ty2026.py` works 1,160 TY2026 state cases (29 states, 4 filing statuses, 10 income levels) from the published state rules and writes `src/golden/ty2026-state-golden.json`. `src/golden/ty2026-state-golden.test.ts` requires the engine to match each tax to the dollar and each taxable amount exactly. Paths the engine does not model (AZ, CO, NY, MN and RI above their phase-out limits) must fail closed.
+
+The script shares no code with the engine. It rebuilds each graduated schedule from its floors and rates and asserts the base-tax amounts the state publishes (KS K-40ES, ND ND-1ES, RI ADV 2025-22, NE HoH schedule). `scripts/sources/check_state_sources.py` re-downloads the official sources and confirms the constants still appear in them.
+
+```bash
+python3 scripts/golden/state_worksheet_ty2026.py > src/golden/ty2026-state-golden.json
+npm test
+```

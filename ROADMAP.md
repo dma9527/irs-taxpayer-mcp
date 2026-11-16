@@ -123,7 +123,7 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 
 - [ ] Build IRS publication and worksheet fixtures for every supported path.
 - [ ] Add golden returns that reconcile every form line and worksheet intermediate.
-- [🔄] Add differential checks against independent tax engines using non-sensitive synthetic cases. Federal check against PSL Tax-Calculator lives in `scripts/differential/`; state engines not yet compared.
+- [🔄] Add differential checks against independent tax engines using non-sensitive synthetic cases. Federal check against PSL Tax-Calculator lives in `scripts/differential/`. TY2026 state results are checked against 1,160 independently worked cases in `scripts/golden/state_worksheet_ty2026.py`; no third-party state engine has been compared yet.
 - [ ] Add invariant, boundary, and rounding tests for all thresholds and phase-outs.
 - [ ] Publish a support matrix that identifies each implemented form, schedule, election, and known exclusion.
 - [ ] Require source citations and reviewer approval for every annual tax-data update.

@@ -4,6 +4,15 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Added
+
+- 1,160 TY2026 state golden cases in CI (29 states, every filing status, 10 income levels), worked by an independent script in `scripts/golden/state_worksheet_ty2026.py`. Unmodeled paths must fail closed.
+- `scripts/sources/check_state_sources.py` re-reads the official state sources and confirms each constant still appears.
+
+### Changed
+
+- `@hono/node-server` (transitive, HTTP transport) updated from 2.1.5 to 2.1.8.
+
 ## [1.2.6] - 2026-11-08
 
 ### Fixed

@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerTaxTool } from "./shared.js";
+import { registerTaxTool, StateTaxDataSchema, toStateTaxData } from "./shared.js";
 import {
   STATE_TAX_CALCULATION_DATA,
   STATE_TAX_DATA,
@@ -113,8 +113,21 @@ export function registerStateTaxTools(server: McpServer): void {
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married", "married_filing_jointly", "married_filing_separately", "head_of_household"]).optional().describe("Filing status (default: single; married means married filing jointly)"),
       federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
+      taxableSocialSecurityBenefits: z.number().min(0).optional().describe("Federally taxable Social Security included in the income above; states that do not exclude it fail closed"),
+      taxableRetirementDistributions: z.number().min(0).optional().describe("Taxable retirement distributions included in the income above"),
+      netLongTermCapitalGain: z.number().min(0).optional().describe("Net long-term capital gain included in the income above (Washington capital gains excise)"),
     },
-    async ({ stateCode, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {
+    async ({
+      stateCode,
+      taxYear,
+      incomeBeforeStateDeductions,
+      taxableIncome,
+      filingStatus,
+      federalTaxableIncome,
+      taxableSocialSecurityBenefits,
+      taxableRetirementDistributions,
+      netLongTermCapitalGain,
+    }) => {
       const state = getStateInfo(stateCode);
       if (!state) {
         return ERRORS.invalidState(stateCode);
@@ -149,6 +162,7 @@ export function registerStateTaxTools(server: McpServer): void {
           incomeBeforeDeductions: stateIncome,
           filingStatus: status,
           federalTaxableIncome,
+          incomeComposition: { taxableSocialSecurityBenefits, taxableRetirementDistributions, netLongTermCapitalGain },
         });
       } catch (error: unknown) {
         if (error instanceof UnsupportedStateTaxCalculationError) {
@@ -193,8 +207,9 @@ export function registerStateTaxTools(server: McpServer): void {
         "> This is a simplified estimate. State tax rules vary significantly. Consult a tax professional for accuracy.",
       ].filter(Boolean);
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: { data: toStateTaxData(result, taxYear) } };
+    },
+    { dataSchema: StateTaxDataSchema },
   );
 
   registerTaxTool(server,
@@ -207,8 +222,21 @@ export function registerStateTaxTools(server: McpServer): void {
       taxableIncome: z.number().min(0).optional().describe("Deprecated alias for incomeBeforeStateDeductions"),
       filingStatus: z.enum(["single", "married", "married_filing_jointly", "married_filing_separately", "head_of_household"]).optional().describe("Filing status (default: single; married means married filing jointly)"),
       federalTaxableIncome: z.number().min(0).optional().describe("Federal taxable income (Form 1040 line 15); required for states that start from it, such as North Dakota"),
+      taxableSocialSecurityBenefits: z.number().min(0).optional().describe("Federally taxable Social Security included in the income above; states that do not exclude it fail closed"),
+      taxableRetirementDistributions: z.number().min(0).optional().describe("Taxable retirement distributions included in the income above"),
+      netLongTermCapitalGain: z.number().min(0).optional().describe("Net long-term capital gain included in the income above (Washington capital gains excise)"),
     },
-    async ({ states, taxYear, incomeBeforeStateDeductions, taxableIncome, filingStatus, federalTaxableIncome }) => {
+    async ({
+      states,
+      taxYear,
+      incomeBeforeStateDeductions,
+      taxableIncome,
+      filingStatus,
+      federalTaxableIncome,
+      taxableSocialSecurityBenefits,
+      taxableRetirementDistributions,
+      netLongTermCapitalGain,
+    }) => {
       const hasExplicitIncome = incomeBeforeStateDeductions !== undefined;
       const hasLegacyIncome = taxableIncome !== undefined;
       if (hasExplicitIncome === hasLegacyIncome) {
@@ -250,6 +278,7 @@ export function registerStateTaxTools(server: McpServer): void {
             incomeBeforeDeductions: stateIncome,
             filingStatus: status,
             federalTaxableIncome,
+            incomeComposition: { taxableSocialSecurityBenefits, taxableRetirementDistributions, netLongTermCapitalGain },
           });
         } catch (error: unknown) {
           if (error instanceof UnsupportedStateTaxCalculationError) {

@@ -163,7 +163,7 @@ export function writePrivateJsonFile(
     writeFileSync(descriptor, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "EEXIST") {
-      throw new Error(`${path} already exists; use --force to replace it`);
+      throw new Error(`${path} already exists; use --force to replace it`, { cause: error });
     }
     throw error;
   } finally {
@@ -236,6 +236,8 @@ export function buildTaxpayerFactsFromAnswers(
   const income = compactObject({
     w2: optionalNumber(answers.w2),
     selfEmployment: optionalNumber(answers.selfEmployment),
+    spouseW2: optionalNumber(answers.spouseW2),
+    spouseSelfEmployment: optionalNumber(answers.spouseSelfEmployment),
     taxableInterest: optionalNumber(answers.taxableInterest),
     ordinaryDividends: optionalNumber(answers.ordinaryDividends),
     qualifiedDividends: optionalNumber(answers.qualifiedDividends),
@@ -338,6 +340,8 @@ async function collectIntakeAnswers(io: LocalCommandIO) {
   );
   await ask("w2", "W-2 wages", "0");
   await ask("selfEmployment", "Self-employment net income", "0");
+  await ask("spouseW2", "For MFJ, spouse's W-2 wages (included above)", "0");
+  await ask("spouseSelfEmployment", "For MFJ, spouse's self-employment net income (included above)", "0");
   await ask("taxableInterest", "Taxable interest", "0");
   await ask("ordinaryDividends", "Ordinary dividends", "0");
   await ask("qualifiedDividends", "Qualified dividends included above", "0");

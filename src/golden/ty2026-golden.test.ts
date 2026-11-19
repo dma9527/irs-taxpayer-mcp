@@ -26,6 +26,9 @@ const FactsSchema = z.object({
   care: z.number().optional(),
   care_kids: z.number().optional(),
   spouse_wages: z.number().optional(),
+  spouse_se: z.number().optional(),
+  ss: z.number().optional(),
+  pension: z.number().optional(),
   eitc_kids: z.number().nullable().optional(),
 }).strict();
 
@@ -58,8 +61,8 @@ const fixture = FixtureSchema.parse(
 );
 
 describe("TY2026 golden worksheet cases (scripts/golden/worksheet_ty2026.py)", () => {
-  it("covers 50 hand-worked cases", () => {
-    expect(fixture.cases).toHaveLength(50);
+  it("covers 55 hand-worked cases", () => {
+    expect(fixture.cases).toHaveLength(55);
   });
 
   it.each(fixture.cases.map((testCase) => [testCase.name, testCase] as const))("%s", (_name, testCase) => {
@@ -69,7 +72,10 @@ describe("TY2026 golden worksheet cases (scripts/golden/worksheet_ty2026.py)", (
     const interest = facts.interest ?? 0;
     const dividends = facts.odiv ?? 0;
     const longTermGain = facts.ltcg ?? 0;
-    const grossIncome = wages + selfEmployment + interest + dividends + longTermGain;
+    const socialSecurity = facts.ss ?? 0;
+    const pension = facts.pension ?? 0;
+    const married = facts.status === "married_filing_jointly";
+    const grossIncome = wages + selfEmployment + interest + dividends + longTermGain + socialSecurity + pension;
     const hasItemized = Boolean(facts.salt || facts.mortgage || facts.charity);
     const cappedSalt = Math.min(facts.salt ?? 0, getSaltCap(2026, facts.status, expected.adjustedGrossIncome));
     const seniorCount = Number(facts.age65 ?? false) + Number(facts.spouse65 ?? false);
@@ -81,6 +87,11 @@ describe("TY2026 golden worksheet cases (scripts/golden/worksheet_ty2026.py)", (
       grossIncome,
       w2Income: wages,
       selfEmploymentIncome: selfEmployment || undefined,
+      spouseW2Income: married ? facts.spouse_wages : undefined,
+      spouseSelfEmploymentIncome: married ? facts.spouse_se : undefined,
+      socialSecurityBenefits: socialSecurity || undefined,
+      retirementDistributions: pension || undefined,
+      taxableRetirementDistributions: pension || undefined,
       capitalGains: longTermGain || undefined,
       capitalGainsLongTerm: true,
       qualifiedDividends: facts.qdiv,

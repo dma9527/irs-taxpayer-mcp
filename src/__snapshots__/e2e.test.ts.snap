@@ -240,6 +240,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "spouseSelfEmploymentIncome": {
+          "description": "MFJ only: spouse's share of selfEmploymentIncome",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseW2Income": {
+          "description": "MFJ only: spouse's share of w2Income; the Social Security wage base applies per person",
+          "minimum": 0,
+          "type": "number",
+        },
         "stateTaxDeducted": {
           "description": "State/local taxes included in itemized deductions (for AMT)",
           "minimum": 0,
@@ -277,6 +287,105 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "additionalChildTaxCredit": {
+              "type": "number",
+            },
+            "additionalMedicareTax": {
+              "type": "number",
+            },
+            "adjustedGrossIncome": {
+              "type": "number",
+            },
+            "amt": {
+              "type": "number",
+            },
+            "capitalGainsTax": {
+              "type": "number",
+            },
+            "childTaxCredit": {
+              "type": "number",
+            },
+            "creditForOtherDependents": {
+              "type": "number",
+            },
+            "deductionAmount": {
+              "type": "number",
+            },
+            "deductionType": {
+              "enum": [
+                "standard",
+                "itemized",
+              ],
+              "type": "string",
+            },
+            "dependentCareCredit": {
+              "type": "number",
+            },
+            "effectiveRate": {
+              "type": "number",
+            },
+            "filingStatus": {
+              "type": "string",
+            },
+            "limitations": {
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "marginalRate": {
+              "type": "number",
+            },
+            "niit": {
+              "type": "number",
+            },
+            "ordinaryIncomeTax": {
+              "type": "number",
+            },
+            "qbiDeduction": {
+              "type": "number",
+            },
+            "selfEmploymentTax": {
+              "type": "number",
+            },
+            "taxYear": {
+              "type": "number",
+            },
+            "taxableIncome": {
+              "type": "number",
+            },
+            "totalFederalTax": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "taxYear",
+            "filingStatus",
+            "adjustedGrossIncome",
+            "deductionType",
+            "deductionAmount",
+            "taxableIncome",
+            "ordinaryIncomeTax",
+            "capitalGainsTax",
+            "selfEmploymentTax",
+            "niit",
+            "additionalMedicareTax",
+            "qbiDeduction",
+            "amt",
+            "childTaxCredit",
+            "creditForOtherDependents",
+            "dependentCareCredit",
+            "additionalChildTaxCredit",
+            "totalFederalTax",
+            "effectiveRate",
+            "marginalRate",
+            "limitations",
+          ],
+          "type": "object",
+        },
         "error": {
           "additionalProperties": false,
           "properties": {
@@ -596,6 +705,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "description": "Whether capital gains are long-term (default: true)",
           "type": "boolean",
         },
+        "charitableCashContributions": {
+          "description": "TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction",
+          "minimum": 0,
+          "type": "number",
+        },
         "dependents": {
           "description": "Legacy dependent count for nonrefundable CTC only",
           "maximum": 9007199254740991,
@@ -634,8 +748,13 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         "hasForm2555": {
           "type": "boolean",
         },
+        "itemizedCharitableContributions": {
+          "description": "TY2026+: charitable portion of itemizedDeductions, for the 0.5% of AGI floor",
+          "minimum": 0,
+          "type": "number",
+        },
         "itemizedDeductions": {
-          "description": "Total itemized deductions",
+          "description": "Schedule A total after the SALT cap and medical floor, before the TY2026 charitable floor and 2/37 limit",
           "minimum": 0,
           "type": "number",
         },
@@ -716,11 +835,26 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "spouseSelfEmploymentIncome": {
+          "description": "MFJ only: spouse's share of selfEmploymentIncome",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseW2Income": {
+          "description": "MFJ only: spouse's share of w2Income; the Social Security wage base applies per person",
+          "minimum": 0,
+          "type": "number",
+        },
         "stateCode": {
           "description": "Two-letter state code (e.g., 'CA', 'TX', 'NY')",
           "maxLength": 2,
           "minLength": 2,
           "type": "string",
+        },
+        "stateTaxDeducted": {
+          "description": "State and local taxes included in itemizedDeductions (added back for AMT)",
+          "minimum": 0,
+          "type": "number",
         },
         "taxExemptInterest": {
           "minimum": 0,
@@ -753,6 +887,167 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "employeeFica": {
+              "type": "number",
+            },
+            "federal": {
+              "additionalProperties": false,
+              "properties": {
+                "additionalChildTaxCredit": {
+                  "type": "number",
+                },
+                "additionalMedicareTax": {
+                  "type": "number",
+                },
+                "adjustedGrossIncome": {
+                  "type": "number",
+                },
+                "amt": {
+                  "type": "number",
+                },
+                "capitalGainsTax": {
+                  "type": "number",
+                },
+                "childTaxCredit": {
+                  "type": "number",
+                },
+                "creditForOtherDependents": {
+                  "type": "number",
+                },
+                "deductionAmount": {
+                  "type": "number",
+                },
+                "deductionType": {
+                  "enum": [
+                    "standard",
+                    "itemized",
+                  ],
+                  "type": "string",
+                },
+                "dependentCareCredit": {
+                  "type": "number",
+                },
+                "effectiveRate": {
+                  "type": "number",
+                },
+                "filingStatus": {
+                  "type": "string",
+                },
+                "limitations": {
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "marginalRate": {
+                  "type": "number",
+                },
+                "niit": {
+                  "type": "number",
+                },
+                "ordinaryIncomeTax": {
+                  "type": "number",
+                },
+                "qbiDeduction": {
+                  "type": "number",
+                },
+                "selfEmploymentTax": {
+                  "type": "number",
+                },
+                "taxYear": {
+                  "type": "number",
+                },
+                "taxableIncome": {
+                  "type": "number",
+                },
+                "totalFederalTax": {
+                  "type": "number",
+                },
+              },
+              "required": [
+                "taxYear",
+                "filingStatus",
+                "adjustedGrossIncome",
+                "deductionType",
+                "deductionAmount",
+                "taxableIncome",
+                "ordinaryIncomeTax",
+                "capitalGainsTax",
+                "selfEmploymentTax",
+                "niit",
+                "additionalMedicareTax",
+                "qbiDeduction",
+                "amt",
+                "childTaxCredit",
+                "creditForOtherDependents",
+                "dependentCareCredit",
+                "additionalChildTaxCredit",
+                "totalFederalTax",
+                "effectiveRate",
+                "marginalRate",
+                "limitations",
+              ],
+              "type": "object",
+            },
+            "state": {
+              "additionalProperties": false,
+              "properties": {
+                "adjustedIncome": {
+                  "type": "number",
+                },
+                "deduction": {
+                  "type": "number",
+                },
+                "effectiveRate": {
+                  "type": "number",
+                },
+                "excludedIncome": {
+                  "type": "number",
+                },
+                "hasLocalTaxes": {
+                  "type": "boolean",
+                },
+                "stateCode": {
+                  "type": "string",
+                },
+                "tax": {
+                  "type": "number",
+                },
+                "taxYear": {
+                  "type": "number",
+                },
+              },
+              "required": [
+                "stateCode",
+                "taxYear",
+                "tax",
+                "deduction",
+                "excludedIncome",
+                "adjustedIncome",
+                "effectiveRate",
+                "hasLocalTaxes",
+              ],
+              "type": "object",
+            },
+            "takeHome": {
+              "type": "number",
+            },
+            "totalTax": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "federal",
+            "state",
+            "employeeFica",
+            "totalTax",
+            "takeHome",
+          ],
+          "type": "object",
+        },
         "error": {
           "additionalProperties": false,
           "properties": {
@@ -1938,6 +2233,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "netLongTermCapitalGain": {
+          "description": "Net long-term capital gain included in the income above (Washington capital gains excise)",
+          "minimum": 0,
+          "type": "number",
+        },
         "stateCode": {
           "description": "Two-letter state code",
           "maxLength": 2,
@@ -1955,6 +2255,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "taxableRetirementDistributions": {
+          "description": "Taxable retirement distributions included in the income above",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxableSocialSecurityBenefits": {
+          "description": "Federally taxable Social Security included in the income above; states that do not exclude it fail closed",
+          "minimum": 0,
+          "type": "number",
+        },
       },
       "required": [
         "stateCode",
@@ -1967,6 +2277,46 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "adjustedIncome": {
+              "type": "number",
+            },
+            "deduction": {
+              "type": "number",
+            },
+            "effectiveRate": {
+              "type": "number",
+            },
+            "excludedIncome": {
+              "type": "number",
+            },
+            "hasLocalTaxes": {
+              "type": "boolean",
+            },
+            "stateCode": {
+              "type": "string",
+            },
+            "tax": {
+              "type": "number",
+            },
+            "taxYear": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "stateCode",
+            "taxYear",
+            "tax",
+            "deduction",
+            "excludedIncome",
+            "adjustedIncome",
+            "effectiveRate",
+            "hasLocalTaxes",
+          ],
+          "type": "object",
+        },
         "error": {
           "additionalProperties": false,
           "properties": {
@@ -2036,6 +2386,11 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "netLongTermCapitalGain": {
+          "description": "Net long-term capital gain included in the income above (Washington capital gains excise)",
+          "minimum": 0,
+          "type": "number",
+        },
         "states": {
           "description": "Array of state codes to compare (e.g., ['CA', 'TX', 'WA', 'NY'])",
           "items": {
@@ -2055,6 +2410,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
         },
         "taxableIncome": {
           "description": "Deprecated alias for incomeBeforeStateDeductions",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxableRetirementDistributions": {
+          "description": "Taxable retirement distributions included in the income above",
+          "minimum": 0,
+          "type": "number",
+        },
+        "taxableSocialSecurityBenefits": {
+          "description": "Federally taxable Social Security included in the income above; states that do not exclude it fail closed",
           "minimum": 0,
           "type": "number",
         },
@@ -3217,6 +3582,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "minimum": 0,
           "type": "number",
         },
+        "spouseSelfEmploymentIncome": {
+          "description": "MFJ only: spouse's share of selfEmploymentIncome",
+          "minimum": 0,
+          "type": "number",
+        },
+        "spouseW2Income": {
+          "description": "MFJ only: spouse's share of w2Income; the Social Security wage base applies per person",
+          "minimum": 0,
+          "type": "number",
+        },
         "stateCode": {
           "description": "State code for state tax estimate",
           "maxLength": 2,
@@ -4281,7 +4656,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
         "age": {
-          "description": "Your current age",
+          "description": "Your age at your birthday in the tax year",
           "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer",
@@ -4290,6 +4665,12 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "description": "Annual spending need (pre-tax)",
           "minimum": 0,
           "type": "number",
+        },
+        "birthYear": {
+          "description": "Birth year; sets the SECURE 2.0 RMD start age (default: taxYear - age)",
+          "maximum": 9007199254740991,
+          "minimum": 1900,
+          "type": "integer",
         },
         "filingStatus": {
           "enum": [
@@ -4329,7 +4710,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
           "type": "number",
         },
         "traditionalBalance": {
-          "description": "Traditional IRA/401k balance",
+          "description": "Traditional IRA balance on December 31 of the prior year",
           "minimum": 0,
           "type": "number",
         },
@@ -5195,6 +5576,16 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
               "type": "number",
             },
             "socialSecurityBenefits": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "spouseSelfEmployment": {
+              "description": "MFJ only: spouse's share of selfEmployment, already included in selfEmployment",
+              "minimum": 0,
+              "type": "number",
+            },
+            "spouseW2": {
+              "description": "MFJ only: spouse's share of w2, already included in w2; the Social Security wage base applies per person",
               "minimum": 0,
               "type": "number",
             },

@@ -1,6 +1,6 @@
 # irs-taxpayer-mcp Roadmap
 
-_Last updated: 2026-11-01._
+_Last updated: 2026-11-19._
 
 ## Current Baseline
 
@@ -43,7 +43,8 @@ Version 1.2.7 is a privacy-first deterministic TY2024 through TY2026 estimation 
 ### State estimates
 
 - Reference metadata for all 50 states and DC.
-- Exact-year no-broad-income-tax profiles for applicable TY2024 through TY2026 paths.
+- Exact-year no-broad-income-tax profiles for applicable TY2024 through TY2026 paths, plus Washington TY2026 (wages untaxed; long-term gains above $278,000 fail closed).
+- TY2026 profiles declare how they treat federally taxable Social Security and retirement distributions; undeclared treatments fail closed.
 - Audited California TY2024 single and married brackets from official FTB schedules.
 - Unsupported state-year and filing-status combinations return an error.
 
@@ -89,7 +90,7 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] Model the TY2026 non-itemizer charitable deduction and the 0.5% of AGI itemized charitable floor.
 - [x] Model the TY2026 IRC 68 2/37 itemized deduction limit.
 - [x] Calculate the Child and Dependent Care Credit, including the TY2026 OBBB schedule.
-- [🔄] Add TY2026 numeric profiles: CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, ND, NE, NJ, OH, PA, RI, and VA done; NY and remaining states pending official TY2026 sources.
+- [🔄] Add TY2026 numeric profiles: CA, GA, IL, IN, KS, KY, MA, MI, MN, MS, NC, ND, NE, NJ, OH, PA, RI, VA, and WA done; NY and remaining states pending official TY2026 sources.
 - [x] Add a TY2026 Premium Tax Credit estimate (Form 8962 annual method).
 - [x] Separate TY2025 and TY2026 law changes with primary-source citations in `what_changed_between_tax_years`.
 - [x] Use the 2026 Form W-4 Step 3 child amount ($2,200).
@@ -100,6 +101,11 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] Year-key the student loan interest phase-out and Saver's Credit AGI limits.
 - [x] Clear production dependency advisories (MCP SDK 1.32.2, zod 4.6.7).
 - [x] Release 1.2.0 to npm and the MCP Registry.
+- [x] 2026-11-19 review fixes: per-spouse Social Security wage base for SE tax and FICA, Schedule C QBI adjustments, Uniform Lifetime RMD table and SECURE 2.0 start age, Schedule SE $400 floor.
+- [x] State Social Security and retirement-income treatment from state sources (12 states subtract Social Security; IL subtracts retirement distributions), fail closed elsewhere.
+- [x] California TY2026 exemption credit with the AGI phase-out (2025 thresholds as a lower bound until the 2026 Form 540 instructions).
+- [ ] Decide whether to apply the IRS Tax Table below $100,000 taxable income (up to about $6 difference) or reword the README "exact" claim.
+- [ ] Declare Social Security treatment for KS, MN, MS, ND, NE, and RI and retirement-distribution treatment for the remaining TY2026 states from state sources.
 
 ## Phase 2: Forms and Schedules
 
@@ -155,12 +161,14 @@ This phase begins only after the filing-grade verification gates are met.
 - [x] Zero known production dependency vulnerabilities at release time.
 - [ ] Published support matrix generated from code-owned capability metadata.
 - [ ] Independent calculation review for each newly supported tax form.
+- [x] ESLint with typescript-eslint, type-checked tests, and v8 coverage floors in CI.
+- [x] Typed `structuredContent.data` for `calculate_federal_tax`, `calculate_total_tax`, and `estimate_state_tax`.
 
 ## Known Limitations
 
 - TY2024 through TY2026 federal data are modeled from annual IRS and SSA sources.
 - QBI and AMT are planning approximations for unsupported high-complexity paths.
-- Most graduated states lack explicit married brackets, and state HoH and MFS brackets are not modeled.
+- TY2026 state profiles model HoH and MFS rules; TY2024 and TY2025 state profiles still apply single amounts to those statuses.
 - Local, part-year, nonresident, community-property, and multi-state allocation rules are incomplete.
 - Credit screening data is broader than the set of credits calculated end to end.
 - Retirement, relocation, audit-risk, and multi-year tools are planning aids, not return calculations.

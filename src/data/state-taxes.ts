@@ -42,12 +42,25 @@ export interface StateInfo {
   thresholdTax?: { threshold: number; baseTax: number };
   /** Nonrefundable credit subtracted from computed tax, never below zero. */
   personalCredit?: { single: number; married: number };
+  /** Credit reduced by reductionPerExemption per exemption for each step (or part) of federal AGI above agiThreshold. */
+  personalCreditPhaseout?: { agiThreshold: { single: number; married: number }; step: number; reductionPerExemption: number };
   /** TY2026+: verified HoH and MFS rules. A missing key makes those statuses fail closed; {} means single amounts apply. */
   filingStatusOverrides?: Partial<Record<"head_of_household" | "married_filing_separately", FilingStatusOverride>>;
   /** Tax base: federal taxable income replaces the state deduction model when set. */
   incomeBase?: "federal_taxable_income";
   /** Income above this is not modeled (for example a deduction phase-out), so the calculation fails closed. */
   maxModeledIncome?: number;
+  /**
+   * Treatment of federally taxable Social Security and retirement distributions included in federal AGI.
+   * "excluded" subtracts them; "taxed" keeps them; an undeclared type fails closed when the amount is positive.
+   */
+  federalIncomeTreatment?: {
+    socialSecurity?: "excluded" | "taxed";
+    retirementDistributions?: "excluded" | "taxed";
+    sources: string[];
+  };
+  /** Capital gains excise (Washington): no tax when net long-term gains are at or below this amount, else fails closed. */
+  capitalGainsExciseNoTaxAtOrBelow?: number;
   notes?: string;
   saltDeductionOnFederal: boolean;
   localTaxes?: boolean;
@@ -61,6 +74,7 @@ export interface FilingStatusOverride {
   personalExemption?: number;
   exemptionIncomeLimit?: number;
   personalCredit?: number;
+  personalCreditPhaseout?: { agiThreshold: number; step: number };
   maxModeledIncome?: number;
 }
 
@@ -381,6 +395,15 @@ export const STATE_TAX_CALCULATION_DATA: Record<
   },
   2026: {
     ...createNoTaxProfiles(2026),
+    WA: createCalculationProfile(
+      "WA",
+      2026,
+      "Washington DOR capital gains tax page (2025 standard deduction $278,000) and RCW 82.87.150 (the deduction is never reduced)",
+      {
+        capitalGainsExciseNoTaxAtOrBelow: 278000,
+        notes: "No tax on wages. The capital gains excise applies to Washington long-term gains above the annual standard deduction; gains above $278,000 are not modeled",
+      },
+    ),
     NH: createCalculationProfile(
       "NH",
       2026,
@@ -394,8 +417,15 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         brackets: CA_2026_SINGLE,
         marriedBrackets: CA_2026_JOINT,
         standardDeduction: { single: 5900, married: 11800 },
-        notes: "TY2026 FTB Schedules X, Y, and Z; 1% Mental Health Services Tax above $1,000,000; MFS uses Schedule X and $5,900; exemption credits are not modeled",
-        filingStatusOverrides: { head_of_household: { brackets: CA_2026_HEAD, standardDeduction: 11800 }, married_filing_separately: {} },
+        personalCredit: { single: 158, married: 316 },
+        // 2025 Form 540 AGI limitation amounts; indexing only raises them, so the 2026 credit is at least this.
+        personalCreditPhaseout: { agiThreshold: { single: 252203, married: 504411 }, step: 2500, reductionPerExemption: 6 },
+        notes: "TY2026 FTB Schedules X, Y, and Z; 1% Mental Health Services Tax above $1,000,000; MFS uses Schedule X and $5,900; personal exemption credit $158 ($316 joint). The credit phase-out uses the 2025 AGI limitation amounts until the 2026 Form 540 instructions publish, which can overstate tax by about $6 per $2,500 of the threshold increase; dependent exemption credits ($491) are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://www.ftb.ca.gov/file/personal/income-types/social-security.html", "https://www.ftb.ca.gov/forms/2025/2025-1005-publication.pdf"] },
+        filingStatusOverrides: {
+          head_of_household: { brackets: CA_2026_HEAD, standardDeduction: 11800, personalCreditPhaseout: { agiThreshold: 378310, step: 2500 } },
+          married_filing_separately: { personalCreditPhaseout: { agiThreshold: 252203, step: 1250 } },
+        },
       },
     ),
     MA: createCalculationProfile(
@@ -409,6 +439,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: MA_2026_BRACKETS,
         personalExemption: { single: 4400, married: 8800 },
         notes: "Part A short-term gains (8.5%), dependent and age exemptions, and MA-specific deductions are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://budget.digital.mass.gov/govbudget/fy27/tax-expenditure-budget/personal-income-tax/exclusions-from-gross-income/1-009/"] },
         filingStatusOverrides: { head_of_household: { personalExemption: 6800 }, married_filing_separately: {} },
       },
     ),
@@ -420,6 +451,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         personalExemption: { single: 2925, married: 5850 },
         exemptionIncomeLimit: { single: 250000, married: 500000 },
         notes: "Dependent and age 65 or blind exemptions and Illinois subtractions such as retirement income are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "excluded", sources: ["https://tax.illinois.gov/individuals/pension.html"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -429,6 +461,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       "Pennsylvania Department of Revenue, 3.07% flat rate (REV-414(I) 2026)",
       {
         notes: "PA taxes eight income classes without federal adjustments; local earned income taxes and Tax Forgiveness are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -440,6 +473,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0399,
         standardDeduction: { single: 12750, married: 25500 },
         notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://www.ncdor.gov/taxes-forms/individual-income-tax/filing-topics/social-security-and-railroad-retirement-benefits"] },
         filingStatusOverrides: { head_of_household: { standardDeduction: 19125 }, married_filing_separately: {} },
       },
     ),
@@ -450,6 +484,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       {
         personalExemption: { single: 5900, married: 11800 },
         notes: "Dependent, special, and senior exemptions, retirement subtractions, and city income taxes are not modeled. Confirm the exemption against the 2026 MI-1040 instructions",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://www.michigan.gov/treasury/reference/taxpayer-notices/2025/11/17/social-security-taxation-changes-in-public-act-24-of-2025"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -461,6 +496,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0295,
         personalExemption: { single: 1000, married: 2000 },
         notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://forms.in.gov/Download.aspx?id=16353"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -472,6 +508,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.035,
         standardDeduction: { single: 3360, married: 3360 },
         notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://revenue.ky.gov/Forms/Schedule%20M%20(2025).pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -483,6 +520,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         topRate: 0.0499,
         standardDeduction: { single: 15000, married: 30000 },
         notes: "Dependent exemptions, the retirement income exclusion, and Georgia adjustments are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://www.audits2.ga.gov/wp-content/uploads/2023/11/Social-Security-Exclusion-Summary.pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -500,6 +538,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
           { maxIncome: 500000, inclusive: false, amountPerPerson: 1900 },
         ],
         notes: "Nonbusiness income only; the 3% business income rate and its deduction, dependent exemptions, the $20 exemption credit, the joint filing credit, and municipal and school district taxes are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://dam.assets.ohio.gov/image/upload/v1767098956/tax.ohio.gov/forms/ohio_individual/individual/2025/scheduleofadjustments.pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -513,6 +552,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         standardDeduction: { single: 8750, married: 17500 },
         personalExemption: { single: 930, married: 1860 },
         notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://law.lis.virginia.gov/vacode/title58.1/chapter3/section58.1-322.02/"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -617,6 +657,7 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: NJ_TABLE_B,
         personalExemption: { single: 1000, married: 2000 },
         notes: "Table B applies to HoH and Table A to MFS. Dependent, age 65, and blind exemptions, NJ exclusions, and the property tax deduction are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://nj.gov/treasury/taxation/pdf/anchor/anchor-home-income.pdf"] },
         filingStatusOverrides: { head_of_household: { brackets: NJ_TABLE_B }, married_filing_separately: {} },
       },
     ),

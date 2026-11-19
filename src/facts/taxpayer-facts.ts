@@ -17,6 +17,12 @@ export const FilingStatusSchema = z.enum(
 const IncomeSchema = z.object({
   w2: z.number().min(0).optional(),
   selfEmployment: z.number().min(0).optional(),
+  spouseW2: z.number().min(0).optional().describe(
+    "MFJ only: spouse's share of w2, already included in w2; the Social Security wage base applies per person",
+  ),
+  spouseSelfEmployment: z.number().min(0).optional().describe(
+    "MFJ only: spouse's share of selfEmployment, already included in selfEmployment",
+  ),
   taxableInterest: z.number().min(0).optional(),
   ordinaryDividends: z.number().min(0).optional(),
   qualifiedDividends: z.number().min(0).optional(),

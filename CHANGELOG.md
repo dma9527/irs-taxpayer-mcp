@@ -4,6 +4,26 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+### Fixed
+
+- Social Security wage base applied to the household instead of each person. The engine takes `spouseW2Income` and `spouseSelfEmploymentIncome` (MFJ shares of the household totals) and runs one Schedule SE per spouse; employee FICA in the planner, `generate_full_tax_report`, and `calculate_total_tax` applies the wage base per earner. Example: MFJ with taxpayer W-2 $150,000 and spouse SE $100,000 now owes SE tax $14,130 instead of $6,956. Without a split the engine keeps the same-spouse assumption and says so in `limitations`.
+- `estimate_self_employment_tax` and `process_1099_income` passed net profit as QBI. QBI now subtracts the deductible half of SE tax, SE health insurance, and SE retirement contributions (Treas. Reg. 1.199A-3(b)(1)(vi)); the example MFJ case drops from a $20,000 to a $15,304 QBI deduction.
+- RMDs used four bucketed divisors and a fixed age-73 start. `plan_retirement_withdrawals` uses the full Uniform Lifetime Table (Treas. Reg. 1.401(a)(9)-9(c)) and the SECURE 2.0 start age (75 for people born 1960 or later); it takes an optional `birthYear`. `plan_multi_year_taxes` shows the start age for the birth year.
+- SE tax and Additional Medicare Tax applied to net SE earnings below $400 (Schedule SE line 4c).
+- State estimates started from federal AGI and kept federally taxable Social Security and retirement distributions. TY2026 profiles now declare their treatment from state sources: Social Security is subtracted in CA, GA, IL, IN, KY, MA, MI, NC, NJ, OH, PA, and VA; retirement distributions are subtracted in IL and kept in CA. Any other state returns an error when those amounts are present instead of overstating tax.
+- `calculate_total_tax` take-home ignored employee FICA, and its itemized path could not pass the SALT AMT add-back or TY2026 charitable inputs.
+- The planner warned that TY2026 head of household and married filing separately state estimates use the single profile.
+
+### Added
+
+- Washington TY2026 profile: wages are untaxed; long-term gains above $278,000 (the 2025 capital gains standard deduction, which RCW 82.87.150 never lowers) return an error.
+- California TY2026 personal exemption credit ($158, $316 joint) with the $6 per $2,500 AGI phase-out. The 2026 AGI thresholds are not published yet, so the 2025 thresholds are used as a lower bound.
+- `estimate_state_tax` and `compare_state_taxes` accept `taxableSocialSecurityBenefits`, `taxableRetirementDistributions`, and `netLongTermCapitalGain`.
+- `calculate_federal_tax`, `calculate_total_tax`, and `estimate_state_tax` return typed results in `structuredContent.data`.
+- Law change registry entries for the TY2026 Form 1099-NEC/MISC $2,000 threshold (OBBB sec. 70433) and the Roth catch-up rule for 2025 FICA wages above $150,000 (Notice 2025-67); the document checklist and form reference use the year's 1099-NEC threshold.
+- Golden cases: 55 federal (per-spouse SE, the $400 floor, two retiree cases with the Pub. 915 worksheet) and 1,706 state (Social Security treatment and Washington gains). Six differential scenarios compare per-spouse SE tax with Tax-Calculator (59 of 59 match).
+- `npm run lint` (ESLint with typescript-eslint), `npm run typecheck` (tests included), and `npm run test:coverage` (v8 with floors at the current baseline), all run in CI.
+
 ## [1.2.7] - 2026-11-16
 
 ### Added

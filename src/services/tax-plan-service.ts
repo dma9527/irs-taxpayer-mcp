@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 import {
-  calculateStateTax,
+  calculateStateTaxForFederal,
   UnsupportedStateTaxCalculationError,
 } from "../calculators/state-tax-calculator.js";
-import { calculateTax } from "../calculators/tax-calculator.js";
+import { calculateEmployeeFica, calculateTax } from "../calculators/tax-calculator.js";
 import { TaxInputValidationError } from "../calculators/validation.js";
 import {
   FilingStatusSchema,
@@ -253,6 +253,8 @@ export function buildTaxPlan(
       grossIncome: calculatorGrossIncome,
       w2Income,
       selfEmploymentIncome,
+      spouseW2Income: income.spouseW2,
+      spouseSelfEmploymentIncome: income.spouseSelfEmployment,
       capitalGains: longTermCapitalGains,
       qualifiedDividends,
       capitalGainsLongTerm: true,
@@ -333,11 +335,10 @@ export function buildTaxPlan(
   const federalTaxAfterRefundableCredits =
     federalResult.totalFederalTax - earnedIncomeCredit;
 
-  const employeeFica = Math.round(
-    Math.min(w2Income, taxData.socialSecurity.wageBase)
-      * taxData.socialSecurity.taxRate
-    + w2Income * taxData.medicare.taxRate,
-  );
+  const employeeFica = Math.round(calculateEmployeeFica(
+    taxData,
+    income.spouseW2 === undefined ? [w2Income] : [w2Income - income.spouseW2, income.spouseW2],
+  ));
 
   let stateTax = 0;
   let stateBalance = 0;
@@ -353,13 +354,7 @@ export function buildTaxPlan(
   if (params.stateCode) {
     let stateResult;
     try {
-      stateResult = calculateStateTax({
-        stateCode: params.stateCode,
-        taxYear: params.taxYear,
-        incomeBeforeDeductions: federalResult.adjustedGrossIncome,
-        federalTaxableIncome: federalResult.taxableIncome,
-        filingStatus: params.filingStatus,
-      });
+      stateResult = calculateStateTaxForFederal(params.stateCode, params.taxYear, params.filingStatus, federalResult);
     } catch (error) {
       if (error instanceof UnsupportedStateTaxCalculationError) {
         fail(
@@ -399,22 +394,17 @@ export function buildTaxPlan(
     "All inputs are annual US-dollar amounts supplied by the user.",
     "CTC, ODC, and EITC dependent counts have each been verified under their separate eligibility tests.",
     "Any supplied itemized deduction is after the SALT cap and medical floor; the engine applies the TY2026 charitable floor and IRC 68 limit.",
-    "State estimates use federal AGI as pre-deduction state income and only exact-year profiles.",
+    "State estimates start from federal AGI, subtract taxable Social Security and retirement income the profile declares excluded, and use only exact-year profiles.",
   ];
   const warnings = [...federalResult.limitations];
   if (params.stateCode) {
     warnings.push(
       "Part-year, nonresident, local, multi-state allocation, and state-specific income adjustments are not modeled.",
     );
-    if (params.filingStatus === "head_of_household"
-      || params.filingStatus === "married_filing_separately") {
+    if (params.taxYear < 2026 && (params.filingStatus === "head_of_household"
+      || params.filingStatus === "married_filing_separately")) {
       warnings.push(
         "The supported state estimate uses the single state profile for this federal filing status.",
-      );
-    }
-    if (socialSecurityBenefits > 0) {
-      warnings.push(
-        "The state estimate does not subtract state-exempt Social Security benefits from its federal-AGI starting point.",
       );
     }
   }

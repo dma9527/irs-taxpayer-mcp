@@ -23,6 +23,7 @@ def oracle(scenario):
         "RECID": 1, "exact": 1, "MARS": MARS[scenario["status"]], "FLPDYR": scenario["year"],
         "XTOT": (2 if married else 1) + max(scenario["ctc_kids"], scenario["eitc_kids"]),
         "e00200": wages, "e00200p": scenario["wages"], "e00200s": scenario["spouse_wages"],
+        "e00900": scenario["se"] + scenario["spouse_se"], "e00900p": scenario["se"], "e00900s": scenario["spouse_se"],
         "p23250": scenario["ltcg"], "e00600": scenario["odiv"], "e00650": scenario["qdiv"],
         "e18400": scenario["salt"], "e19200": scenario["mortgage"], "e19800": scenario["charity"],
         "n24": scenario["ctc_kids"], "EIC": min(scenario["eitc_kids"], 3),
@@ -50,6 +51,7 @@ def oracle(scenario):
         "actc": get("c11070"),
         "eitc": get("eitc"),
         "niit": get("niit"),
+        "setax": get("setax"),
     }
 
 
@@ -62,7 +64,8 @@ def main():
     mismatches = 0
     for scenario, local in zip(SCENARIOS, engine):
         reference = oracle(scenario)
-        diffs = {key: (local[key], reference[key]) for key in reference
+        keys = scenario["keys"] or [key for key in reference if key != "setax"]
+        diffs = {key: (local[key], reference[key]) for key in keys
                  if abs(local[key] - reference[key]) > TOLERANCE}
         status = "OK  " if not diffs else "DIFF"
         mismatches += bool(diffs)

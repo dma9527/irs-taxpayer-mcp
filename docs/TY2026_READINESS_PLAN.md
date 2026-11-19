@@ -104,6 +104,47 @@ Verdict: TY2026 federal planning is ready for the modeled scope. State coverage 
 | P3 | Other state profiles | Open | AZ: ADOR says 2026 standard deduction is pending legislative conformity. CO: taxes federal taxable income, which the state calculator now receives, but CO additions (for example the high-income deduction addback) still need sourcing. UT: needs the taxpayer credit model and 2026 HB 210 changes. IA: 2026 standard deduction not found in an IDR document. ID: 2026 rate schedule not published. LA: 2026 standard deduction only appears as a withholding assumption. AR: 3.9% in the withholding formula conflicts with 3.7% in SB1. WI: the standard deduction is a sliding scale that phases out from low income, which needs its own model. MD: county income tax applies to every resident and the exemption phases out above $100,000, so a state-only number would mislead. Others not yet sourced |
 | P3 | Trump Accounts, scholarship credit (TY2027), adoption credit refundability | Reference only | Listed in the law change registry; not calculated |
 
+## 2026-11-19 Review: Findings and Optimization Plan
+
+Build, 1,721 tests, `npm audit`, and the differential test (53 of 53) passed before this review. The TY2026
+federal constants were re-checked against Rev. Proc. 2025-32, Rev. Proc. 2025-25, Notice 2025-67, and the
+Schedule 1-A PDF; no constant error was found. The defects below sit in how tools assemble engine inputs and
+in the state income base.
+
+### Findings
+
+| ID | Severity | Defect | Reproduction | Status |
+|----|----------|--------|--------------|--------|
+| D19 | P1 | Social Security wage base applied to the household instead of each person (SE tax and employee FICA) | MFJ, spouse A W-2 $150,000, spouse B SE $100,000: SE tax understated by about $7,174. Two W-2 earners at $180,000 each: employee FICA understated by about $10,881 | Fixed: `spouseW2Income` and `spouseSelfEmploymentIncome`, one Schedule SE per spouse, `calculateEmployeeFica` per earner |
+| D20 | P1 | SE and 1099 tools pass net profit as QBI without subtracting the deductible half of SE tax, SE health insurance, and SE retirement contributions (Treas. Reg. 1.199A-3(b)(1)(vi)) | MFJ, W-2 $150,000, SE $100,000, $20,000 SE retirement: QBI deduction $20,000, correct $15,304 | Fixed: `calculateScheduleCQualifiedBusinessIncome` in both tools |
+| D21 | P1 | RMD uses four bucketed divisors and a fixed age-73 start | Age 80 uses 22.9 instead of 20.2; age 90 uses 14.8 instead of 12.2; people born 1960 or later start at 75 | Fixed: `src/data/rmd.ts` from Treas. Reg. 1.401(a)(9)-9(c); optional `birthYear` |
+| D22 | P1 | State estimates start from federal AGI, which includes Social Security and retirement income that most profiled states exempt, and still return a number | Any retiree with taxable Social Security in a TY2026 income-tax state | Fixed: `federalIncomeTreatment` per profile from state sources (Social Security subtracted in 12 states, retirement in IL, kept in CA); undeclared amounts fail closed; KS, MN, MS, ND, NE, RI and most retirement treatments still to source |
+| D23 | P2 | SE tax charged when net earnings are below $400 (Schedule SE line 4c) | SE profit $300 returns SE tax $42 | Fixed (SE tax and Additional Medicare Tax) |
+| D24 | P2 | Washington fails closed although wages are untaxed; the README sample prompt compares CA, TX, and WA | `estimate_state_tax` WA TY2026 | Fixed: wages untaxed; long-term gains above $278,000 fail closed (RCW 82.87.150 never lowers the deduction) |
+| D25 | P2 | Stale TY2026 reference text: 1099-NEC/MISC threshold is $2,000 for payments after 2025; no 2026 Roth catch-up rule; planner warns HoH and MFS use the single state profile although TY2026 profiles have overrides | `get_irs_form_info` 1099-NEC; `generate_tax_plan` HoH with a TY2026 state | Fixed: law change entries, year-aware 1099-NEC text, planner warning limited to TY2024 and TY2025 |
+| D26 | P2 | `calculate_total_tax` take-home excludes employee FICA, while the planner includes it | Same W-2 inputs give different take-home | Fixed; the tool also takes the SALT AMT add-back and TY2026 charitable inputs |
+| D27 | P3 | Engine uses the rate formula where Form 1040 requires the Tax Table below $100,000 taxable income (up to about $6) | Single, taxable income $83,900: table $13,176, engine $13,170 | Decision needed: apply the Tax Table, or reword the README "exact" claim |
+| Q1 | Quality | 44 of 45 tools return only text in `structuredContent` | `registerTaxTool` in `src/tools/shared.ts` | Done for `calculate_federal_tax`, `calculate_total_tax`, `estimate_state_tax` (`structuredContent.data`); `calculateStateTaxForFederal` replaces 10 call sites |
+| Q2 | Quality | No lint script, no coverage provider, tests are not type-checked (tsconfig excludes them) | `package.json`, `tsconfig.json` | Done: `npm run lint`, `npm run typecheck`, `npm run test:coverage` in CI |
+
+### Plan
+
+| Phase | Scope | Exit criteria |
+|-------|-------|---------------|
+| A. Correctness (target 1.2.8) | D19, D20, D21, D23 | Hand-worked failing test first for each; suite, golden, and differential green |
+| B. TY2026 content (target 1.3.0) | D22 framework (state exempt-income declarations, fail closed when undeclared), D24, D25, D26 | Each state treatment cites the state revenue department; unmodeled income still fails closed |
+| C. Product structure | Q1 for the core calculation tools; split shared state-calculation calls into one helper | Contract snapshot diff shows only added structured fields |
+| D. Engineering | Q2 | CI runs lint, test type-check, and coverage |
+| E. Season validation (January 2027) | Final 2026 forms check (existing P2 row), NY when published, D27 decision, golden cases for two-earner MFJ, SE plus W-2, and retirees | Existing P3 exit criteria |
+
+Also added in this pass: California TY2026 exemption credit ($158, $316 joint) with the $6 per $2,500 AGI phase-out
+on the 2025 thresholds as a lower bound; 55 federal and 1,706 state golden cases; 59 of 59 differential scenarios,
+including six per-spouse SE cases.
+
+Dropped from the review draft: a projected TY2027 profile built from CPI estimates. It would put
+unpublished amounts into the engine, which the primary-source rule forbids; TY2027 stays fail-closed
+until Rev. Proc. 2026-xx is published.
+
 ## TY2026 Law Changes Versus Earlier Years
 
 Inflation adjustments (brackets, standard deduction, limits) are year data in `src/data/tax-brackets.ts` and

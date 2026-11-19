@@ -102,14 +102,29 @@ def eitc(earned, agi, status, children):
 def work(case):
     f = {"wages": 0, "se": 0, "interest": 0, "odiv": 0, "qdiv": 0, "ltcg": 0, "kids": 0, "age65": False,
          "spouse65": False, "tips": 0, "overtime": 0, "vehicle": 0, "salt": 0, "mortgage": 0, "charity": 0,
-         "cash_charity": 0, "care": 0, "care_kids": 0, "spouse_wages": 0, "eitc_kids": None, **case}
+         "cash_charity": 0, "care": 0, "care_kids": 0, "spouse_wages": 0, "eitc_kids": None, "spouse_se": 0,
+         "ss": 0, "pension": 0, **case}
     st = f["status"]
     lines = []
-    net_se = f["se"] * .9235
-    ss_room = max(0, WAGE_BASE - f["wages"])
-    se_tax = min(net_se, ss_room) * .124 + net_se * .029 if f["se"] else 0.0
-    agi = f["wages"] + f["se"] + f["interest"] + f["odiv"] + f["ltcg"] - se_tax / 2
-    lines.append(f"AGI {agi:,.2f}" + (f" after half SE tax {se_tax / 2:,.2f}" if se_tax else ""))
+    # One Schedule SE per spouse: 92.35% net earnings, none below $400 (line 4c), wage base reduced by own wages.
+    people = [(f["se"] - f["spouse_se"], f["wages"] - f["spouse_wages"]), (f["spouse_se"], f["spouse_wages"])]
+    nets = [profit * .9235 for profit, _ in people]
+    nets = [net if net >= 400 else 0.0 for net in nets]
+    se_tax = sum(min(net, max(0, WAGE_BASE - wages)) * .124 + net * .029 for net, (_, wages) in zip(nets, people))
+    net_se = sum(nets)
+    other = f["wages"] + f["se"] + f["interest"] + f["odiv"] + f["ltcg"] + f["pension"] - se_tax / 2
+    # Pub. 915 Worksheet 1: provisional income against the $25,000/$34,000 ($32,000/$44,000 MFJ) bases.
+    base, adjusted_base = (32000, 44000) if st == MFJ else (25000, 34000)
+    provisional = other + f["ss"] * .5
+    if provisional <= base:
+        taxable_ss = 0.0
+    elif provisional <= adjusted_base:
+        taxable_ss = min(f["ss"] * .5, (provisional - base) * .5)
+    else:
+        taxable_ss = min(f["ss"] * .85, (provisional - adjusted_base) * .85 + min(f["ss"] * .5, (adjusted_base - base) * .5))
+    agi = other + taxable_ss
+    lines.append(f"AGI {agi:,.2f}" + (f" after half SE tax {se_tax / 2:,.2f}" if se_tax else "")
+                 + (f", taxable Social Security {taxable_ss:,.2f}" if f["ss"] else ""))
 
     standard = STANDARD[st] + AGED[st] * (f["age65"] + f["spouse65"])
     itemized = 0.0
@@ -228,6 +243,11 @@ CASES = [
     C("mfj care 2 kids 150k", MFJ, wages=150000, spouse_wages=60000, kids=2, care=8000, care_kids=2),
     C("hoh care 1 kid 45k", HOH, wages=45000, kids=1, care=5000, care_kids=1, eitc_kids=1),
     C("single care 1 kid 30k", S, wages=30000, kids=1, care=3000, care_kids=1),
+    C("single SE 300 below the $400 floor", S, se=300),
+    C("mfj taxpayer W-2 150k, spouse SE 100k", MFJ, wages=150000, se=100000, spouse_se=100000),
+    C("mfj both spouses W-2 and SE", MFJ, wages=210000, spouse_wages=90000, se=170000, spouse_se=110000),
+    C("single retiree SS 30k pension 20k", S, ss=30000, pension=20000, age65=True),
+    C("mfj retirees SS 48k pension 60k", MFJ, ss=48000, pension=60000, age65=True, spouse65=True),
 ]
 
 if __name__ == "__main__":

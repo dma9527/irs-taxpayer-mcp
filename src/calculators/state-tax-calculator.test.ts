@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateStateTax } from "./state-tax-calculator.js";
+import {
+  calculateStateTax,
+  calculateStateTaxForFederal,
+  UnsupportedStateTaxCalculationError,
+} from "./state-tax-calculator.js";
+import { calculateTax } from "./tax-calculator.js";
 
 describe("calculateStateTax accuracy safeguards", () => {
   it("fails closed when a graduated state has no brackets", () => {
@@ -123,13 +128,20 @@ describe("TY2026 state profiles", () => {
   });
 
   it("uses the TY2026 California FTB schedules and standard deduction", () => {
-    // Single: 94,100 taxable -> 3,310.88 + 9.3% x 18,903. MFJ: 188,200 -> 6,621.76 + 9.3% x 37,806.
+    // Single: 94,100 taxable -> 3,310.88 + 9.3% x 18,903 - $158 credit. MFJ: 188,200 -> 6,621.76 + 9.3% x 37,806 - $316.
     const single = calculateStateTax({ stateCode: "CA", taxYear: 2026, incomeBeforeDeductions: 100000, filingStatus: "single" });
     const married = calculateStateTax({ stateCode: "CA", taxYear: 2026, incomeBeforeDeductions: 200000, filingStatus: "married" });
     expect(single?.deduction).toBe(5900);
-    expect(single?.tax).toBe(5069);
+    expect(single?.tax).toBe(4911);
     expect(married?.deduction).toBe(11800);
-    expect(married?.tax).toBe(10138);
+    expect(married?.tax).toBe(9822);
+  });
+
+  it("phases out the CA exemption credit by $6 per $2,500 of AGI above the threshold", () => {
+    // 300,000 - 5,900 = 294,100: 3,310.88 + 9.3% x (294,100 - 75,197) = 23,668.86;
+    // credit 158 - 6 x ceil((300,000 - 252,203) / 2,500) = 158 - 120 = 38.
+    const result = calculateStateTax({ stateCode: "CA", taxYear: 2026, incomeBeforeDeductions: 300000, filingStatus: "single" });
+    expect(result?.tax).toBe(23631);
   });
 
   it("adds the 1% Mental Health Services Tax above $1,000,000 for TY2026 California", () => {
@@ -299,8 +311,8 @@ describe("TY2026 head of household and married filing separately", () => {
     calculateStateTax({ stateCode, taxYear: 2026, incomeBeforeDeductions: income, filingStatus, federalTaxableIncome })?.tax;
 
   it.each([
-    // CA Schedule Z on 88,200: 2,483.29 + 8% x 1,546.
-    ["CA", 100000, 2607],
+    // CA Schedule Z on 88,200: 2,483.29 + 8% x 1,546 - $158 exemption credit.
+    ["CA", 100000, 2449],
     // MN HoH on 77,000: 5.35% x 41,010 + 6.80% x 35,990.
     ["MN", 100000, 4641],
     // KS: 100,000 - 6,180 - 9,160 = 84,660; 1,196 + 5.58% x 61,660.
@@ -322,8 +334,8 @@ describe("TY2026 head of household and married filing separately", () => {
   });
 
   it.each([
-    // CA Schedule X and $5,900, same as single.
-    ["CA", 100000, 5069],
+    // CA Schedule X and $5,900, same as single, less the $158 exemption credit.
+    ["CA", 100000, 4911],
     // MN MFS on 84,700: 5.35% x 24,350 + 6.80% x 60,350.
     ["MN", 100000, 5407],
     // KS: 100,000 - 4,120 - 9,160 = 86,720; 1,196 + 5.58% x 63,720.
@@ -365,5 +377,69 @@ describe("TY2026 head of household and married filing separately", () => {
     const single = calculateStateTax({ stateCode: "CA", taxYear: 2024, incomeBeforeDeductions: 100000, filingStatus: "single" })?.tax;
     const head = calculateStateTax({ stateCode: "CA", taxYear: 2024, incomeBeforeDeductions: 100000, filingStatus: "head_of_household" })?.tax;
     expect(head).toBe(single);
+  });
+});
+
+describe("TY2026 state treatment of Social Security, retirement income, and Washington gains", () => {
+  it("subtracts federally taxable Social Security where the state excludes it", () => {
+    // CA: $60,000 - $20,000 SS - $5,900 = $34,100; 1% x 11,456 + 2% x 15,701 + 4% x 6,943 = $706.30, less $158 credit
+    const result = calculateStateTax({
+      stateCode: "CA", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      incomeComposition: { taxableSocialSecurityBenefits: 20000 },
+    });
+    expect(result?.excludedIncome).toBe(20000);
+    expect(result?.adjustedIncome).toBe(34100);
+    expect(result?.tax).toBe(548);
+  });
+
+  it("keeps retirement distributions in a state that follows federal treatment", () => {
+    // CA: $60,000 - $5,900 = $54,100; adds 6% x 11,239 above $42,861 = $1,731.08, less $158 credit
+    const result = calculateStateTax({
+      stateCode: "CA", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      incomeComposition: { taxableRetirementDistributions: 20000 },
+    });
+    expect(result?.excludedIncome).toBe(0);
+    expect(result?.tax).toBe(1573);
+  });
+
+  it("subtracts retirement distributions in Illinois", () => {
+    // IL: $100,000 - $40,000 - $2,925 = $57,075 x 4.95% = $2,825.21
+    const result = calculateStateTax({
+      stateCode: "IL", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 100000,
+      incomeComposition: { taxableRetirementDistributions: 40000 },
+    });
+    expect(result?.tax).toBe(2825);
+  });
+
+  it("fails closed when the state's treatment is not modeled", () => {
+    expect(() => calculateStateTax({
+      stateCode: "KS", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      incomeComposition: { taxableSocialSecurityBenefits: 20000 },
+    })).toThrow(UnsupportedStateTaxCalculationError);
+    expect(() => calculateStateTax({
+      stateCode: "NC", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      incomeComposition: { taxableRetirementDistributions: 20000 },
+    })).toThrow("treatment of taxable retirement distributions is not modeled");
+  });
+
+  it("taxes no Washington wages and fails closed above the capital gains floor", () => {
+    expect(calculateStateTax({
+      stateCode: "WA", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 500000,
+      incomeComposition: { netLongTermCapitalGain: 278000 },
+    })?.tax).toBe(0);
+    expect(() => calculateStateTax({
+      stateCode: "WA", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 500000,
+      incomeComposition: { netLongTermCapitalGain: 278001 },
+    })).toThrow("capital gains excise");
+  });
+
+  it("passes the federal components through calculateStateTaxForFederal", () => {
+    const federal = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 70000, w2Income: 40000, socialSecurityBenefits: 30000,
+    });
+    const result = calculateStateTaxForFederal("CA", 2026, "single", federal);
+    expect(federal.taxableSocialSecurityBenefits).toBeGreaterThan(0);
+    expect(result?.excludedIncome).toBe(federal.taxableSocialSecurityBenefits);
+    expect(result?.adjustedIncome).toBe(federal.adjustedGrossIncome - federal.taxableSocialSecurityBenefits - 5900);
   });
 });

@@ -12,6 +12,8 @@ const FixtureSchema = z.object({
       status: z.enum(["single", "married_filing_jointly", "married_filing_separately", "head_of_household"]),
       income: z.number(),
       federalTaxableIncome: z.number().optional(),
+      taxableSocialSecurityBenefits: z.number().optional(),
+      netLongTermCapitalGain: z.number().optional(),
     }).strict(),
     expected: z.union([
       z.object({ tax: z.number(), adjustedIncome: z.number() }).strict(),
@@ -27,7 +29,7 @@ const fixture = FixtureSchema.parse(
 
 describe("TY2026 state golden cases (scripts/golden/state_worksheet_ty2026.py)", () => {
   it("covers every TY2026 profile and the fail-closed states", () => {
-    expect(new Set(fixture.cases.map(({ facts }) => facts.state)).size).toBe(29);
+    expect(new Set(fixture.cases.map(({ facts }) => facts.state)).size).toBe(30);
   });
 
   it.each(fixture.cases.map((testCase) => [testCase.name, testCase] as const))("%s", (_name, { facts, expected }) => {
@@ -37,6 +39,10 @@ describe("TY2026 state golden cases (scripts/golden/state_worksheet_ty2026.py)",
       incomeBeforeDeductions: facts.income,
       filingStatus: facts.status,
       federalTaxableIncome: facts.federalTaxableIncome,
+      incomeComposition: {
+        taxableSocialSecurityBenefits: facts.taxableSocialSecurityBenefits,
+        netLongTermCapitalGain: facts.netLongTermCapitalGain,
+      },
     });
     if ("unsupported" in expected) {
       expect(run).toThrow(UnsupportedStateTaxCalculationError);

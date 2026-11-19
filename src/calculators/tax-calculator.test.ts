@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { calculateTax, type TaxInput } from "./tax-calculator.js";
+import {
+  calculateEmployeeFica,
+  calculateScheduleCQualifiedBusinessIncome,
+  calculateTax,
+  type TaxInput,
+} from "./tax-calculator.js";
+import { getTaxYearData } from "../data/tax-brackets.js";
 
 const base2024Single: TaxInput = {
   taxYear: 2024,
@@ -236,6 +242,85 @@ describe("calculateTax", () => {
       // W-2 $200k > $168,600 wage base → SE SS tax = $0, only Medicare
       const netEarnings = 50000 * 0.9235;
       expect(result.selfEmploymentTax).toBeCloseTo(netEarnings * 0.029, 0);
+    });
+
+    it("charges no SE tax when net earnings are below $400", () => {
+      // $400 profit x 0.9235 = $369.40 net earnings, below the Schedule SE line 4c floor.
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "single", grossIncome: 400, selfEmploymentIncome: 400,
+      });
+      expect(result.selfEmploymentTax).toBe(0);
+      expect(result.adjustedGrossIncome).toBe(400);
+    });
+
+    it("charges SE tax once net earnings reach $400", () => {
+      // $1,000 x 0.9235 = $923.50; $923.50 x 15.3% = $141.2955
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "single", grossIncome: 1000, selfEmploymentIncome: 1000,
+      });
+      expect(result.selfEmploymentTax).toBeCloseTo(141.2955, 4);
+    });
+
+    it("applies the wage base per spouse when the other spouse has the W-2 wages", () => {
+      // Spouse SE $100,000: net $92,350 x 15.3% = $14,129.55; taxpayer W-2 does not use the spouse's wage base.
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 250000,
+        w2Income: 150000, selfEmploymentIncome: 100000, spouseSelfEmploymentIncome: 100000,
+      });
+      expect(result.selfEmploymentTax).toBeCloseTo(14129.55, 2);
+      expect(result.limitations.some((note) => note.includes("same spouse"))).toBe(false);
+    });
+
+    it("reduces the wage base when the same spouse has the W-2 wages", () => {
+      // ($184,500 - $150,000) x 12.4% = $4,278; $92,350 x 2.9% = $2,678.15
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 250000,
+        w2Income: 150000, selfEmploymentIncome: 100000,
+        spouseW2Income: 150000, spouseSelfEmploymentIncome: 100000,
+      });
+      expect(result.selfEmploymentTax).toBeCloseTo(6956.15, 2);
+    });
+
+    it("flags the same-spouse assumption for MFJ W-2 and SE income without a split", () => {
+      const result = calculateTax({
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 250000,
+        w2Income: 150000, selfEmploymentIncome: 100000,
+      });
+      expect(result.selfEmploymentTax).toBeCloseTo(6956.15, 2);
+      expect(result.limitations.some((note) => note.includes("same spouse"))).toBe(true);
+    });
+
+    it("rejects spouse earnings splits outside MFJ or above the household totals", () => {
+      expect(() => calculateTax({
+        taxYear: 2026, filingStatus: "single", grossIncome: 50000, w2Income: 50000, spouseW2Income: 10000,
+      })).toThrow("married filing jointly");
+      expect(() => calculateTax({
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 50000,
+        w2Income: 50000, spouseW2Income: 60000,
+      })).toThrow("between 0 and w2Income");
+    });
+  });
+
+  describe("employee FICA", () => {
+    it("applies the Social Security wage base to each earner", () => {
+      // Two earners at $180,000: 2 x ($180,000 x 6.2% + $180,000 x 1.45%) = $27,540
+      expect(calculateEmployeeFica(getTaxYearData(2026)!, [180000, 180000])).toBeCloseTo(27540, 2);
+    });
+
+    it("caps one earner at the wage base", () => {
+      // $184,500 x 6.2% = $11,439; $360,000 x 1.45% = $5,220
+      expect(calculateEmployeeFica(getTaxYearData(2026)!, [360000])).toBeCloseTo(16659, 2);
+    });
+  });
+
+  describe("Schedule C qualified business income", () => {
+    it("subtracts half of SE tax, SE health insurance, and SE retirement", () => {
+      // $100,000 - $6,956.15 / 2 - $5,000 - $20,000 = $71,521.925
+      expect(calculateScheduleCQualifiedBusinessIncome(100000, 6956.15, 5000, 20000)).toBeCloseTo(71521.925, 3);
+    });
+
+    it("does not go below zero", () => {
+      expect(calculateScheduleCQualifiedBusinessIncome(1000, 141.3, 5000)).toBe(0);
     });
   });
 

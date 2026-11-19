@@ -12,7 +12,6 @@
  *   PTC: IRC §36B (ACA)
  */
 
-import type { FilingStatus } from "./tax-brackets.js";
 
 export interface CreditRule {
   id: string;

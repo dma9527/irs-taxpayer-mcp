@@ -75,6 +75,10 @@ export interface TaxInput {
   dependentCareBenefitsExcluded?: number;
   /** MFJ only: the spouse's earned income, included in combined earned income. */
   spouseEarnedIncome?: number;
+  /** MFJ only: the spouse's share of w2Income, so the Social Security wage base applies per person. */
+  spouseW2Income?: number;
+  /** MFJ only: the spouse's share of selfEmploymentIncome (each spouse files a Schedule SE). */
+  spouseSelfEmploymentIncome?: number;
 }
 
 export interface TaxBreakdown {
@@ -92,6 +96,8 @@ export interface TaxBreakdown {
   ordinaryIncomeTax: number;
   capitalGainsTax: number;
   capitalLossDeduction: number;
+  /** Net long-term capital gain after Schedule D netting (zero for a net loss). */
+  netLongTermCapitalGain: number;
   shortTermCapitalLossCarryforward: number;
   longTermCapitalLossCarryforward: number;
   taxableSocialSecurityBenefits: number;
@@ -233,18 +239,79 @@ function calculateCapitalNetting(
 
 /** Schedule SE line 4a: net earnings are 92.35% of SE profit. */
 const SE_NET_EARNINGS_FACTOR = 0.9235;
+/** Schedule SE line 4c: no SE tax when net earnings are below $400. */
+const SE_MINIMUM_NET_EARNINGS = 400;
 
-function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData, w2Income: number = 0): number {
-  if (seIncome <= 0) return 0;
-
+/** One person's Schedule SE tax; w2Income is that person's own Social Security wages. */
+export function calculateSelfEmploymentTax(seIncome: number, taxData: TaxYearData, w2Income: number = 0): number {
   const netEarnings = seIncome * SE_NET_EARNINGS_FACTOR;
-  // W-2 wages already used part of the SS wage base
+  if (netEarnings < SE_MINIMUM_NET_EARNINGS) return 0;
+
   const remainingWageBase = Math.max(0, taxData.socialSecurity.wageBase - w2Income);
   const ssWages = Math.min(netEarnings, remainingWageBase);
   const ssTax = ssWages * taxData.socialSecurity.taxRate * 2; // both employer + employee share
   const medicareTax = netEarnings * taxData.medicare.taxRate * 2;
 
   return ssTax + medicareTax;
+}
+
+/** Employee Social Security and Medicare (no Additional Medicare Tax); the wage base applies per person. */
+export function calculateEmployeeFica(taxData: TaxYearData, wagesByPerson: readonly number[]): number {
+  return wagesByPerson.reduce((total, wages) => {
+    const positiveWages = Math.max(0, wages);
+    return total
+      + Math.min(positiveWages, taxData.socialSecurity.wageBase) * taxData.socialSecurity.taxRate
+      + positiveWages * taxData.medicare.taxRate;
+  }, 0);
+}
+
+interface PersonEarnings {
+  w2Income: number;
+  selfEmploymentIncome: number;
+}
+
+/** Splits household W-2 and SE totals into taxpayer and spouse; without a split both belong to one person. */
+function splitEarningsByPerson(input: TaxInput): PersonEarnings[] {
+  const w2 = input.w2Income ?? 0;
+  const se = input.selfEmploymentIncome ?? 0;
+  const spouseW2 = input.spouseW2Income;
+  const spouseSe = input.spouseSelfEmploymentIncome;
+  if (spouseW2 === undefined && spouseSe === undefined) {
+    return [{ w2Income: w2, selfEmploymentIncome: se }];
+  }
+  if (input.filingStatus !== "married_filing_jointly") {
+    throw new Error("spouseW2Income and spouseSelfEmploymentIncome apply only to married filing jointly.");
+  }
+  if ((spouseW2 ?? 0) < 0 || (spouseW2 ?? 0) > w2) {
+    throw new Error("spouseW2Income must be between 0 and w2Income.");
+  }
+  if ((spouseSe ?? 0) < 0 || (spouseSe ?? 0) > Math.max(0, se)) {
+    throw new Error("spouseSelfEmploymentIncome must be between 0 and selfEmploymentIncome.");
+  }
+  return [
+    { w2Income: w2 - (spouseW2 ?? 0), selfEmploymentIncome: se - (spouseSe ?? 0) },
+    { w2Income: spouseW2 ?? 0, selfEmploymentIncome: spouseSe ?? 0 },
+  ];
+}
+
+function calculateHouseholdSelfEmploymentTax(people: PersonEarnings[], taxData: TaxYearData): number {
+  return people.reduce(
+    (total, person) => total + calculateSelfEmploymentTax(person.selfEmploymentIncome, taxData, person.w2Income),
+    0,
+  );
+}
+
+/** Schedule C QBI after the deductible half of SE tax, SE health insurance, and SE retirement (Reg. 1.199A-3(b)(1)(vi)). */
+export function calculateScheduleCQualifiedBusinessIncome(
+  netProfit: number,
+  selfEmploymentTax: number,
+  selfEmployedHealthInsurance: number = 0,
+  selfEmployedRetirementContributions: number = 0,
+): number {
+  return Math.max(
+    0,
+    netProfit - selfEmploymentTax * 0.5 - selfEmployedHealthInsurance - selfEmployedRetirementContributions,
+  );
 }
 
 /**
@@ -799,9 +866,9 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     + (taxableRetirementDistributions ?? 0);
   const aboveTheLine = input.aboveTheLineDeductions ?? 0;
   const w2 = input.w2Income ?? 0;
-  const seDeduction = input.selfEmploymentIncome
-    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2) * 0.5
-    : 0;
+  const earningsByPerson = splitEarningsByPerson(input);
+  const householdSelfEmploymentTax = calculateHouseholdSelfEmploymentTax(earningsByPerson, taxData);
+  const seDeduction = householdSelfEmploymentTax * 0.5;
   const adjustedGrossIncomeBeforeSocialSecurity = ordinaryIncomeBeforeSocialSecurity
     + capitalNetting.longTermGain
     + capitalNetting.shortTermGain
@@ -922,10 +989,14 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     ? calculateCapitalGainsTax(taxablePreferentialIncome, adjustedTaxableOrdinary, input.filingStatus, taxData)
     : 0;
 
-  // Step 7: Self-employment tax
-  const seTax = input.selfEmploymentIncome
-    ? calculateSelfEmploymentTax(input.selfEmploymentIncome, taxData, w2)
-    : 0;
+  // Step 7: Self-employment tax, one Schedule SE per person.
+  const seTax = householdSelfEmploymentTax;
+  if (input.filingStatus === "married_filing_jointly" && earningsByPerson.length === 1
+    && w2 > 0 && (input.selfEmploymentIncome ?? 0) > 0) {
+    limitations.push(
+      "SE tax assumes the W-2 wages and self-employment income belong to the same spouse; pass spouseW2Income or spouseSelfEmploymentIncome when they do not.",
+    );
+  }
 
   // Step 8: NIIT (3.8% on the lesser of NII or excess MAGI)
   const netInvestmentIncome = input.netInvestmentIncome
@@ -934,7 +1005,10 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   // Step 9: Additional Medicare Tax; Form 8959 line 8 uses SE net earnings (Schedule SE line 6), not profit.
   const medicareEarnedIncome = (input.w2Income ?? 0)
-    + Math.max(0, input.selfEmploymentIncome ?? 0) * SE_NET_EARNINGS_FACTOR;
+    + earningsByPerson.reduce((total, person) => {
+      const netEarnings = Math.max(0, person.selfEmploymentIncome) * SE_NET_EARNINGS_FACTOR;
+      return total + (netEarnings >= SE_MINIMUM_NET_EARNINGS ? netEarnings : 0);
+    }, 0);
   const additionalMedicareTax = calculateAdditionalMedicareTax(medicareEarnedIncome, input.filingStatus, taxData);
   const earlyRetirementDistributionSubjectToPenalty =
     input.earlyRetirementDistributionSubjectToPenalty ?? 0;
@@ -1106,6 +1180,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     ordinaryIncomeTax: ordinaryTax,
     capitalGainsTax: cgTax,
     capitalLossDeduction: capitalNetting.capitalLossDeduction,
+    netLongTermCapitalGain: capitalNetting.longTermGain,
     shortTermCapitalLossCarryforward:
       capitalNetting.shortTermCapitalLossCarryforward,
     longTermCapitalLossCarryforward:

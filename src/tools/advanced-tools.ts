@@ -7,8 +7,9 @@ import { z } from "zod";
 import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { calculateTax, capitalLossDeductionLimit } from "../calculators/tax-calculator.js";
-import { calculateStateTax } from "../calculators/state-tax-calculator.js";
-import { getTaxYearData, getSaltCap, LATEST_TAX_YEAR, type FilingStatus } from "../data/tax-brackets.js";
+import { calculateStateTaxForFederal } from "../calculators/state-tax-calculator.js";
+import { getTaxYearData, getSaltCap, LATEST_TAX_YEAR } from "../data/tax-brackets.js";
+import { getRmdApplicableAge, getUniformLifetimeDivisor } from "../data/rmd.js";
 import { ERRORS, wrapToolHandler } from "./error-handler.js";
 
 
@@ -60,7 +61,7 @@ export function registerAdvancedTools(server: McpServer): void {
       }
       if (params.hasSelfEmployment) {
         required.push(
-          { doc: "1099-NEC (Freelance/Contract Income)", form: "1099-NEC", deadline: "Jan 31", notes: "From each client who paid you $600+" },
+          { doc: "1099-NEC (Freelance/Contract Income)", form: "1099-NEC", deadline: "Jan 31", notes: `From each client who paid you ${(params.taxYear ?? LATEST_TAX_YEAR) >= 2026 ? "$2,000" : "$600"} or more; report all income even without a form` },
           { doc: "Business income & expense records", form: "Schedule C", deadline: "—", notes: "Revenue, expenses, receipts, mileage log" },
           { doc: "Estimated tax payment records", form: "1040-ES", deadline: "—", notes: "Dates and amounts of quarterly payments made" },
         );
@@ -332,8 +333,9 @@ export function registerAdvancedTools(server: McpServer): void {
     {
       taxYear: z.number().describe("Tax year"),
       filingStatus: FilingStatusEnum,
-      age: z.number().int().min(0).describe("Your current age"),
-      traditionalBalance: z.number().min(0).describe("Traditional IRA/401k balance"),
+      age: z.number().int().min(0).describe("Your age at your birthday in the tax year"),
+      birthYear: z.number().int().min(1900).optional().describe("Birth year; sets the SECURE 2.0 RMD start age (default: taxYear - age)"),
+      traditionalBalance: z.number().min(0).describe("Traditional IRA balance on December 31 of the prior year"),
       rothBalance: z.number().min(0).describe("Roth IRA/401k balance"),
       taxableBalance: z.number().min(0).describe("Taxable brokerage account balance"),
       socialSecurityIncome: z.number().min(0).optional().describe("Annual Social Security income"),
@@ -426,28 +428,30 @@ export function registerAdvancedTools(server: McpServer): void {
       // Step 4: Roth last
       if (params.rothBalance > 0) {
         lines.push(
-          `**Step ${step++}: Roth IRA (last resort)**`,
+          `**Step ${step}: Roth IRA (last resort)**`,
           `> Tax-free withdrawals. Preserve as long as possible for maximum tax-free growth.`,
           `> No RMDs on Roth IRA — can pass to heirs tax-free.`,
           "",
         );
       }
 
-      // RMD warning
-      if (params.age >= 73 && params.traditionalBalance > 0) {
-        const rmdFactor = params.age <= 75 ? 26.5 : params.age <= 80 ? 22.9 : params.age <= 85 ? 18.7 : 14.8;
-        const rmd = Math.round(params.traditionalBalance / rmdFactor);
+      // RMD (Treas. Reg. 1.401(a)(9)-9(c); SECURE 2.0 applicable age)
+      const rmdStartAge = getRmdApplicableAge(params.birthYear ?? params.taxYear - params.age);
+      const rmdDivisor = getUniformLifetimeDivisor(params.age);
+      if (params.age >= rmdStartAge && rmdDivisor !== undefined && params.traditionalBalance > 0) {
+        const rmd = Math.round(params.traditionalBalance / rmdDivisor);
         lines.push(
-          `### ⚠️ Required Minimum Distribution (RMD)`,
-          `At age ${params.age}, you MUST withdraw at least **$${fmt(rmd)}** from Traditional accounts.`,
-          `RMD = $${fmt(params.traditionalBalance)} ÷ ${rmdFactor} (life expectancy factor)`,
-          `Failure to take RMD: 25% penalty on the amount not withdrawn.`,
+          `### ⚠ Required Minimum Distribution (RMD)`,
+          `At age ${params.age}, you must withdraw at least **$${fmt(rmd)}** from Traditional IRAs this year.`,
+          `RMD = $${fmt(params.traditionalBalance)} ÷ ${rmdDivisor.toFixed(1)} (Uniform Lifetime Table)`,
+          `Failure to take RMD: 25% excise tax on the shortfall (10% if corrected timely).`,
+          `> Uses the Uniform Lifetime Table; a spouse more than 10 years younger who is the sole beneficiary uses the Joint Life Table instead.`,
           "",
         );
-      } else if (params.age >= 70) {
+      } else if (params.age >= rmdStartAge - 5 && params.age < rmdStartAge) {
         lines.push(
           `### 📝 RMD Reminder`,
-          `RMDs begin at age 73 (SECURE 2.0). You have ${73 - params.age} year(s) to do Roth conversions before RMDs start.`,
+          `RMDs begin at age ${rmdStartAge} for your birth year (SECURE 2.0). You have ${rmdStartAge - params.age} year(s) to do Roth conversions before RMDs start.`,
           "",
         );
       }
@@ -521,13 +525,7 @@ export function registerAdvancedTools(server: McpServer): void {
         let stateTax = 0;
         let stateName = "";
         if (yr.stateCode) {
-          const sr = calculateStateTax({
-            stateCode: yr.stateCode,
-            taxYear: yr.year,
-            incomeBeforeDeductions: federal.adjustedGrossIncome,
-            federalTaxableIncome: federal.taxableIncome,
-            filingStatus: params.filingStatus,
-          });
+          const sr = calculateStateTaxForFederal(yr.stateCode, yr.year, params.filingStatus, federal);
           if (sr) { stateTax = sr.tax; stateName = sr.stateName; }
         }
 
@@ -605,13 +603,14 @@ export function registerAdvancedTools(server: McpServer): void {
 
       // Age-based milestones
       const milestones: string[] = [];
+      const rmdStartAge = getRmdApplicableAge(results[0].year - params.currentAge);
       for (const r of results) {
         const ageInYear = params.currentAge + (r.year - results[0].year);
         if (ageInYear === 59) milestones.push(`${r.year}: Age 59½ — penalty-free retirement withdrawals`);
         if (ageInYear === 62) milestones.push(`${r.year}: Age 62 — earliest Social Security eligibility`);
         if (ageInYear === 65) milestones.push(`${r.year}: Age 65 — Medicare eligible, senior bonus deduction ($6K)`);
         if (ageInYear === 67) milestones.push(`${r.year}: Age 67 — full Social Security retirement age`);
-        if (ageInYear === 73) milestones.push(`${r.year}: Age 73 — RMDs begin (SECURE 2.0)`);
+        if (ageInYear === rmdStartAge) milestones.push(`${r.year}: Age ${rmdStartAge}, RMDs begin (SECURE 2.0)`);
       }
       if (milestones.length > 0) {
         lines.push(`### 🎯 Age Milestones`, "", ...milestones.map((m) => `- ${m}`), "");
@@ -657,8 +656,8 @@ export function registerAdvancedTools(server: McpServer): void {
 
       const stateFS = params.filingStatus;
 
-      const fromResult = calculateStateTax({ stateCode: params.fromState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, federalTaxableIncome: federal.taxableIncome, filingStatus: stateFS });
-      const toResult = calculateStateTax({ stateCode: params.toState, taxYear: params.taxYear, incomeBeforeDeductions: federal.adjustedGrossIncome, federalTaxableIncome: federal.taxableIncome, filingStatus: stateFS });
+      const fromResult = calculateStateTaxForFederal(params.fromState, params.taxYear, stateFS, federal);
+      const toResult = calculateStateTaxForFederal(params.toState, params.taxYear, stateFS, federal);
 
       if (!fromResult || !toResult) {
         return ERRORS.invalidState(params.fromState);
@@ -678,8 +677,8 @@ export function registerAdvancedTools(server: McpServer): void {
           filingStatus: params.filingStatus,
           grossIncome: yearIncome,
         });
-        const yearFrom = calculateStateTax({ stateCode: params.fromState, taxYear: projectionTaxYear, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, federalTaxableIncome: yearFederal.taxableIncome, filingStatus: stateFS });
-        const yearTo = calculateStateTax({ stateCode: params.toState, taxYear: projectionTaxYear, incomeBeforeDeductions: yearFederal.adjustedGrossIncome, federalTaxableIncome: yearFederal.taxableIncome, filingStatus: stateFS });
+        const yearFrom = calculateStateTaxForFederal(params.fromState, projectionTaxYear, stateFS, yearFederal);
+        const yearTo = calculateStateTaxForFederal(params.toState, projectionTaxYear, stateFS, yearFederal);
         const yearSavings = (yearFrom?.tax ?? 0) - (yearTo?.tax ?? 0);
         cumulativeSavings += yearSavings;
         projections.push({

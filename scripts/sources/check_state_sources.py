@@ -62,6 +62,26 @@ SOURCES = {
            ["41,400", "152,425", "2,164.99", "66,400", "277,600", "4,118.40"]),
     "ND": ("https://www.tax.nd.gov/sites/www/files/documents/forms/software-developer/individual-income-forms/28709-form-nd-1es-2026%20final.pdf",
            ["49,575", "250,400", "3,916.09", "82,800", "304,850", "4,329.98", "1.95%", "2.50%"]),
+    "CA-credit": ("https://www.ftb.ca.gov/about-ftb/newsroom/tax-news/2026/10.html",
+                  ["Personal exemption credit amount for single, separate, and head of household taxpayers $153 $158", "joint filers or surviving spouses $306 $316"]),
+    "CA-credit-limit": ("https://www.ftb.ca.gov/forms/2025/2025-540-booklet.html",
+                        ["$252,203", "$504,411", "$378,310", "Divide line c by $2,500 ($1,250 if married/RDP filing separately)", "Multiply line d by $6"]),
+    "WA": ("https://dor.wa.gov/taxes-rates/other-taxes/capital-gains-tax", ["The standard deduction for 2025 is $278,000"]),
+    "WA-statute": ("https://app.leg.wa.gov/RCW/default.aspx?cite=82.87.150", ["the department must not adjust the applicable amounts"]),
+    # Federally taxable Social Security subtracted or excluded (federalIncomeTreatment in src/data/state-taxes.ts).
+    "CA-SS": ("https://www.ftb.ca.gov/file/personal/income-types/social-security.html", ["as a subtraction on California Adjustments"]),
+    "CA-retirement": ("https://www.ftb.ca.gov/forms/2025/2025-1005-publication.pdf", ["generally the same as the federal treatment"]),
+    "IL-SS": ("https://tax.illinois.gov/individuals/pension.html", ["Social Security", "Individual Retirement Accounts"]),
+    "NC-SS": ("https://www.ncdor.gov/taxes-forms/individual-income-tax/filing-topics/social-security-and-railroad-retirement-benefits", ["social security"]),
+    "MA-SS": ("https://budget.digital.mass.gov/govbudget/fy27/tax-expenditure-budget/personal-income-tax/exclusions-from-gross-income/1-009/", ["Social Security benefits are excluded from Massachusetts gross income"]),
+    "MI-SS": ("https://www.michigan.gov/treasury/reference/taxpayer-notices/2025/11/17/social-security-taxation-changes-in-public-act-24-of-2025", ["deduct SSA income included in AGI"]),
+    "IN-SS": ("https://forms.in.gov/Download.aspx?id=16353", ["Taxable Social Security benefits"]),
+    "KY-SS": ("https://revenue.ky.gov/Forms/Schedule%20M%20(2025).pdf", ["taxable amount of Social Security"]),
+    "GA-SS": ("https://www.audits2.ga.gov/wp-content/uploads/2023/11/Social-Security-Exclusion-Summary.pdf", ["fully exempts Social Security benefits"]),
+    "OH-SS": ("https://dam.assets.ohio.gov/image/upload/v1767098956/tax.ohio.gov/forms/ohio_individual/individual/2025/scheduleofadjustments.pdf", ["Taxable Social Security benefits"]),
+    "VA-SS": ("https://law.lis.virginia.gov/vacode/title58.1/chapter3/section58.1-322.02/", ["Benefits received under Title II of the Social Security Act"]),
+    "NJ-SS": ("https://nj.gov/treasury/taxation/pdf/anchor/anchor-home-income.pdf", ["Social Security"]),
+    "PA-SS": ("https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf", ["INCOME NOT TAXABLE FOR PA PIT PURPOSES: • Social Security benefits"]),
 }
 
 os.makedirs("/tmp/src", exist_ok=True)

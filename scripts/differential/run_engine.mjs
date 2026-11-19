@@ -8,7 +8,9 @@ const scenarios = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const results = scenarios.map((scenario) => {
   const wages = scenario.wages + scenario.spouse_wages;
   const dividends = scenario.odiv;
-  const grossIncome = wages + scenario.ltcg + dividends;
+  const selfEmployment = scenario.se + scenario.spouse_se;
+  const married = scenario.status === "married_filing_jointly";
+  const grossIncome = wages + selfEmployment + scenario.ltcg + dividends;
   const preliminaryAgi = grossIncome;
   const salt = Math.min(scenario.salt, getSaltCap(scenario.year, scenario.status, preliminaryAgi));
   const itemized = salt + scenario.mortgage + scenario.charity;
@@ -17,6 +19,9 @@ const results = scenarios.map((scenario) => {
     filingStatus: scenario.status,
     grossIncome,
     w2Income: wages,
+    selfEmploymentIncome: selfEmployment > 0 ? selfEmployment : undefined,
+    spouseW2Income: married ? scenario.spouse_wages : undefined,
+    spouseSelfEmploymentIncome: married ? scenario.spouse_se : undefined,
     capitalGains: scenario.ltcg,
     qualifiedDividends: scenario.qdiv,
     netInvestmentIncome: scenario.ltcg + dividends,
@@ -54,6 +59,7 @@ const results = scenarios.map((scenario) => {
     actc: result.additionalChildTaxCredit,
     eitc: eitc.credit,
     niit: result.niit,
+    setax: result.selfEmploymentTax,
   };
 });
 console.log(JSON.stringify(results));

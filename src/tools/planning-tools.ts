@@ -6,11 +6,15 @@
 import { z } from "zod";
 import { fmt, FilingStatusEnum, registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { calculateTax } from "../calculators/tax-calculator.js";
-import { calculateStateTax } from "../calculators/state-tax-calculator.js";
+import {
+  calculateScheduleCQualifiedBusinessIncome,
+  calculateSelfEmploymentTax,
+  calculateTax,
+} from "../calculators/tax-calculator.js";
 import { getSaltCap, getTaxYearData, LATEST_TAX_YEAR, type FilingStatus } from "../data/tax-brackets.js";
 import { calculateSelfEmployedSepLimit, getContributionLimits } from "../data/contribution-limits.js";
 import { getStudentLoanInterestPhaseout } from "../data/phaseout-limits.js";
+import { ERRORS } from "./error-handler.js";
 
 
 
@@ -264,6 +268,16 @@ export function registerPlanningTools(server: McpServer): void {
       const aboveTheLine = retirement + healthPremiums;
 
       const totalIncome = netProfit + otherIncome;
+      const seTaxData = getTaxYearData(params.taxYear);
+      if (!seTaxData) {
+        return ERRORS.unsupportedYear(params.taxYear);
+      }
+      const qualifiedBusinessIncome = calculateScheduleCQualifiedBusinessIncome(
+        netProfit,
+        calculateSelfEmploymentTax(netProfit, seTaxData, otherIncome),
+        healthPremiums,
+        retirement,
+      );
 
       const result = calculateTax({
         taxYear: params.taxYear,
@@ -271,7 +285,7 @@ export function registerPlanningTools(server: McpServer): void {
         grossIncome: totalIncome,
         w2Income: otherIncome,
         selfEmploymentIncome: netProfit,
-        qualifiedBusinessIncome: netProfit,
+        qualifiedBusinessIncome,
         qualifiedBusinessIsSstb: params.qualifiedBusinessIsSstb,
         qualifiedBusinessW2Wages: params.qualifiedBusinessW2Wages,
         qualifiedBusinessPropertyBasis: params.qualifiedBusinessPropertyBasis,
@@ -375,7 +389,6 @@ export function registerPlanningTools(server: McpServer): void {
       });
 
       const savings = withStandard.totalFederalTax - withItemized.totalFederalTax;
-      const recommendation = savings > 0 ? "itemize" : "standard";
 
       const lines = [
         `## Mortgage Tax Benefit Analysis — TY${params.taxYear}`,
@@ -641,7 +654,6 @@ export function registerPlanningTools(server: McpServer): void {
       const { mfs1, mfs2, mfsTotalTax, spouse1Dependents, spouse2Dependents } = bestMFS;
 
       const difference = mfsTotalTax - mfj.totalFederalTax;
-      const recommendation = difference > 0 ? "MFJ" : difference < 0 ? "MFS" : "Either";
 
       const lines = [
         `## MFJ vs MFS Comparison — TY${params.taxYear}`,

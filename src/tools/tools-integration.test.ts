@@ -62,6 +62,42 @@ describe("MCP Tools Integration", () => {
   });
 
   // --- Tax Calculation Tools ---
+  describe("structured data", () => {
+    it("returns typed federal results from calculate_federal_tax", async () => {
+      const { structuredContent } = await callTool(server, "calculate_federal_tax", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000,
+      });
+      // Taxable $83,900: $1,240 + 12% x $38,000 + 22% x $33,500 = $13,170
+      expect(structuredContent?.data).toMatchObject({ taxableIncome: 83900, totalFederalTax: 13170, deductionType: "standard" });
+    });
+
+    it("returns federal, state, and FICA totals from calculate_total_tax", async () => {
+      const { structuredContent } = await callTool(server, "calculate_total_tax", {
+        taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000, stateCode: "TX",
+      });
+      // FICA $100,000 x 7.65% = $7,650; take-home $100,000 - $13,170 - $7,650 = $79,180
+      expect(structuredContent?.data).toMatchObject({
+        employeeFica: 7650, totalTax: 20820, takeHome: 79180, state: { stateCode: "TX", tax: 0 },
+      });
+    });
+
+    it("returns state results from estimate_state_tax", async () => {
+      const { structuredContent } = await callTool(server, "estimate_state_tax", {
+        stateCode: "IL", taxYear: 2026, incomeBeforeStateDeductions: 100000, taxableRetirementDistributions: 40000,
+      });
+      // ($100,000 - $40,000 - $2,925) x 4.95% = $2,825.21
+      expect(structuredContent?.data).toMatchObject({ stateCode: "IL", tax: 2825, excludedIncome: 40000 });
+    });
+
+    it("omits data on errors", async () => {
+      const { structuredContent, isError } = await callTool(server, "estimate_state_tax", {
+        stateCode: "KS", taxYear: 2026, incomeBeforeStateDeductions: 60000, taxableSocialSecurityBenefits: 20000,
+      });
+      expect(isError).toBe(true);
+      expect(structuredContent?.data).toBeUndefined();
+    });
+  });
+
   describe("calculate_federal_tax", () => {
     it("returns tax breakdown for basic input", async () => {
       const { text } = await callTool(server, "calculate_federal_tax", {
@@ -224,6 +260,15 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Total Tax Summary");
       expect(text).toContain("California");
       expect(text).toContain("Take-Home");
+    });
+
+    it("includes employee FICA per earner in total tax and take-home", async () => {
+      // Two earners at $180,000: FICA 2 x $13,770 = $27,540
+      const { text } = await callTool(server, "calculate_total_tax", {
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossIncome: 360000,
+        w2Income: 360000, spouseW2Income: 180000, stateCode: "TX",
+      });
+      expect(text).toContain("| Employee FICA (W-2) | $27,540 |");
     });
 
     it("uses the North Dakota separate schedule for married filing separately", async () => {
@@ -529,7 +574,7 @@ describe("MCP Tools Integration", () => {
     });
 
     it("returns error for invalid state", async () => {
-      const { text, isError } = await callTool(server, "get_state_tax_info", { stateCode: "XX" });
+      const { isError } = await callTool(server, "get_state_tax_info", { stateCode: "XX" });
       expect(isError).toBe(true);
     });
   });
@@ -544,12 +589,12 @@ describe("MCP Tools Integration", () => {
     });
 
     it("accepts head of household in estimate_state_tax", async () => {
-      // CA Schedule Z on 100,000 - 11,800 = 88,200: 2,483.29 + 8% x 1,546.
+      // CA Schedule Z on 100,000 - 11,800 = 88,200: 2,483.29 + 8% x 1,546 - $158 exemption credit.
       const { text, isError } = await callTool(server, "estimate_state_tax", {
         stateCode: "CA", taxYear: 2026, incomeBeforeStateDeductions: 100000, filingStatus: "head_of_household",
       });
       expect(isError).toBeFalsy();
-      expect(text).toContain("$2,607");
+      expect(text).toContain("$2,449");
     });
 
     it("estimates North Dakota TY2026 tax from federal taxable income", async () => {
@@ -624,6 +669,16 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Self-Employment");
       expect(text).toContain("Schedule C");
       expect(text).toContain("Quarterly");
+    });
+
+    it("reduces QBI by half of SE tax and SE retirement contributions", async () => {
+      // SE tax ($184,500 - $150,000) x 12.4% + $92,350 x 2.9% = $6,956.15
+      // QBI $100,000 - $3,478.075 - $20,000 = $76,521.925; 20% = $15,304.385
+      const { text } = await callTool(server, "estimate_self_employment_tax", {
+        taxYear: 2026, filingStatus: "married_filing_jointly", grossRevenue: 100000, businessExpenses: 0,
+        otherW2Income: 150000, retirementContributions: 20000,
+      });
+      expect(text).toContain("| QBI Deduction | -$15,304 |");
     });
   });
 
@@ -1052,6 +1107,15 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Self-Employment");
     });
 
+    it("reduces 1099-NEC QBI by half of SE tax", async () => {
+      // SE tax $55,410 x 15.3% = $8,477.73; QBI $60,000 - $4,238.865 = $55,761.135; 20% = $11,152.227
+      const { text } = await callTool(server, "process_1099_income", {
+        taxYear: 2026, filingStatus: "single", w2Income: 100000,
+        forms: [{ type: "1099-NEC", payer: "Client A", amount: 60000 }],
+      });
+      expect(text).toContain("| ↳ QBI Deduction | -$11,152 |");
+    });
+
     it("processes Form 1099-R taxable and early-distribution amounts", async () => {
       const { text } = await callTool(server, "process_1099_income", {
         taxYear: 2025,
@@ -1210,6 +1274,13 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("1098");
     });
 
+    it("uses the 1099-NEC threshold for the tax year", async () => {
+      const ty2026 = await callTool(server, "get_tax_document_checklist", { taxYear: 2026, hasSelfEmployment: true });
+      const ty2025 = await callTool(server, "get_tax_document_checklist", { taxYear: 2025, hasSelfEmployment: true });
+      expect(ty2026.text).toContain("$2,000 or more");
+      expect(ty2025.text).toContain("$600 or more");
+    });
+
     it("does not request EV or new solar credit forms for TY2026", async () => {
       const { text } = await callTool(server, "get_tax_document_checklist", {
         taxYear: 2026, hasW2: true, boughtEV: true, installedSolar: true,
@@ -1297,6 +1368,26 @@ describe("MCP Tools Integration", () => {
       expect(text).toContain("Retirement Withdrawal");
       expect(text).toContain("Traditional");
       expect(text).toContain("Roth");
+    });
+
+    it("uses the Uniform Lifetime divisor for the owner's age", async () => {
+      // Age 80 divisor 20.2: $500,000 / 20.2 = $24,752.48
+      const { text } = await callTool(server, "plan_retirement_withdrawals", {
+        taxYear: 2026, filingStatus: "single", age: 80,
+        traditionalBalance: 500000, rothBalance: 0, taxableBalance: 0, annualSpending: 60000,
+      });
+      expect(text).toContain("**$24,752**");
+      expect(text).toContain("÷ 20.2");
+    });
+
+    it("starts RMDs at 75 when birthYear is 1960 or later", async () => {
+      // birthYear overrides the taxYear - age default used for the start age.
+      const { text } = await callTool(server, "plan_retirement_withdrawals", {
+        taxYear: 2026, filingStatus: "single", age: 73, birthYear: 1960,
+        traditionalBalance: 500000, rothBalance: 0, taxableBalance: 0, annualSpending: 60000,
+      });
+      expect(text).not.toContain("Required Minimum Distribution (RMD)");
+      expect(text).toContain("RMDs begin at age 75");
     });
   });
 

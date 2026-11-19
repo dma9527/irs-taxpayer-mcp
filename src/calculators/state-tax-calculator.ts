@@ -8,7 +8,9 @@ import {
   getStateInfo,
   type FilingStatusOverride,
   type StateBracket,
+  type StateCalculationInfo,
 } from "../data/state-taxes.js";
+import type { TaxBreakdown } from "./tax-calculator.js";
 
 export type StateFilingStatus =
   | "single"
@@ -34,6 +36,14 @@ export interface StateTaxInput {
   filingStatus?: StateFilingStatus;
   /** Federal taxable income (Form 1040 line 15), required by states whose base starts there. */
   federalTaxableIncome?: number;
+  /** Components already included in incomeBeforeDeductions; missing amounts mean zero. */
+  incomeComposition?: StateIncomeComposition;
+}
+
+export interface StateIncomeComposition {
+  taxableSocialSecurityBenefits?: number;
+  taxableRetirementDistributions?: number;
+  netLongTermCapitalGain?: number;
 }
 
 export interface StateTaxResult {
@@ -46,6 +56,8 @@ export interface StateTaxResult {
   tax: number;
   effectiveRate: number;
   hasLocalTaxes: boolean;
+  /** Federal AGI components the state excludes (Social Security, retirement distributions). */
+  excludedIncome: number;
   notes?: string;
 }
 
@@ -72,7 +84,14 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     throw new Error("State income before deductions is required");
   }
 
+  const composition = input.incomeComposition ?? {};
   if (state.taxType === "none") {
+    const longTermGain = composition.netLongTermCapitalGain ?? 0;
+    if (state.capitalGainsExciseNoTaxAtOrBelow !== undefined && longTermGain > state.capitalGainsExciseNoTaxAtOrBelow) {
+      throw new UnsupportedStateTaxCalculationError(
+        `${state.name} TY${input.taxYear} capital gains excise on long-term gains above $${state.capitalGainsExciseNoTaxAtOrBelow.toLocaleString("en-US")} is not modeled`,
+      );
+    }
     return {
       stateCode: state.code,
       stateName: state.name,
@@ -83,9 +102,12 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
       tax: 0,
       effectiveRate: 0,
       hasLocalTaxes: false,
+      excludedIncome: 0,
       notes: state.notes,
     };
   }
+
+  const excludedIncome = excludedFederalIncome(state, input.taxYear, composition);
 
   const requested = input.filingStatus ?? "single";
   const status: "single" | "married" =
@@ -109,7 +131,7 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     if (!brackets || brackets.length === 0) {
       throw new UnsupportedStateTaxCalculationError(`${state.name} brackets are not available`);
     }
-    const adjustedIncome = Math.max(0, input.federalTaxableIncome);
+    const adjustedIncome = Math.max(0, input.federalTaxableIncome - excludedIncome);
     const tax = calculateGraduatedTax(adjustedIncome, brackets);
     return {
       stateCode: state.code,
@@ -121,9 +143,11 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
       tax: Math.round(tax),
       effectiveRate: incomeBeforeDeductions > 0 ? tax / incomeBeforeDeductions : 0,
       hasLocalTaxes: state.localTaxes ?? false,
+      excludedIncome,
       notes: state.notes,
     };
   }
+  const stateIncome = Math.max(0, incomeBeforeDeductions - excludedIncome);
   const pick = (pair: { single: number; married: number } | undefined): number | undefined =>
     pair === undefined ? undefined : (status === "married" ? pair.married : pair.single);
   const maxModeledIncome = override?.maxModeledIncome ?? state.maxModeledIncome;
@@ -140,12 +164,12 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
   }
   if (state.personalExemptionTiers) {
     const tier = state.personalExemptionTiers.find(({ maxIncome, inclusive }) =>
-      inclusive ? incomeBeforeDeductions <= maxIncome : incomeBeforeDeductions < maxIncome);
+      inclusive ? stateIncome <= maxIncome : stateIncome < maxIncome);
     deduction += (tier?.amountPerPerson ?? 0) * (status === "married" ? 2 : 1);
   }
 
-  const adjustedIncome = Math.max(0, incomeBeforeDeductions - deduction);
-  let tax = 0;
+  const adjustedIncome = Math.max(0, stateIncome - deduction);
+  let tax: number;
 
   if (state.taxType === "flat" && state.thresholdTax) {
     const { threshold, baseTax } = state.thresholdTax;
@@ -169,7 +193,16 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
 
   const personalCredit = override?.personalCredit ?? pick(state.personalCredit);
   if (personalCredit !== undefined) {
-    tax = Math.max(0, tax - personalCredit);
+    const phaseout = state.personalCreditPhaseout;
+    let credit = personalCredit;
+    if (phaseout) {
+      const threshold = override?.personalCreditPhaseout?.agiThreshold ?? pick(phaseout.agiThreshold) ?? Infinity;
+      const step = override?.personalCreditPhaseout?.step ?? phaseout.step;
+      const exemptions = status === "married" ? 2 : 1;
+      const steps = Math.ceil(Math.max(0, incomeBeforeDeductions - threshold) / step);
+      credit = Math.max(0, credit - steps * phaseout.reductionPerExemption * exemptions);
+    }
+    tax = Math.max(0, tax - credit);
   }
 
   return {
@@ -182,8 +215,32 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     tax: Math.round(tax),
     effectiveRate: incomeBeforeDeductions > 0 ? tax / incomeBeforeDeductions : 0,
     hasLocalTaxes: state.localTaxes ?? false,
+    excludedIncome,
     notes: state.notes,
   };
+}
+
+/** Taxable Social Security and retirement income the state excludes; undeclared treatments fail closed. */
+function excludedFederalIncome(
+  state: StateCalculationInfo,
+  taxYear: number,
+  composition: StateIncomeComposition,
+): number {
+  const components = [
+    { amount: composition.taxableSocialSecurityBenefits ?? 0, treatment: state.federalIncomeTreatment?.socialSecurity, label: "taxable Social Security benefits" },
+    { amount: composition.taxableRetirementDistributions ?? 0, treatment: state.federalIncomeTreatment?.retirementDistributions, label: "taxable retirement distributions" },
+  ];
+  let excluded = 0;
+  for (const { amount, treatment, label } of components) {
+    if (amount <= 0) continue;
+    if (treatment === undefined) {
+      throw new UnsupportedStateTaxCalculationError(
+        `${state.name} TY${taxYear} treatment of ${label} is not modeled`,
+      );
+    }
+    if (treatment === "excluded") excluded += amount;
+  }
+  return excluded;
 }
 
 function calculateGraduatedTax(income: number, brackets: StateBracket[]): number {
@@ -199,4 +256,31 @@ function calculateGraduatedTax(income: number, brackets: StateBracket[]): number
   }
 
   return tax;
+}
+
+/** Federal results a state calculation needs. */
+export type FederalResultForState = Pick<
+  TaxBreakdown,
+  "adjustedGrossIncome" | "taxableIncome" | "taxableSocialSecurityBenefits" | "taxableRetirementDistributions" | "netLongTermCapitalGain"
+>;
+
+/** State tax on the federal AGI starting point, passing the income components states treat differently. */
+export function calculateStateTaxForFederal(
+  stateCode: string,
+  taxYear: number,
+  filingStatus: StateFilingStatus,
+  federal: FederalResultForState,
+): StateTaxResult | null {
+  return calculateStateTax({
+    stateCode,
+    taxYear,
+    filingStatus,
+    incomeBeforeDeductions: federal.adjustedGrossIncome,
+    federalTaxableIncome: federal.taxableIncome,
+    incomeComposition: {
+      taxableSocialSecurityBenefits: federal.taxableSocialSecurityBenefits,
+      taxableRetirementDistributions: federal.taxableRetirementDistributions,
+      netLongTermCapitalGain: federal.netLongTermCapitalGain,
+    },
+  });
 }

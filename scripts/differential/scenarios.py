@@ -5,8 +5,9 @@ S, MFJ, MFS, HOH = "single", "married_filing_jointly", "married_filing_separatel
 
 def sc(name, year, status, wages=0, spouse_wages=0, ltcg=0, qdiv=0, odiv=0, salt=0, mortgage=0, charity=0,
        ctc_kids=0, eitc_kids=0, care_kids=0, care_expenses=0, age=40, spouse_age=40, tips=0, overtime=0,
-       auto_interest=0):
-    return dict(name=name, year=year, status=status, wages=wages, spouse_wages=spouse_wages, ltcg=ltcg,
+       auto_interest=0, se=0, spouse_se=0, keys=None):
+    return dict(name=name, year=year, status=status, wages=wages, spouse_wages=spouse_wages, se=se,
+                spouse_se=spouse_se, keys=keys, ltcg=ltcg,
                 qdiv=qdiv, odiv=odiv, salt=salt, mortgage=mortgage, charity=charity, ctc_kids=ctc_kids,
                 eitc_kids=eitc_kids, care_kids=care_kids, care_expenses=care_expenses, age=age,
                 spouse_age=spouse_age, tips=tips, overtime=overtime, auto_interest=auto_interest)
@@ -65,6 +66,13 @@ SCENARIOS = [
     sc("hoh care 1 kid 2026", 2026, HOH, 45000, ctc_kids=1, eitc_kids=1, care_kids=1, care_expenses=5000),
     sc("single high LTCG 2026", 2026, S, 80000, ltcg=600000),
     sc("mfj senior LTCG 2026", 2026, MFJ, 50000, 30000, ltcg=40000, qdiv=10000, odiv=10000, age=70, spouse_age=68),
+    # SE scenarios compare SE tax and AGI only; Tax-Calculator's QBI base does not subtract the SE adjustments.
+    sc("single SE 80k 2026", 2026, S, se=80000, keys=["setax", "agi"]),
+    sc("single SE 300 below floor 2026", 2026, S, se=300, keys=["setax", "agi"]),
+    sc("single W-2 150k + SE 100k 2026", 2026, S, 150000, se=100000, keys=["setax", "agi"]),
+    sc("mfj W-2 150k + spouse SE 100k 2026", 2026, MFJ, 150000, 0, se=0, spouse_se=100000, keys=["setax", "agi"]),
+    sc("mfj spouse W-2 150k + spouse SE 100k 2026", 2026, MFJ, 0, 150000, spouse_se=100000, keys=["setax", "agi"]),
+    sc("mfj both SE 2026", 2026, MFJ, 120000, 90000, se=60000, spouse_se=110000, keys=["setax", "agi"]),
 ]
 
 if __name__ == "__main__":

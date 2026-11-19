@@ -7,7 +7,7 @@ import { z } from "zod";
 import { registerTaxTool } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TAX_DEADLINES } from "../data/deadlines.js";
-import { SUPPORTED_TAX_YEARS, LATEST_TAX_YEAR } from "../data/tax-brackets.js";
+import { LATEST_TAX_YEAR } from "../data/tax-brackets.js";
 
 export function registerIrsLookupTools(server: McpServer): void {
   registerTaxTool(server,
@@ -166,7 +166,7 @@ const IRS_FORMS: Record<string, FormInfo> = {
   "1099-NEC": {
     number: "1099-NEC",
     name: "Nonemployee Compensation",
-    purpose: "Reports payments of $600+ to independent contractors",
+    purpose: "Reports nonemployee compensation of $600 or more (payments through 2025) or $2,000 or more (payments after 2025, OBBB sec. 70433). Income below the threshold is still taxable",
     whoFiles: "Businesses that paid contractors; contractors report this income",
     dueDate: "Payers must send by January 31",
     relatedForms: "Schedule C, Schedule SE",

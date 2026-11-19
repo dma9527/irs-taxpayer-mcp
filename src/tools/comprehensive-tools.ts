@@ -11,8 +11,13 @@ import {
   registerTaxTool,
 } from "./shared.js";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { calculateTax } from "../calculators/tax-calculator.js";
-import { calculateStateTax } from "../calculators/state-tax-calculator.js";
+import {
+  calculateEmployeeFica,
+  calculateScheduleCQualifiedBusinessIncome,
+  calculateSelfEmploymentTax,
+  calculateTax,
+} from "../calculators/tax-calculator.js";
+import { calculateStateTaxForFederal } from "../calculators/state-tax-calculator.js";
 import { calculateEITC } from "../calculators/eitc-calculator.js";
 import { getTaxYearData, getSaltCap } from "../data/tax-brackets.js";
 import { ERRORS, wrapToolHandler } from "./error-handler.js";
@@ -32,6 +37,8 @@ export function registerComprehensiveTools(server: McpServer): void {
       // Income
       w2Income: z.number().min(0).optional().describe("W-2 wages"),
       selfEmploymentIncome: z.number().min(0).optional().describe("Self-employment net profit"),
+      spouseW2Income: z.number().min(0).optional().describe("MFJ only: spouse's share of w2Income; the Social Security wage base applies per person"),
+      spouseSelfEmploymentIncome: z.number().min(0).optional().describe("MFJ only: spouse's share of selfEmploymentIncome"),
       interestIncome: z.number().min(0).optional().describe("1099-INT interest income"),
       dividendIncome: z.number().min(0).optional().describe("1099-DIV ordinary dividends"),
       qualifiedDividends: z.number().min(0).optional().describe("Qualified dividends (subset of dividends, taxed at CG rates)"),
@@ -208,6 +215,8 @@ export function registerComprehensiveTools(server: McpServer): void {
         qualifyingChildrenForCtc: params.dependents,
         otherDependentsForOdc: params.otherDependents,
         earnedIncome: w2 + Math.max(0, se),
+        spouseW2Income: params.spouseW2Income,
+        spouseSelfEmploymentIncome: params.spouseSelfEmploymentIncome,
         socialSecurityTaxesPaid: params.socialSecurityTaxesPaid,
         hasForm2555: params.hasForm2555,
         aotcStudentQualifiedExpenses: params.aotcStudentQualifiedExpenses,
@@ -221,10 +230,12 @@ export function registerComprehensiveTools(server: McpServer): void {
       });
 
       // FICA (employee share only for W-2; SE tax already in federal calc)
-      const ssWages = Math.min(w2, taxData.socialSecurity.wageBase);
-      const ficaSS = ssWages * taxData.socialSecurity.taxRate;
+      const wagesByPerson = params.spouseW2Income === undefined
+        ? [w2]
+        : [w2 - params.spouseW2Income, params.spouseW2Income];
+      const ficaTotal = calculateEmployeeFica(taxData, wagesByPerson);
       const ficaMedicare = w2 * taxData.medicare.taxRate;
-      const ficaTotal = ficaSS + ficaMedicare;
+      const ficaSS = ficaTotal - ficaMedicare;
 
       // EITC check
       const earnedIncome = w2 + se;
@@ -248,13 +259,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       let stateName = "N/A";
       if (params.stateCode) {
         const stateFilingStatus = params.filingStatus;
-        const stateResult = calculateStateTax({
-          stateCode: params.stateCode,
-          taxYear: params.taxYear,
-          incomeBeforeDeductions: federalResult.adjustedGrossIncome,
-          federalTaxableIncome: federalResult.taxableIncome,
-          filingStatus: stateFilingStatus,
-        });
+        const stateResult = calculateStateTaxForFederal(params.stateCode, params.taxYear, stateFilingStatus, federalResult);
         if (stateResult) {
           stateTax = stateResult.tax;
           stateName = stateResult.stateName;
@@ -495,6 +500,11 @@ export function registerComprehensiveTools(server: McpServer): void {
         };
       }
 
+      const necTaxData = getTaxYearData(taxYear);
+      const necQualifiedBusinessIncome = necTotal > 0 && necTaxData
+        ? calculateScheduleCQualifiedBusinessIncome(necTotal, calculateSelfEmploymentTax(necTotal, necTaxData, w2))
+        : 0;
+
       const grossIncome = w2
         + necTotal
         + intTotal
@@ -526,7 +536,7 @@ export function registerComprehensiveTools(server: McpServer): void {
             - (shortTermCapitalLossCarryover ?? 0)
             - (longTermCapitalLossCarryover ?? 0),
         ),
-        qualifiedBusinessIncome: necTotal > 0 ? necTotal : undefined,
+        qualifiedBusinessIncome: necQualifiedBusinessIncome > 0 ? necQualifiedBusinessIncome : undefined,
         qualifiedBusinessIsSstb,
         qualifiedBusinessW2Wages,
         qualifiedBusinessPropertyBasis,
@@ -561,6 +571,7 @@ export function registerComprehensiveTools(server: McpServer): void {
         `|------|--------|`,
         `| Federal Tax | $${fmt(result.totalFederalTax)} |`,
         result.selfEmploymentTax > 0 ? `| ↳ Self-Employment Tax | $${fmt(result.selfEmploymentTax)} |` : "",
+        result.qbiDeduction > 0 ? `| ↳ QBI Deduction | -$${fmt(result.qbiDeduction)} |` : "",
         result.capitalGainsTax > 0 ? `| ↳ Capital Gains Tax | $${fmt(result.capitalGainsTax)} |` : "",
         result.capitalLossDeduction > 0 ? `| ↳ Capital Loss Deduction | -$${fmt(result.capitalLossDeduction)} |` : "",
         result.shortTermCapitalLossCarryforward > 0 ? `| ↳ Short-Term Loss Carryforward | $${fmt(result.shortTermCapitalLossCarryforward)} |` : "",
@@ -854,13 +865,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       let currentStateTax = 0;
       let currentStateName = "N/A";
       if (params.currentState) {
-        const sr = calculateStateTax({
-          stateCode: params.currentState,
-          taxYear: params.taxYear,
-          incomeBeforeDeductions: currentFederal.adjustedGrossIncome,
-          federalTaxableIncome: currentFederal.taxableIncome,
-          filingStatus: params.filingStatus,
-        });
+        const sr = calculateStateTaxForFederal(params.currentState, params.taxYear, params.filingStatus, currentFederal);
         if (sr) { currentStateTax = sr.tax; currentStateName = sr.stateName; }
       }
       const currentTotal = currentFederal.totalFederalTax + currentStateTax;
@@ -894,13 +899,7 @@ export function registerComprehensiveTools(server: McpServer): void {
       let whatIfStateTax = 0;
       let whatIfStateName = "N/A";
       if (whatIfStateCode) {
-        const sr = calculateStateTax({
-          stateCode: whatIfStateCode,
-          taxYear: params.taxYear,
-          incomeBeforeDeductions: whatIfFederal.adjustedGrossIncome,
-          federalTaxableIncome: whatIfFederal.taxableIncome,
-          filingStatus: newFilingStatus,
-        });
+        const sr = calculateStateTaxForFederal(whatIfStateCode, params.taxYear, newFilingStatus, whatIfFederal);
         if (sr) { whatIfStateTax = sr.tax; whatIfStateName = sr.stateName; }
       }
       const whatIfTotal = whatIfFederal.totalFederalTax + whatIfStateTax;

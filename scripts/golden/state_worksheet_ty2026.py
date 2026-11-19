@@ -12,7 +12,12 @@ STATUSES = ["single", "married_filing_jointly", "married_filing_separately", "he
 INCOMES = [0, 9000, 15000, 30000, 45000, 85000, 150000, 240000, 600000, 1500000]
 # Rev. Proc. 2025-32 standard deductions, used to derive federal taxable income for ND cases.
 FEDERAL_STANDARD_DEDUCTION = {"single": 16100, "married_filing_jointly": 32200, "married_filing_separately": 16100, "head_of_household": 24150}
-NO_TAX = ["AK", "FL", "NH", "NV", "SD", "TN", "TX", "WY"]
+NO_TAX = ["AK", "FL", "NH", "NV", "SD", "TN", "TX", "WA", "WY"]
+# States whose 2025 forms or revenue department pages subtract federally taxable Social Security benefits.
+SOCIAL_SECURITY_EXCLUDED = ["CA", "GA", "IL", "IN", "KY", "MA", "MI", "NC", "NJ", "OH", "PA", "VA"]
+TAXABLE_SOCIAL_SECURITY = 20000
+# RCW 82.87.150 never lowers the Washington standard deduction ($278,000 for 2025, WA DOR).
+WA_NO_TAX_LONG_TERM_GAIN = 278000
 UNSUPPORTED = ["AZ", "CO", "NY"]
 
 S, J, M, H = STATUSES
@@ -99,7 +104,7 @@ def by_status(status, single, joint, head=None, separate=None):
     return {S: single, J: joint, H: single if head is None else head, M: single if separate is None else separate}[status]
 
 
-def work(state, status, income):
+def work(state, status, income, agi=None):
     """Return (tax, adjustedIncome, worksheet lines) or raise LookupError when the path is not modeled."""
     lines = []
     if state in NO_TAX:
@@ -116,7 +121,16 @@ def work(state, status, income):
         deduction = by_status(status, 5900, 11800, head=11800)
         taxable = max(0, income - deduction)
         lines.append(f"FTB standard deduction {deduction}; Schedule {dict(single='X', married_filing_separately='X', married_filing_jointly='Y', head_of_household='Z')[status]} on {taxable}")
-        return schedule_tax(taxable, CA[status]), taxable, lines
+        # FTB Tax News 10/2026 exemption credit; 2025 Form 540 line 32 AGI limitation worksheet ($6 per exemption per step).
+        exemptions = 2 if status == J else 1
+        credit = 158 * exemptions
+        threshold = {S: 252203, M: 252203, J: 504411, H: 378310}[status]
+        step = 1250 if status == M else 2500
+        federal_agi = income if agi is None else agi
+        steps = max(0, math.ceil((federal_agi - threshold) / step)) if federal_agi > threshold else 0
+        credit = max(0, credit - 6 * exemptions * steps)
+        lines.append(f"Exemption credit {credit}")
+        return max(0, schedule_tax(taxable, CA[status]) - credit), taxable, lines
     if state == "MA":
         deduction = by_status(status, 4400, 8800, head=6800)
         taxable = max(0, income - deduction)
@@ -215,5 +229,24 @@ for state in STATES:
             except LookupError as error:
                 expected, lines = {"unsupported": True}, [f"Fails closed: {error}"]
             cases.append({"name": f"{state} {status} {income}", "facts": facts, "expected": expected, "worksheet": lines})
+            if state in NO_TAX or state in UNSUPPORTED or income < TAXABLE_SOCIAL_SECURITY:
+                continue
+            ss_facts = {**facts, "taxableSocialSecurityBenefits": TAXABLE_SOCIAL_SECURITY}
+            if state not in SOCIAL_SECURITY_EXCLUDED:
+                ss_expected, ss_lines = {"unsupported": True}, ["Fails closed: Social Security treatment not modeled"]
+            else:
+                try:
+                    tax, adjusted, ss_lines = work(state, status, income - TAXABLE_SOCIAL_SECURITY, agi=income)
+                    ss_expected = {"tax": math.floor(tax + 0.5), "adjustedIncome": adjusted}
+                    ss_lines = [f"Subtract taxable Social Security {TAXABLE_SOCIAL_SECURITY}"] + ss_lines
+                except LookupError as error:
+                    ss_expected, ss_lines = {"unsupported": True}, [f"Fails closed: {error}"]
+            cases.append({"name": f"{state} {status} {income} with Social Security", "facts": ss_facts,
+                          "expected": ss_expected, "worksheet": ss_lines})
+
+for gain, expected in [(WA_NO_TAX_LONG_TERM_GAIN, {"tax": 0, "adjustedIncome": 400000}), (WA_NO_TAX_LONG_TERM_GAIN + 1, {"unsupported": True})]:
+    cases.append({"name": f"WA single 400000 with long-term gain {gain}",
+                  "facts": {"state": "WA", "status": "single", "income": 400000, "netLongTermCapitalGain": gain},
+                  "expected": expected, "worksheet": ["Washington capital gains excise boundary"]})
 
 print(json.dumps({"taxYear": 2026, "cases": cases}, indent=1))

@@ -27,7 +27,6 @@ export function registerCreditTools(server: McpServer): void {
     },
     async ({ category, refundableOnly }) => {
       let credits = TAX_CREDITS;
-      ``
       if (category && category !== "all") {
         credits = credits.filter((c) => c.category === category);
       }

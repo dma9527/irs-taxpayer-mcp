@@ -5,18 +5,30 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { calculateTax } from "../calculators/tax-calculator.js";
-import { calculateStateTax } from "../calculators/state-tax-calculator.js";
+import { calculateEmployeeFica, calculateTax } from "../calculators/tax-calculator.js";
+import { calculateStateTaxForFederal } from "../calculators/state-tax-calculator.js";
 import { calculateW4 } from "../calculators/w4-calculator.js";
-import { getTaxYearData, SUPPORTED_TAX_YEARS } from "../data/tax-brackets.js";
+import { getTaxYearData } from "../data/tax-brackets.js";
 import {
   AMT_PLANNING_NOTE,
+  FederalTaxDataSchema,
   fmt,
   FilingStatusEnum,
   registerTaxTool,
+  StateTaxDataSchema,
+  toFederalTaxData,
+  toStateTaxData,
 } from "./shared.js";
+
+const TotalTaxDataSchema = z.object({
+  federal: FederalTaxDataSchema,
+  state: StateTaxDataSchema,
+  employeeFica: z.number(),
+  totalTax: z.number(),
+  takeHome: z.number(),
+});
 import { TaxInputValidationError } from "../calculators/validation.js";
-import { ERRORS, toolError, wrapToolHandler } from "./error-handler.js";
+import { ERRORS, toolError } from "./error-handler.js";
 
 export function registerTaxCalculationTools(server: McpServer): void {
   registerTaxTool(server,
@@ -76,6 +88,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
       spouseEarnedIncome: z.number().min(0).optional().describe("MFJ only: spouse's earned income, already included in w2Income or earnedIncome"),
       spouseAge65OrOlder: z.boolean().optional().describe("Spouse is 65 or older"),
       spouseBlind: z.boolean().optional().describe("Spouse is blind"),
+      spouseW2Income: z.number().min(0).optional().describe("MFJ only: spouse's share of w2Income; the Social Security wage base applies per person"),
+      spouseSelfEmploymentIncome: z.number().min(0).optional().describe("MFJ only: spouse's share of selfEmploymentIncome"),
     },
     async (params) => {
       try {
@@ -160,7 +174,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `> 💡 **If this result seems wrong**, verify: (1) all income sources included? (W-2, 1099, SE, investments) (2) correct filing status? (3) deduction amounts accurate? If the issue persists, use the \`submit_feedback\` tool to report it.`,
         ].filter(Boolean);
 
-        return { content: [{ type: "text", text: lines.join("\n") }] };
+        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: { data: toFederalTaxData(result) } };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (err instanceof TaxInputValidationError) {
@@ -184,7 +198,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
           suggestion: "Check the supplied tax facts and required worksheet inputs.",
         });
       }
-    }
+    },
+    { dataSchema: FederalTaxDataSchema },
   );
 
   registerTaxTool(server,
@@ -355,7 +370,12 @@ export function registerTaxCalculationTools(server: McpServer): void {
       qualifiedBusinessW2Wages: z.number().min(0).optional(),
       qualifiedBusinessPropertyBasis: z.number().min(0).optional(),
       aboveTheLineDeductions: z.number().min(0).optional().describe("Above-the-line deductions"),
-      itemizedDeductions: z.number().min(0).optional().describe("Total itemized deductions"),
+      itemizedDeductions: z.number().min(0).optional().describe("Schedule A total after the SALT cap and medical floor, before the TY2026 charitable floor and 2/37 limit"),
+      itemizedCharitableContributions: z.number().min(0).optional().describe("TY2026+: charitable portion of itemizedDeductions, for the 0.5% of AGI floor"),
+      stateTaxDeducted: z.number().min(0).optional().describe("State and local taxes included in itemizedDeductions (added back for AMT)"),
+      charitableCashContributions: z.number().min(0).optional().describe("TY2026+: qualifying cash gifts to public charities for the non-itemizer deduction"),
+      spouseW2Income: z.number().min(0).optional().describe("MFJ only: spouse's share of w2Income; the Social Security wage base applies per person"),
+      spouseSelfEmploymentIncome: z.number().min(0).optional().describe("MFJ only: spouse's share of selfEmploymentIncome"),
       dependents: z.number().int().min(0).optional().describe("Legacy dependent count for nonrefundable CTC only"),
       qualifyingChildrenForCtc: z.number().int().min(0).optional().describe("Verified CTC/ACTC qualifying children"),
       otherDependentsForOdc: z.number().int().min(0).optional().describe("Verified dependents for ODC"),
@@ -369,19 +389,21 @@ export function registerTaxCalculationTools(server: McpServer): void {
         const federal = calculateTax(params);
 
         const stateFilingStatus = params.filingStatus;
-        const stateResult = calculateStateTax({
-          stateCode: params.stateCode,
-          taxYear: params.taxYear,
-          incomeBeforeDeductions: federal.adjustedGrossIncome,
-          federalTaxableIncome: federal.taxableIncome,
-          filingStatus: stateFilingStatus,
-        });
+        const stateResult = calculateStateTaxForFederal(params.stateCode, params.taxYear, stateFilingStatus, federal);
 
         if (!stateResult) {
           return ERRORS.invalidState(params.stateCode);
         }
 
-        const totalTax = federal.totalFederalTax + stateResult.tax;
+        const totalTaxData = getTaxYearData(params.taxYear);
+        const w2Wages = params.w2Income ?? 0;
+        const employeeFica = totalTaxData
+          ? calculateEmployeeFica(
+            totalTaxData,
+            params.spouseW2Income === undefined ? [w2Wages] : [w2Wages - params.spouseW2Income, params.spouseW2Income],
+          )
+          : 0;
+        const totalTax = federal.totalFederalTax + stateResult.tax + employeeFica;
         const totalRate = params.grossIncome > 0 ? totalTax / params.grossIncome : 0;
         const takeHome = params.grossIncome - totalTax;
 
@@ -393,6 +415,7 @@ export function registerTaxCalculationTools(server: McpServer): void {
           `|-----------|-----|------|`,
           `| Federal Income Tax | $${fmt(federal.totalFederalTax)} | ${(federal.effectiveRate * 100).toFixed(2)}% |`,
           `| ${stateResult.stateName} State Tax | $${fmt(stateResult.tax)} | ${(stateResult.effectiveRate * 100).toFixed(2)}% |`,
+          employeeFica > 0 ? `| Employee FICA (W-2) | $${fmt(employeeFica)} | ${(params.grossIncome > 0 ? employeeFica / params.grossIncome * 100 : 0).toFixed(2)}% |` : "",
           `| **Total Tax** | **$${fmt(totalTax)}** | **${(totalRate * 100).toFixed(2)}%** |`,
           "",
           `| Item | Amount |`,
@@ -427,10 +450,10 @@ export function registerTaxCalculationTools(server: McpServer): void {
           "",
           stateResult.hasLocalTaxes ? "⚠️ Does not include local/city income taxes" : "",
           "",
-          `> ⚠️ Estimate only. Does not include FICA withholding from W-2 wages. Consult a tax professional.`,
+          `> ⚠️ Estimate only. Employee FICA is computed from w2Income. Consult a tax professional.`,
         ].filter(Boolean);
 
-        return { content: [{ type: "text", text: lines.join("\n") }] };
+        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: { data: { federal: toFederalTaxData(federal), state: toStateTaxData(stateResult, params.taxYear), employeeFica, totalTax, takeHome } } };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (err instanceof TaxInputValidationError) {
@@ -454,7 +477,8 @@ export function registerTaxCalculationTools(server: McpServer): void {
           suggestion: "Check the supplied tax facts and required worksheet inputs.",
         });
       }
-    }
+    },
+    { dataSchema: TotalTaxDataSchema },
   );
 
   registerTaxTool(server,

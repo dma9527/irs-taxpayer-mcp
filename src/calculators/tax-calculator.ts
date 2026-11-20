@@ -79,7 +79,11 @@ export interface TaxInput {
   spouseW2Income?: number;
   /** MFJ only: the spouse's share of selfEmploymentIncome (each spouse files a Schedule SE). */
   spouseSelfEmploymentIncome?: number;
+  /** "irs_form" (default) uses the Tax Table below $100,000; "rate_schedule" uses the bracket formula throughout. */
+  taxComputation?: TaxComputationMethod;
 }
+
+export type TaxComputationMethod = "irs_form" | "rate_schedule";
 
 export interface TaxBreakdown {
   taxYear: number;
@@ -94,6 +98,8 @@ export interface TaxBreakdown {
   taxableIncome: number;
   bracketBreakdown: { rate: number; taxableAmount: number; tax: number }[];
   ordinaryIncomeTax: number;
+  /** Whether Form 1040 line 16 (or QDCG worksheet line 22) came from the Tax Table. */
+  taxTableUsed: boolean;
   capitalGainsTax: number;
   capitalLossDeduction: number;
   /** Net long-term capital gain after Schedule D netting (zero for a net loss). */
@@ -156,6 +162,34 @@ function calculateBracketTax(
   }
 
   return { breakdown, total, marginalRate };
+}
+
+/** Form 1040 instructions: taxable income below this uses the Tax Table. */
+const TAX_TABLE_LIMIT = 100000;
+
+/** Tax Table row [atLeast, lessThan): $0-5, $5-15, $15-25, $25 rows to $3,000, then $50 rows. */
+function taxTableRow(amount: number): [number, number] {
+  if (amount < 5) return [0, 5];
+  if (amount < 15) return [5, 15];
+  if (amount < 25) return [15, 25];
+  const width = amount < 3000 ? 25 : 50;
+  const low = Math.floor(amount / width) * width;
+  return [low, low + width];
+}
+
+/** Regular tax on an amount: Tax Table (row midpoint, whole dollars) below $100,000, else the Tax Computation Worksheet. */
+export function calculateRegularTax(
+  amount: number,
+  brackets: TaxBracket[],
+  method: TaxComputationMethod = "irs_form",
+): number {
+  if (amount <= 0) return 0;
+  if (method === "rate_schedule" || amount >= TAX_TABLE_LIMIT) {
+    return calculateBracketTax(amount, brackets).total;
+  }
+  const [low, high] = taxTableRow(amount);
+  const cents = Math.round(calculateBracketTax((low + high) / 2, brackets).total * 100);
+  return Math.floor((cents + 50) / 100);
 }
 
 function calculateCapitalGainsTax(
@@ -978,15 +1012,21 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
 
   const adjustedTaxableOrdinary = Math.max(0, taxableOrdinaryIncome - qbiDeduction);
 
-  // Step 5: Calculate ordinary income tax
-  const { breakdown, total: ordinaryTax, marginalRate } = calculateBracketTax(
-    adjustedTaxableOrdinary,
-    taxData.brackets[input.filingStatus]
-  );
+  // Step 5: Ordinary income tax (Form 1040 line 16, or QDCG worksheet line 22).
+  const brackets = taxData.brackets[input.filingStatus];
+  const taxComputation = input.taxComputation ?? "irs_form";
+  const { breakdown, marginalRate } = calculateBracketTax(adjustedTaxableOrdinary, brackets);
+  const ordinaryTax = calculateRegularTax(adjustedTaxableOrdinary, brackets, taxComputation);
+  const taxTableUsed = taxComputation === "irs_form"
+    && adjustedTaxableOrdinary > 0
+    && adjustedTaxableOrdinary < TAX_TABLE_LIMIT;
 
-  // Step 6: Capital gains tax (long-term only)
+  // Step 6: QDCG worksheet line 25 is the smaller of line 23 and the regular tax on all taxable income (line 24).
   const cgTax = taxablePreferentialIncome > 0
-    ? calculateCapitalGainsTax(taxablePreferentialIncome, adjustedTaxableOrdinary, input.filingStatus, taxData)
+    ? Math.min(
+        ordinaryTax + calculateCapitalGainsTax(taxablePreferentialIncome, adjustedTaxableOrdinary, input.filingStatus, taxData),
+        calculateRegularTax(adjustedTaxableOrdinary + taxablePreferentialIncome, brackets, taxComputation),
+      ) - ordinaryTax
     : 0;
 
   // Step 7: Self-employment tax, one Schedule SE per person.
@@ -1178,6 +1218,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
     taxableIncome,
     bracketBreakdown: breakdown,
     ordinaryIncomeTax: ordinaryTax,
+    taxTableUsed,
     capitalGainsTax: cgTax,
     capitalLossDeduction: capitalNetting.capitalLossDeduction,
     netLongTermCapitalGain: capitalNetting.longTermGain,

@@ -123,7 +123,8 @@ describe("local taxpayer facts CLI", () => {
         },
         results: {
           adjustedGrossIncome: 100000,
-          federalTaxAfterRefundableCredits: 13170,
+          // Taxable $83,900 from the Tax Table (midpoint $83,925): $13,176.
+          federalTaxAfterRefundableCredits: 13176,
         },
       });
       expect(errors).toEqual([]);
@@ -276,7 +277,7 @@ describe("local taxpayer facts CLI", () => {
       expect(planning.stderr).toBe("");
       const plan = TaxPlanSchema.parse(JSON.parse(planning.stdout));
       expect(plan.privacy.modelInvoked).toBe(false);
-      expect(plan.results.federalTaxAfterRefundableCredits).toBe(13170);
+      expect(plan.results.federalTaxAfterRefundableCredits).toBe(13176);
     });
   });
 });

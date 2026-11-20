@@ -344,6 +344,7 @@ See [ROADMAP.md](ROADMAP.md) for the remaining work toward a filing-grade federa
 | Feature                                      | Status |
 | -------------------------------------------- | ------ |
 | Federal income tax (7 brackets × 4 statuses) | ✅     |
+| Form 1040 Tax Table below $100,000 taxable income | ✅ All 2,062 rows of the official 2025 table match |
 | Long-term capital gains (0%/15%/20%)         | ✅     |
 | Capital-loss netting, annual limit, carryovers | Planning-grade |
 | Social Security benefit taxation              | Publication 915 planning model |

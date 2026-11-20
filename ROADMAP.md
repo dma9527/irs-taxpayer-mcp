@@ -104,7 +104,7 @@ Plan and evidence: [docs/TY2026_READINESS_PLAN.md](docs/TY2026_READINESS_PLAN.md
 - [x] 2026-11-19 review fixes: per-spouse Social Security wage base for SE tax and FICA, Schedule C QBI adjustments, Uniform Lifetime RMD table and SECURE 2.0 start age, Schedule SE $400 floor.
 - [x] State Social Security and retirement-income treatment from state sources (12 states subtract Social Security; IL subtracts retirement distributions), fail closed elsewhere.
 - [x] California TY2026 exemption credit with the AGI phase-out (2025 thresholds as a lower bound until the 2026 Form 540 instructions).
-- [ ] Decide whether to apply the IRS Tax Table below $100,000 taxable income (up to about $6 difference) or reword the README "exact" claim.
+- [x] Apply the Form 1040 Tax Table below $100,000 taxable income, checked row by row against the official table (`scripts/sources/check_tax_table.py`; rerun when the 2026 table publishes).
 - [ ] Declare Social Security treatment for KS, MN, MS, ND, NE, and RI and retirement-distribution treatment for the remaining TY2026 states from state sources.
 
 ## Phase 2: Forms and Schedules

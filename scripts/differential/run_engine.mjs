@@ -17,6 +17,8 @@ const results = scenarios.map((scenario) => {
   const result = calculateTax({
     taxYear: scenario.year,
     filingStatus: scenario.status,
+    // Tax-Calculator applies the rate schedule everywhere; the Tax Table path is covered by the golden cases.
+    taxComputation: "rate_schedule",
     grossIncome,
     w2Income: wages,
     selfEmploymentIncome: selfEmployment > 0 ? selfEmployment : undefined,

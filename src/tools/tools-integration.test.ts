@@ -67,17 +67,19 @@ describe("MCP Tools Integration", () => {
       const { structuredContent } = await callTool(server, "calculate_federal_tax", {
         taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000,
       });
-      // Taxable $83,900: $1,240 + 12% x $38,000 + 22% x $33,500 = $13,170
-      expect(structuredContent?.data).toMatchObject({ taxableIncome: 83900, totalFederalTax: 13170, deductionType: "standard" });
+      // Taxable $83,900, Tax Table midpoint $83,925: $1,240 + 12% x $38,000 + 22% x $33,525 = $13,175.50, rounded $13,176
+      expect(structuredContent?.data).toMatchObject({
+        taxableIncome: 83900, totalFederalTax: 13176, deductionType: "standard", taxTableUsed: true,
+      });
     });
 
     it("returns federal, state, and FICA totals from calculate_total_tax", async () => {
       const { structuredContent } = await callTool(server, "calculate_total_tax", {
         taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000, stateCode: "TX",
       });
-      // FICA $100,000 x 7.65% = $7,650; take-home $100,000 - $13,170 - $7,650 = $79,180
+      // FICA $100,000 x 7.65% = $7,650; take-home $100,000 - $13,176 - $7,650 = $79,174
       expect(structuredContent?.data).toMatchObject({
-        employeeFica: 7650, totalTax: 20820, takeHome: 79180, state: { stateCode: "TX", tax: 0 },
+        employeeFica: 7650, totalTax: 20826, takeHome: 79174, state: { stateCode: "TX", tax: 0 },
       });
     });
 
@@ -115,7 +117,7 @@ describe("MCP Tools Integration", () => {
 
       expect(text).toContain("TY2026");
       expect(text).toContain("$16,100");
-      expect(text).toContain("$13,170");
+      expect(text).toContain("$13,176");
     });
 
     it("reports limited capital loss and carryforward", async () => {
@@ -167,7 +169,7 @@ describe("MCP Tools Integration", () => {
         capitalGains: 900000,
       });
 
-      expect(text).toContain("Alternative Minimum Tax (AMT) | $12,159");
+      expect(text).toContain("Alternative Minimum Tax (AMT) | $12,153");
     });
 
     it("calculates taxable Social Security benefits", async () => {
@@ -800,7 +802,7 @@ describe("MCP Tools Integration", () => {
         longTermCapitalGains: 900000,
       });
 
-      expect(text).toContain("| AMT | $12,159 |");
+      expect(text).toContain("| AMT | $12,153 |");
       expect(text).toContain(
         "AMT applies annual exemptions, phase-outs, 26%/28% ordinary rates, and preferential rates for qualified dividends and net capital gains.",
       );
@@ -1157,22 +1159,22 @@ describe("MCP Tools Integration", () => {
     });
 
     it("counts qualifying children when projecting TY2026 tax", async () => {
-      // $78,000 - $24,150 = $53,850; $1,770 + 12% x $36,150 = $6,108; minus 2 x $2,200 CTC = $1,708.
+      // $78,000 - $24,150 = $53,850; Tax Table midpoint $53,875: $1,770 + 12% x $36,175 = $6,111; minus 2 x $2,200 CTC = $1,711.
       const { text } = await callTool(server, "analyze_paycheck", {
         taxYear: 2026, filingStatus: "head_of_household", payFrequency: "biweekly",
         grossPay: 3000, federalWithheld: 66, qualifyingChildrenForCtc: 2,
       });
-      expect(text).toContain("| Expected Annual Federal Tax | $1,708 |");
+      expect(text).toContain("| Expected Annual Federal Tax | $1,711 |");
       expect(text).toContain("Withholding looks accurate");
     });
 
     it("applies the TY2026 overtime deduction to the projection", async () => {
-      // $65,000 - $16,100 - $5,000 = $43,900; $1,240 + 12% x $31,500 = $5,020.
+      // $65,000 - $16,100 - $5,000 = $43,900; Tax Table midpoint $43,925: $1,240 + 12% x $31,525 = $5,023.
       const { text } = await callTool(server, "analyze_paycheck", {
         taxYear: 2026, filingStatus: "single", payFrequency: "biweekly",
         grossPay: 2500, federalWithheld: 193, annualQualifiedOvertimeCompensation: 5000,
       });
-      expect(text).toContain("| Expected Annual Federal Tax | $5,020 |");
+      expect(text).toContain("| Expected Annual Federal Tax | $5,023 |");
     });
   });
 
@@ -1225,12 +1227,12 @@ describe("MCP Tools Integration", () => {
     });
 
     it("applies TY2026 non-itemizer charitable and senior deductions to both scenarios", async () => {
-      // $60,000 - ($16,100 + $2,050) - $1,000 - $6,000 = $34,850; $1,240 + 12% x $22,450 = $3,934.
+      // $60,000 - ($16,100 + $2,050) - $1,000 - $6,000 = $34,850; Tax Table midpoint $34,875: $1,240 + 12% x $22,475 = $3,937.
       const { text } = await callTool(server, "simulate_tax_scenario", {
         taxYear: 2026, filingStatus: "single", currentIncome: 60000, age65OrOlder: true,
         charitableCashContributions: 1500, whatIfIncomeChange: 0,
       });
-      expect(text).toContain("| Federal Tax | $3,934 | $3,934 |");
+      expect(text).toContain("| Federal Tax | $3,937 | $3,937 |");
     });
 
     it("rejects itemized SALT above the current itemized total", async () => {
@@ -1561,8 +1563,9 @@ describe("MCP Tools Integration", () => {
         qualifiedDividends: 20000,
       });
 
+      // Ordinary $85,400 from the Tax Table ($13,847) plus 15% x $20,000.
       expect(text).toContain("| Capital Gains Tax | $3,000 |");
-      expect(text).toContain("| **Federal Tax After Refundable Credits** | **$16,841** |");
+      expect(text).toContain("| **Federal Tax After Refundable Credits** | **$16,847** |");
     });
 
     it("reports refundable EITC and ACTC when no withholding remains", async () => {
@@ -1638,7 +1641,8 @@ describe("MCP Tools Integration", () => {
         dependents: 1,
       });
 
-      expect(text).toContain("| Combined Tax | **$12,482** | **$12,657** |");
+      // MFJ $110,800 uses the worksheet ($14,482 - $2,000); MFS Tax Table $9,447 - $2,000 + $5,219.
+      expect(text).toContain("| Combined Tax | **$12,482** | **$12,666** |");
       expect(text).toContain("| Dependents Allocation | 1 joint | 1 + 0 |");
     });
 
@@ -1651,7 +1655,8 @@ describe("MCP Tools Integration", () => {
       });
 
       expect(text).toContain("| MFS Deductions | - | $10,000 + $10,000 |");
-      expect(text).toContain("| Combined Tax | **$14,482** | **$16,506** |");
+      // MFS Tax Table: $70,000 -> $10,459 and $50,000 -> $6,059.
+      expect(text).toContain("| Combined Tax | **$14,482** | **$16,518** |");
     });
 
     it("rejects dependent counts that would make allocation search unbounded", async () => {

@@ -153,6 +153,7 @@ export const FederalTaxDataSchema = z.object({
   deductionAmount: z.number(),
   taxableIncome: z.number(),
   ordinaryIncomeTax: z.number(),
+  taxTableUsed: z.boolean(),
   capitalGainsTax: z.number(),
   selfEmploymentTax: z.number(),
   niit: z.number(),

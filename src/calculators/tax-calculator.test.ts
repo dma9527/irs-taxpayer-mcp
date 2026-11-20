@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateEmployeeFica,
+  calculateRegularTax,
   calculateScheduleCQualifiedBusinessIncome,
   calculateTax,
   type TaxInput,
@@ -22,9 +23,9 @@ describe("calculateTax", () => {
       expect(result.deductionType).toBe("standard");
       expect(result.deductionAmount).toBe(14600);
       expect(result.taxableIncome).toBe(85400);
-      // 10% on 11600 = 1160, 12% on 35550 = 4266, 22% on 38250 = 8415
-      expect(result.ordinaryIncomeTax).toBeCloseTo(13841, 0);
-      expect(result.effectiveRate).toBeCloseTo(0.13841, 3);
+      // Tax Table row 85,400-85,450, midpoint 85,425: 1,160 + 12% x 35,550 + 22% x 38,275 = 13,846.50
+      expect(result.ordinaryIncomeTax).toBe(13847);
+      expect(result.effectiveRate).toBeCloseTo(0.13847, 5);
       expect(result.marginalRate).toBe(0.22);
     });
 
@@ -88,7 +89,8 @@ describe("calculateTax", () => {
 
       expect(result.deductionAmount).toBe(16100);
       expect(result.taxableIncome).toBe(83900);
-      expect(result.ordinaryIncomeTax).toBe(13170);
+      // Tax Table row 83,900-83,950, midpoint 83,925: 13,175.50 rounds to 13,176.
+      expect(result.ordinaryIncomeTax).toBe(13176);
     });
 
     it("calculates TY2026 MFJ brackets", () => {
@@ -125,7 +127,8 @@ describe("calculateTax", () => {
       });
 
       expect(result.taxableIncome).toBe(63900);
-      expect(result.ordinaryIncomeTax).toBe(1420);
+      // QDCG line 22: Tax Table on 13,900 (midpoint 13,925) = 1,240 + 12% x 1,525 = 1,423.
+      expect(result.ordinaryIncomeTax).toBe(1423);
       expect(result.capitalGainsTax).toBe(2167.5);
     });
   });
@@ -575,10 +578,11 @@ describe("calculateTax", () => {
         earnedIncome: 20000,
       });
 
-      expect(result.childTaxCredit).toBe(540);
-      expect(result.additionalChildTaxCredit).toBe(1460);
+      // Tax Table row 5,400-5,450, midpoint 5,425: 542.50, rounded 543.
+      expect(result.childTaxCredit).toBe(543);
+      expect(result.additionalChildTaxCredit).toBe(1457);
       expect(result.creditForOtherDependents).toBe(0);
-      expect(result.totalFederalTax).toBe(-1460);
+      expect(result.totalFederalTax).toBe(-1457);
     });
 
     it("keeps the credit for other dependents nonrefundable", () => {
@@ -608,9 +612,10 @@ describe("calculateTax", () => {
         earnedIncome: 34867,
       });
 
+      // Tax Table on 20,267 (row 20,250-20,300, midpoint 20,275) = 1,160 + 12% x 8,675 = 2,201.
       expect(result.childTaxCredit).toBe(2000);
-      expect(result.creditForOtherDependents).toBeCloseTo(200, 0);
-      expect(result.additionalChildTaxCredit).toBe(300);
+      expect(result.creditForOtherDependents).toBe(201);
+      expect(result.additionalChildTaxCredit).toBe(299);
     });
 
     it("uses the three-child payroll-tax method when it is larger", () => {
@@ -865,7 +870,8 @@ describe("calculateTax", () => {
         aotcRefundableAllowed: true,
       });
 
-      expect(result.nonrefundableAmericanOpportunityCreditApplied).toBe(50);
+      // Tax Table on 500 (row 500-525, midpoint 512.50) = 51.25, rounded 51.
+      expect(result.nonrefundableAmericanOpportunityCreditApplied).toBe(51);
       expect(result.refundableAmericanOpportunityCredit).toBe(200);
       expect(result.childTaxCredit).toBe(0);
       expect(result.additionalChildTaxCredit).toBe(1700);
@@ -927,7 +933,7 @@ describe("calculateTax", () => {
 
     it("measures AMT capital-gain bands from regular ordinary taxable income (Form 6251 Part III)", () => {
       // TY2026: regular ordinary $83,900; 15% band 545,500 - 83,900 = 461,600; 438,400 at 20%.
-      // Tentative AMT 26,000 + 69,240 + 87,680 = 182,920; regular tax 13,170 + 156,920 = 170,090.
+      // Tentative AMT 26,000 + 69,240 + 87,680 = 182,920; regular tax 13,176 (Tax Table) + 156,920 = 170,096.
       const result = calculateTax({
         taxYear: 2026,
         filingStatus: "single",
@@ -935,7 +941,7 @@ describe("calculateTax", () => {
         w2Income: 100000,
         capitalGains: 900000,
       });
-      expect(result.amt).toBeCloseTo(12830, 2);
+      expect(result.amt).toBeCloseTo(12824, 2);
     });
 
     it("adds the standard deduction back to AMTI (Form 6251 line 2a)", () => {
@@ -986,9 +992,9 @@ describe("calculateTax", () => {
 
       // AMTI $1,000,000 adds back the $14,600 standard deduction (Form 6251 line 2a); exemption fully phased out.
       // Part III bands use regular ordinary taxable income $85,400 (lines 20, 27): 433,500 at 15% + 466,500 at 20%.
-      // Tentative AMT 26,000 + 158,325 = 184,325; regular tax 13,841 + 158,325 = 172,166.
+      // Tentative AMT 26,000 + 158,325 = 184,325; regular tax 13,847 (Tax Table) + 158,325 = 172,172.
       expect(result.capitalGainsTax).toBe(158325);
-      expect(result.amt).toBeCloseTo(12159, 2);
+      expect(result.amt).toBeCloseTo(12153, 2);
     });
 
     it("treats qualified dividends and long-term gains equally under AMT", () => {
@@ -1007,7 +1013,7 @@ describe("calculateTax", () => {
         capitalGains: 900000,
       });
 
-      expect(dividendResult.amt).toBeCloseTo(12159, 2);
+      expect(dividendResult.amt).toBeCloseTo(12153, 2);
       expect(dividendResult.amt).toBe(capitalGainResult.amt);
       expect(dividendResult.totalFederalTax)
         .toBe(capitalGainResult.totalFederalTax);
@@ -1073,12 +1079,11 @@ describe("calculateTax", () => {
  * These tests verify exact dollar amounts, not just "greater than zero".
  */
 describe("IRS Tax Table verification", () => {
-  it("TY2024 single $50k → tax $4,016", () => {
-    // Taxable: $50,000 - $14,600 = $35,400
-    // 10% × $11,600 = $1,160 + 12% × $23,800 = $2,856
+  it("TY2024 single $50k uses the Tax Table: $4,019", () => {
+    // Taxable $35,400; row 35,400-35,450, midpoint 35,425: 1,160 + 12% x 23,825 = 4,019.
     const r = calculateTax({ taxYear: 2024, filingStatus: "single", grossIncome: 50000 });
     expect(r.taxableIncome).toBe(35400);
-    expect(r.ordinaryIncomeTax).toBeCloseTo(4016, 0);
+    expect(r.ordinaryIncomeTax).toBe(4019);
   });
 
   it("TY2024 MFJ $150k → tax $16,682", () => {
@@ -1096,15 +1101,66 @@ describe("IRS Tax Table verification", () => {
     expect(r.ordinaryIncomeTax).toBeCloseTo(140264.75, 0);
   });
 
-  it("TY2025 single $100k → tax $13,449", () => {
-    // Taxable: $100,000 - $15,750 = $84,250
-    // 10% × $11,925 + 12% × $36,550 + 22% × $35,775
+  it("TY2025 single $100k uses the Tax Table: $13,455", () => {
+    // Taxable $84,250; row 84,250-84,300, midpoint 84,275: 1,192.50 + 4,386 + 22% x 35,800 = 13,454.50, rounded 13,455.
     const r = calculateTax({ taxYear: 2025, filingStatus: "single", grossIncome: 100000 });
     expect(r.taxableIncome).toBe(84250);
-    expect(r.ordinaryIncomeTax).toBeCloseTo(13449, 0);
+    expect(r.ordinaryIncomeTax).toBe(13455);
   });
 });
 
+
+describe("Form 1040 Tax Table (official 2025 Tax Table rows, i1040tt.pdf)", () => {
+  it.each([
+    // [taxable income, filing status, official 2025 Tax Table amount]
+    [0, "single", 0],
+    [10, "single", 1],
+    [20, "married_filing_jointly", 2],
+    [2980, "head_of_household", 299],
+    [3000, "single", 303],
+    [25300, "married_filing_jointly", 2562],
+    [48460, "single", 5579],
+    [48460, "married_filing_jointly", 5340],
+    [48460, "head_of_household", 5477],
+    [99999, "single", 16909],
+    [99999, "married_filing_jointly", 11823],
+    [99999, "married_filing_separately", 16909],
+    [99999, "head_of_household", 15170],
+  ] as const)("taxable income %i %s uses the table amount %i", (taxableIncome, filingStatus, expected) => {
+    expect(calculateRegularTax(taxableIncome, getTaxYearData(2025)!.brackets[filingStatus], "irs_form")).toBe(expected);
+  });
+
+  it("uses the Tax Computation Worksheet at $100,000 and above", () => {
+    // TY2025 single: 1,192.50 + 12% x 36,550 + 22% x 51,525 = 16,914
+    expect(calculateRegularTax(100000, getTaxYearData(2025)!.brackets.single, "irs_form")).toBeCloseTo(16914, 2);
+  });
+
+  it("skips the table for the rate_schedule method", () => {
+    // TY2025 single 48,460: 1,192.50 + 12% x 36,535 = 5,576.70
+    expect(calculateRegularTax(48460, getTaxYearData(2025)!.brackets.single, "rate_schedule")).toBeCloseTo(5576.7, 2);
+  });
+
+  it("applies the table to Form 1040 line 16 in calculateTax", () => {
+    // TY2026 single $100,000 wages: taxable 83,900, row 83,900-83,950, midpoint 83,925:
+    // 1,240 + 12% x 38,000 + 22% x 33,525 = 13,175.50, rounded to 13,176.
+    const result = calculateTax({ taxYear: 2026, filingStatus: "single", grossIncome: 100000, w2Income: 100000 });
+    expect(result.ordinaryIncomeTax).toBe(13176);
+    expect(result.totalFederalTax).toBe(13176);
+    expect(result.taxTableUsed).toBe(true);
+  });
+
+  it("takes the smaller of QDCG worksheet lines 23 and 24", () => {
+    // TY2026 single: $60,000 wages + $10,000 LTCG; taxable 53,900, ordinary 43,900.
+    // Line 22: row 43,900-43,950 midpoint 43,925 -> 1,240 + 12% x 31,525 = 5,023 (table 5,023).
+    // Line 18: 15% x (53,900 - 49,450) = 667.50; 0% on 5,550. Line 23 = 5,690.50.
+    // Line 24: row 53,900-53,950 midpoint 53,925 -> 5,800 + 22% x 3,525 = 6,575.50, table 6,576.
+    const result = calculateTax({
+      taxYear: 2026, filingStatus: "single", grossIncome: 70000, w2Income: 60000, capitalGains: 10000,
+    });
+    expect(result.ordinaryIncomeTax).toBe(5023);
+    expect(result.ordinaryIncomeTax + result.capitalGainsTax).toBeCloseTo(5690.5, 2);
+  });
+});
 
 describe("P0 federal accuracy regressions", () => {
   it("applies unused standard deduction to long-term capital gains", () => {
@@ -1150,7 +1206,7 @@ describe("P0 federal accuracy regressions", () => {
 
 describe("TY2026 OBBB charitable and itemized deduction rules", () => {
   it("allows the non-itemizer cash charitable deduction up to $1,000 single", () => {
-    // Taxable $80,000 - $16,100 - $1,000 = $62,900; tax 1,240 + 4,560 + 2,750.
+    // Taxable $80,000 - $16,100 - $1,000 = $62,900; Tax Table midpoint 62,925: 1,240 + 4,560 + 2,755.50, rounded 8,556.
     const result = calculateTax({
       taxYear: 2026,
       filingStatus: "single",
@@ -1160,7 +1216,7 @@ describe("TY2026 OBBB charitable and itemized deduction rules", () => {
     expect(result.nonItemizerCharitableDeduction).toBe(1000);
     expect(result.adjustedGrossIncome).toBe(80000);
     expect(result.taxableIncome).toBe(62900);
-    expect(result.ordinaryIncomeTax).toBeCloseTo(8550, 2);
+    expect(result.ordinaryIncomeTax).toBe(8556);
   });
 
   it("caps the non-itemizer charitable deduction at $2,000 for MFJ", () => {
@@ -1438,11 +1494,11 @@ describe("OBBB Schedule 1-A deductions in the federal calculation", () => {
 
   it("adds the senior deduction back to AMTI", () => {
     // AMTI = 35,850 + 18,150 + 6,000 + 300,000 = 360,000; tentative 63,570 + 25,400 x 28% = 70,682.
-    // Regular tax on $35,850 = 4,054.
+    // Regular tax on $35,850 from the Tax Table (midpoint 35,875) = 4,057.
     const result = calculateTax({
       taxYear: 2026, filingStatus: "single", grossIncome: 60000, w2Income: 60000, age65OrOlder: true,
       isoExerciseSpread: 300000,
     });
-    expect(result.amt).toBeCloseTo(66628, 2);
+    expect(result.amt).toBeCloseTo(66625, 2);
   });
 });

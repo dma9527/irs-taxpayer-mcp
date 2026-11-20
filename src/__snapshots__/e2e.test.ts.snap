@@ -351,6 +351,9 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
             "selfEmploymentTax": {
               "type": "number",
             },
+            "taxTableUsed": {
+              "type": "boolean",
+            },
             "taxYear": {
               "type": "number",
             },
@@ -369,6 +372,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
             "deductionAmount",
             "taxableIncome",
             "ordinaryIncomeTax",
+            "taxTableUsed",
             "capitalGainsTax",
             "selfEmploymentTax",
             "niit",
@@ -957,6 +961,9 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "selfEmploymentTax": {
                   "type": "number",
                 },
+                "taxTableUsed": {
+                  "type": "boolean",
+                },
                 "taxYear": {
                   "type": "number",
                 },
@@ -975,6 +982,7 @@ exports[`E2E Smoke Test > server starts, initializes, lists tools, and calls a t
                 "deductionAmount",
                 "taxableIncome",
                 "ordinaryIncomeTax",
+                "taxTableUsed",
                 "capitalGainsTax",
                 "selfEmploymentTax",
                 "niit",

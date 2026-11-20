@@ -39,6 +39,25 @@ def schedule_tax(income, status):
     return tax
 
 
+def form_tax(amount, status):
+    """1040 instructions: Tax Table below $100,000 (row midpoint, whole dollars), else the Tax Computation Worksheet."""
+    if amount <= 0:
+        return 0.0
+    if amount >= 100000:
+        return schedule_tax(amount, status)
+    if amount < 5:
+        low, high = 0, 5
+    elif amount < 15:
+        low, high = 5, 15
+    elif amount < 25:
+        low, high = 15, 25
+    else:
+        width = 25 if amount < 3000 else 50
+        low = math.floor(amount / width) * width
+        high = low + width
+    return float(math.floor(round(schedule_tax((low + high) / 2, status) * 100) / 100 + 0.5))
+
+
 def qdcg_tax(taxable, preferential, status):
     """Qualified Dividends and Capital Gain Tax Worksheet, line numbers in comments."""
     line4 = preferential
@@ -52,8 +71,8 @@ def qdcg_tax(taxable, preferential, status):
     line16 = max(0, line14 - (line5 + line9))
     line17 = min(line12, line16)                            # taxed at 15%
     line20 = taxable - (line5 + line9 + line17)             # taxed at 20%
-    line24 = schedule_tax(line5, status) + line17 * .15 + line20 * .20
-    return min(line24, schedule_tax(taxable, status))
+    line23 = form_tax(line5, status) + line17 * .15 + line20 * .20   # line 22 uses the Tax Table below $100,000
+    return min(line23, form_tax(taxable, status))                    # line 24, then line 25
 
 
 def amt_tax(amti, preferential, regular_ordinary, status, regular_tax):

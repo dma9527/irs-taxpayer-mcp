@@ -182,10 +182,11 @@ describe("E2E Smoke Test", () => {
       }).parse(planResponse.result);
       expect(planResult.structuredContent.plan.results.adjustedGrossIncome)
         .toBe(100000);
+      // Tax Table on $83,900 = $13,176; plus FICA $7,650.
       expect(planResult.structuredContent.plan.results.federalTaxAfterRefundableCredits)
-        .toBe(13170);
+        .toBe(13176);
       expect(planResult.structuredContent.plan.results.totalTax)
-        .toBe(20820);
+        .toBe(20826);
       expect(planResult.structuredContent.plan.calculationTrace)
         .toContainEqual(expect.objectContaining({ step: "total_tax" }));
       expect(planResult.structuredContent.plan.sources[0]?.title)

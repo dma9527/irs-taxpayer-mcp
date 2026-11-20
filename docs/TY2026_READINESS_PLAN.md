@@ -123,7 +123,7 @@ in the state income base.
 | D24 | P2 | Washington fails closed although wages are untaxed; the README sample prompt compares CA, TX, and WA | `estimate_state_tax` WA TY2026 | Fixed: wages untaxed; long-term gains above $278,000 fail closed (RCW 82.87.150 never lowers the deduction) |
 | D25 | P2 | Stale TY2026 reference text: 1099-NEC/MISC threshold is $2,000 for payments after 2025; no 2026 Roth catch-up rule; planner warns HoH and MFS use the single state profile although TY2026 profiles have overrides | `get_irs_form_info` 1099-NEC; `generate_tax_plan` HoH with a TY2026 state | Fixed: law change entries, year-aware 1099-NEC text, planner warning limited to TY2024 and TY2025 |
 | D26 | P2 | `calculate_total_tax` take-home excludes employee FICA, while the planner includes it | Same W-2 inputs give different take-home | Fixed; the tool also takes the SALT AMT add-back and TY2026 charitable inputs |
-| D27 | P3 | Engine uses the rate formula where Form 1040 requires the Tax Table below $100,000 taxable income (up to about $6) | Single, taxable income $83,900: table $13,176, engine $13,170 | Decision needed: apply the Tax Table, or reword the README "exact" claim |
+| D27 | P3 | Engine uses the rate formula where Form 1040 requires the Tax Table below $100,000 taxable income (up to about $6) | Single, taxable income $83,900: table $13,176, engine $13,170 | Fixed: Tax Table for Form 1040 line 16 and QDCG lines 22 and 24; all 2,062 rows of the official 2025 table match (`scripts/sources/check_tax_table.py`); rerun on the 2026 table in January 2027 |
 | Q1 | Quality | 44 of 45 tools return only text in `structuredContent` | `registerTaxTool` in `src/tools/shared.ts` | Done for `calculate_federal_tax`, `calculate_total_tax`, `estimate_state_tax` (`structuredContent.data`); `calculateStateTaxForFederal` replaces 10 call sites |
 | Q2 | Quality | No lint script, no coverage provider, tests are not type-checked (tsconfig excludes them) | `package.json`, `tsconfig.json` | Done: `npm run lint`, `npm run typecheck`, `npm run test:coverage` in CI |
 
@@ -135,7 +135,7 @@ in the state income base.
 | B. TY2026 content (target 1.3.0) | D22 framework (state exempt-income declarations, fail closed when undeclared), D24, D25, D26 | Each state treatment cites the state revenue department; unmodeled income still fails closed |
 | C. Product structure | Q1 for the core calculation tools; split shared state-calculation calls into one helper | Contract snapshot diff shows only added structured fields |
 | D. Engineering | Q2 | CI runs lint, test type-check, and coverage |
-| E. Season validation (January 2027) | Final 2026 forms check (existing P2 row), NY when published, D27 decision, golden cases for two-earner MFJ, SE plus W-2, and retirees | Existing P3 exit criteria |
+| E. Season validation (January 2027) | Final 2026 forms check (existing P2 row), 2026 Tax Table check, NY when published | Existing P3 exit criteria |
 
 Also added in this pass: California TY2026 exemption credit ($158, $316 joint) with the $6 per $2,500 AGI phase-out
 on the 2025 thresholds as a lower bound; 55 federal and 1,706 state golden cases; 59 of 59 differential scenarios,

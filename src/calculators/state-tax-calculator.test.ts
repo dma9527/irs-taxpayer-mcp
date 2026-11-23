@@ -413,11 +413,11 @@ describe("TY2026 state treatment of Social Security, retirement income, and Wash
 
   it("fails closed when the state's treatment is not modeled", () => {
     expect(() => calculateStateTax({
-      stateCode: "KS", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      stateCode: "RI", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
       incomeComposition: { taxableSocialSecurityBenefits: 20000 },
     })).toThrow(UnsupportedStateTaxCalculationError);
     expect(() => calculateStateTax({
-      stateCode: "NC", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      stateCode: "GA", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
       incomeComposition: { taxableRetirementDistributions: 20000 },
     })).toThrow("treatment of taxable retirement distributions is not modeled");
   });
@@ -441,5 +441,49 @@ describe("TY2026 state treatment of Social Security, retirement income, and Wash
     expect(federal.taxableSocialSecurityBenefits).toBeGreaterThan(0);
     expect(result?.excludedIncome).toBe(federal.taxableSocialSecurityBenefits);
     expect(result?.adjustedIncome).toBe(federal.adjustedGrossIncome - federal.taxableSocialSecurityBenefits - 5900);
+  });
+});
+
+describe("TY2026 retirement distribution treatments", () => {
+  const withRetirement = (stateCode: string, filingStatus: "single" | "married_filing_jointly", income: number,
+    taxableRetirementDistributions: number, earlyRetirementDistributionSubjectToPenalty = 0) =>
+    calculateStateTax({
+      stateCode, taxYear: 2026, filingStatus, incomeBeforeDeductions: income,
+      incomeComposition: { taxableRetirementDistributions, earlyRetirementDistributionSubjectToPenalty },
+    });
+
+  it("keeps retirement distributions in Virginia", () => {
+    // VA: 60,000 - 8,750 - 930 = 50,320; 720 + 5.75% x (50,320 - 17,000) = 2,635.90
+    const result = withRetirement("VA", "single", 60000, 20000);
+    expect(result?.excludedIncome).toBe(0);
+    expect(result?.tax).toBe(2636);
+  });
+
+  it("excludes normal retirement distributions in Pennsylvania", () => {
+    // PA: (60,000 - 20,000) x 3.07% = 1,228
+    expect(withRetirement("PA", "single", 60000, 20000)?.tax).toBe(1228);
+  });
+
+  it("fails closed for Pennsylvania early distributions", () => {
+    expect(() => withRetirement("PA", "single", 60000, 20000, 5000)).toThrow("early");
+  });
+
+  it("caps the Kentucky exclusion at $31,110 per person", () => {
+    // KY single: 100,000 - 31,110 - 3,360 = 65,530 x 3.5% = 2,293.55
+    expect(withRetirement("KY", "single", 100000, 40000)?.tax).toBe(2294);
+    // Joint with 20,000 is under one person's cap, so it is fully excluded: (100,000 - 20,000 - 3,360) x 3.5%
+    expect(withRetirement("KY", "married_filing_jointly", 100000, 20000)?.tax).toBe(2682);
+  });
+
+  it("fails closed for joint Kentucky distributions above one person's cap", () => {
+    expect(() => withRetirement("KY", "married_filing_jointly", 100000, 40000)).toThrow("per spouse");
+  });
+
+  it("subtracts Social Security in Kansas, Mississippi, and Nebraska", () => {
+    const kansas = calculateStateTax({
+      stateCode: "KS", taxYear: 2026, filingStatus: "single", incomeBeforeDeductions: 60000,
+      incomeComposition: { taxableSocialSecurityBenefits: 20000 },
+    });
+    expect(kansas?.excludedIncome).toBe(20000);
   });
 });

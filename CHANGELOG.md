@@ -19,11 +19,12 @@ All notable changes to irs-taxpayer-mcp.
 ### Added
 
 - Washington TY2026 profile: wages are untaxed; long-term gains above $278,000 (the 2025 capital gains standard deduction, which RCW 82.87.150 never lowers) return an error.
+- Retirement distribution treatment for more TY2026 states from state sources: excluded unless early in PA and MS, excluded up to $31,110 per person in KY (Schedule P), and taxed in IN, KS, NC, NE, OH, and VA, with each state's unmodeled special deductions listed in its notes. Social Security is now subtracted in KS, MS, and NE as well. GA, MA, MI, MN, ND, NJ, and RI still return an error for retirement distributions, and MN, ND, and RI for taxable Social Security. `estimate_state_tax` and `compare_state_taxes` accept `earlyRetirementDistributionSubjectToPenalty`.
 - California TY2026 personal exemption credit ($158, $316 joint) with the $6 per $2,500 AGI phase-out. The 2026 AGI thresholds are not published yet, so the 2025 thresholds are used as a lower bound.
 - `estimate_state_tax` and `compare_state_taxes` accept `taxableSocialSecurityBenefits`, `taxableRetirementDistributions`, and `netLongTermCapitalGain`.
 - `calculate_federal_tax`, `calculate_total_tax`, and `estimate_state_tax` return typed results in `structuredContent.data`.
 - Law change registry entries for the TY2026 Form 1099-NEC/MISC $2,000 threshold (OBBB sec. 70433) and the Roth catch-up rule for 2025 FICA wages above $150,000 (Notice 2025-67); the document checklist and form reference use the year's 1099-NEC threshold.
-- Golden cases: 55 federal (per-spouse SE, the $400 floor, two retiree cases with the Pub. 915 worksheet) and 1,706 state (Social Security treatment and Washington gains). Six differential scenarios compare per-spouse SE tax with Tax-Calculator (59 of 59 match).
+- Golden cases: 55 federal (per-spouse SE, the $400 floor, two retiree cases with the Pub. 915 worksheet) and 2,186 state (Social Security and retirement treatment, early distributions, and Washington gains). Six differential scenarios compare per-spouse SE tax with Tax-Calculator (59 of 59 match).
 - `npm run lint` (ESLint with typescript-eslint), `npm run typecheck` (tests included), and `npm run test:coverage` (v8 with floors at the current baseline), all run in CI.
 
 ## [1.2.7] - 2026-11-16

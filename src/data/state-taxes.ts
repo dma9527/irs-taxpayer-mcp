@@ -56,7 +56,12 @@ export interface StateInfo {
    */
   federalIncomeTreatment?: {
     socialSecurity?: "excluded" | "taxed";
-    retirementDistributions?: "excluded" | "taxed";
+    /**
+     * "excluded_unless_early": normal distributions excluded, early (federal penalty) distributions fail closed.
+     * "capped_per_person": excluded up to retirementExclusionCapPerPerson for each spouse.
+     */
+    retirementDistributions?: "excluded" | "taxed" | "excluded_unless_early" | "capped_per_person";
+    retirementExclusionCapPerPerson?: number;
     sources: string[];
   };
   /** Capital gains excise (Washington): no tax when net long-term gains are at or below this amount, else fails closed. */
@@ -460,8 +465,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       2026,
       "Pennsylvania Department of Revenue, 3.07% flat rate (REV-414(I) 2026)",
       {
-        notes: "PA taxes eight income classes without federal adjustments; local earned income taxes and Tax Forgiveness are not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf"] },
+        notes: "PA taxes eight income classes without federal adjustments; local earned income taxes and Tax Forgiveness are not modeled. Retirement distributions are treated as paid after retiring under the plan; early distributions return an error",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "excluded_unless_early", sources: ["https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -472,8 +477,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       {
         topRate: 0.0399,
         standardDeduction: { single: 12750, married: 25500 },
-        notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://www.ncdor.gov/taxes-forms/individual-income-tax/filing-topics/social-security-and-railroad-retirement-benefits"] },
+        notes: "Confirm the standard deduction against the 2026 D-400 instructions (January 2027); child deduction not modeled. Bailey settlement and uniformed services retirement deductions are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://www.ncdor.gov/taxes-forms/individual-income-tax/filing-topics/social-security-and-railroad-retirement-benefits", "https://www.ncdor.gov/2025-d-401-individual-income-tax-instructions/open"] },
         filingStatusOverrides: { head_of_household: { standardDeduction: 19125 }, married_filing_separately: {} },
       },
     ),
@@ -495,8 +500,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       {
         topRate: 0.0295,
         personalExemption: { single: 1000, married: 2000 },
-        notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://forms.in.gov/Download.aspx?id=16353"] },
+        notes: "County income taxes, dependent exemptions, and Indiana deductions are not modeled. Civil service annuity and military retirement deductions are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://forms.in.gov/Download.aspx?id=16353", "https://www.in.gov/dor/files/ib26.pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -507,8 +512,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
       {
         topRate: 0.035,
         standardDeduction: { single: 3360, married: 3360 },
-        notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://revenue.ky.gov/Forms/Schedule%20M%20(2025).pdf"] },
+        notes: "Married uses a joint return with one deduction; two-earner couples filing separately on a combined return get a deduction each. Local occupational taxes and the Family Size Tax Credit are not modeled. Retirement income is excluded up to $31,110 per person (Schedule P); joint amounts above one cap and pre-1998 service credit are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "capped_per_person", retirementExclusionCapPerPerson: 31110, sources: ["https://revenue.ky.gov/Forms/Schedule%20M%20(2025).pdf", "https://revenue.ky.gov/Forms/Schedule%20P%20(2025).pdf"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -537,8 +542,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
           { maxIncome: 80000, inclusive: true, amountPerPerson: 2150 },
           { maxIncome: 500000, inclusive: false, amountPerPerson: 1900 },
         ],
-        notes: "Nonbusiness income only; the 3% business income rate and its deduction, dependent exemptions, the $20 exemption credit, the joint filing credit, and municipal and school district taxes are not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://dam.assets.ohio.gov/image/upload/v1767098956/tax.ohio.gov/forms/ohio_individual/individual/2025/scheduleofadjustments.pdf"] },
+        notes: "Nonbusiness income only; the 3% business income rate and its deduction, dependent exemptions, the $20 exemption credit, the joint filing credit, and municipal and school district taxes are not modeled. The retirement income credit and deductible retirement income types are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://dam.assets.ohio.gov/image/upload/v1767098956/tax.ohio.gov/forms/ohio_individual/individual/2025/scheduleofadjustments.pdf", "https://tax.ohio.gov/help-center/faqs/income-retirement-income"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -551,8 +556,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: VA_BRACKETS,
         standardDeduction: { single: 8750, married: 17500 },
         personalExemption: { single: 930, married: 1860 },
-        notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled",
-        federalIncomeTreatment: { socialSecurity: "excluded", sources: ["https://law.lis.virginia.gov/vacode/title58.1/chapter3/section58.1-322.02/"] },
+        notes: "Dependent and age 65 or blind exemptions, Virginia subtractions, and the low-income credit are not modeled. The age 65 deduction is not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://law.lis.virginia.gov/vacode/title58.1/chapter3/section58.1-322.02/", "https://tax.virginia.gov/news/virginia-taxes-and-your-retirement"] },
         filingStatusOverrides: { head_of_household: {}, married_filing_separately: {} },
       },
     ),
@@ -585,7 +590,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: KS_JOINT,
         standardDeduction: { single: 3605, married: 8240 },
         personalExemption: { single: 9160, married: 18320 },
-        notes: "Head of household ($6,180) and married filing separately ($4,120) use their own standard deductions; the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled",
+        notes: "Head of household ($6,180) and married filing separately ($4,120) use their own standard deductions; the $2,320 dependent exemption, the Social Security subtraction, and Kansas credits are not modeled. Retirement benefits specifically exempt from Kansas tax (KPERS, federal civil service, military) are not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://www.ksrevenue.gov/taxnotices/notice24-08.pdf", "https://ksrevenue.gov/pdf/schs25.pdf"] },
         filingStatusOverrides: { head_of_household: { standardDeduction: 6180 }, married_filing_separately: { standardDeduction: 4120 } },
       },
     ),
@@ -613,7 +619,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         thresholdTax: { threshold: 10000, baseTax: 0 },
         standardDeduction: { single: 2300, married: 4600 },
         personalExemption: { single: 6000, married: 12000 },
-        notes: "Head of family uses the $8,000 exemption and $3,400 standard deduction; dependent, age 65, and blind exemptions are not modeled; a combined return with two working spouses calculates each spouse separately and can owe less; itemized deductions are not modeled",
+        notes: "Head of family uses the $8,000 exemption and $3,400 standard deduction; dependent, age 65, and blind exemptions are not modeled; a combined return with two working spouses calculates each spouse separately and can owe less; itemized deductions are not modeled. Normal retirement distributions are excluded; early distributions return an error",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "excluded_unless_early", sources: ["https://dor.ms.gov/sites/default/files/individual/Individual%20Income%20Checklist.pdf"] },
         filingStatusOverrides: { head_of_household: { standardDeduction: 3400, personalExemption: 8000 }, married_filing_separately: {} },
       },
     ),
@@ -644,7 +651,8 @@ export const STATE_TAX_CALCULATION_DATA: Record<
         marriedBrackets: NE_2026_JOINT,
         standardDeduction: { single: 8850, married: 17700 },
         personalCredit: { single: 176, married: 352 },
-        notes: "Head of household uses its own brackets and the $12,950 standard deduction (draft 2026 Form 1040N); dependent credits and Nebraska adjustments such as the Social Security exemption are not modeled",
+        notes: "Head of household uses its own brackets and the $12,950 standard deduction (draft 2026 Form 1040N); dependent credits and Nebraska adjustments such as the Social Security exemption are not modeled. The military retirement subtraction is not modeled",
+        federalIncomeTreatment: { socialSecurity: "excluded", retirementDistributions: "taxed", sources: ["https://revenue.nebraska.gov/sites/default/files/doc/tax-forms/2025/f_1040N_Schs.pdf"] },
         filingStatusOverrides: { head_of_household: { brackets: NE_2026_HEAD, standardDeduction: 12950 }, married_filing_separately: {} },
       },
     ),

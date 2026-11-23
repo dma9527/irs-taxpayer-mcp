@@ -93,7 +93,7 @@ describe("MCP Tools Integration", () => {
 
     it("omits data on errors", async () => {
       const { structuredContent, isError } = await callTool(server, "estimate_state_tax", {
-        stateCode: "KS", taxYear: 2026, incomeBeforeStateDeductions: 60000, taxableSocialSecurityBenefits: 20000,
+        stateCode: "RI", taxYear: 2026, incomeBeforeStateDeductions: 60000, taxableSocialSecurityBenefits: 20000,
       });
       expect(isError).toBe(true);
       expect(structuredContent?.data).toBeUndefined();

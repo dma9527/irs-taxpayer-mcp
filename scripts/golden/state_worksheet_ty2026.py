@@ -14,7 +14,11 @@ INCOMES = [0, 9000, 15000, 30000, 45000, 85000, 150000, 240000, 600000, 1500000]
 FEDERAL_STANDARD_DEDUCTION = {"single": 16100, "married_filing_jointly": 32200, "married_filing_separately": 16100, "head_of_household": 24150}
 NO_TAX = ["AK", "FL", "NH", "NV", "SD", "TN", "TX", "WA", "WY"]
 # States whose 2025 forms or revenue department pages subtract federally taxable Social Security benefits.
-SOCIAL_SECURITY_EXCLUDED = ["CA", "GA", "IL", "IN", "KY", "MA", "MI", "NC", "NJ", "OH", "PA", "VA"]
+SOCIAL_SECURITY_EXCLUDED = ["CA", "GA", "IL", "IN", "KS", "KY", "MA", "MI", "MS", "NC", "NE", "NJ", "OH", "PA", "VA"]
+# Retirement distribution treatment from each state's 2025 forms or revenue department pages.
+RETIREMENT = {"CA": "taxed", "IN": "taxed", "KS": "taxed", "NC": "taxed", "NE": "taxed", "OH": "taxed", "VA": "taxed",
+              "IL": "excluded", "MS": "unless_early", "PA": "unless_early", "KY": 31110}
+TAXABLE_RETIREMENT = 40000
 TAXABLE_SOCIAL_SECURITY = 20000
 # RCW 82.87.150 never lowers the Washington standard deduction ($278,000 for 2025, WA DOR).
 WA_NO_TAX_LONG_TERM_GAIN = 278000
@@ -243,6 +247,44 @@ for state in STATES:
                     ss_expected, ss_lines = {"unsupported": True}, [f"Fails closed: {error}"]
             cases.append({"name": f"{state} {status} {income} with Social Security", "facts": ss_facts,
                           "expected": ss_expected, "worksheet": ss_lines})
+
+for state in STATES:
+    if state in NO_TAX or state in UNSUPPORTED:
+        continue
+    for status in STATUSES:
+        for income in INCOMES:
+            if income < TAXABLE_RETIREMENT:
+                continue
+            for early in (0, 10000):
+                facts = {"state": state, "status": status, "income": income,
+                         "taxableRetirementDistributions": TAXABLE_RETIREMENT}
+                if early:
+                    facts["earlyRetirementDistributionSubjectToPenalty"] = early
+                if state == "ND":
+                    facts["federalTaxableIncome"] = max(0, income - FEDERAL_STANDARD_DEDUCTION[status])
+                rule = RETIREMENT.get(state)
+                if early and rule != "unless_early":
+                    continue
+                # None means the path fails closed: undeclared, early distributions, or a joint amount above one cap.
+                if rule is None or (rule == "unless_early" and early) or (isinstance(rule, int) and status == J and TAXABLE_RETIREMENT > rule):
+                    excluded = None
+                elif rule == "taxed":
+                    excluded = 0
+                elif isinstance(rule, int):
+                    excluded = min(TAXABLE_RETIREMENT, rule)
+                else:
+                    excluded = TAXABLE_RETIREMENT
+                if excluded is None:
+                    expected, lines = {"unsupported": True}, ["Fails closed: retirement treatment not modeled for this case"]
+                else:
+                    try:
+                        tax, adjusted, lines = work(state, status, income - excluded, agi=income)
+                        expected = {"tax": math.floor(tax + 0.5), "adjustedIncome": adjusted}
+                        lines = [f"Exclude retirement {excluded}"] + lines
+                    except LookupError as error:
+                        expected, lines = {"unsupported": True}, [f"Fails closed: {error}"]
+                suffix = f" with retirement {TAXABLE_RETIREMENT}" + (f" early {early}" if early else "")
+                cases.append({"name": f"{state} {status} {income}{suffix}", "facts": facts, "expected": expected, "worksheet": lines})
 
 for gain, expected in [(WA_NO_TAX_LONG_TERM_GAIN, {"tax": 0, "adjustedIncome": 400000}), (WA_NO_TAX_LONG_TERM_GAIN + 1, {"unsupported": True})]:
     cases.append({"name": f"WA single 400000 with long-term gain {gain}",

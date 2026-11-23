@@ -13,6 +13,8 @@ const FixtureSchema = z.object({
       income: z.number(),
       federalTaxableIncome: z.number().optional(),
       taxableSocialSecurityBenefits: z.number().optional(),
+      taxableRetirementDistributions: z.number().optional(),
+      earlyRetirementDistributionSubjectToPenalty: z.number().optional(),
       netLongTermCapitalGain: z.number().optional(),
     }).strict(),
     expected: z.union([
@@ -41,6 +43,8 @@ describe("TY2026 state golden cases (scripts/golden/state_worksheet_ty2026.py)",
       federalTaxableIncome: facts.federalTaxableIncome,
       incomeComposition: {
         taxableSocialSecurityBenefits: facts.taxableSocialSecurityBenefits,
+        taxableRetirementDistributions: facts.taxableRetirementDistributions,
+        earlyRetirementDistributionSubjectToPenalty: facts.earlyRetirementDistributionSubjectToPenalty,
         netLongTermCapitalGain: facts.netLongTermCapitalGain,
       },
     });

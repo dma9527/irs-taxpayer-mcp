@@ -43,6 +43,8 @@ export interface StateTaxInput {
 export interface StateIncomeComposition {
   taxableSocialSecurityBenefits?: number;
   taxableRetirementDistributions?: number;
+  /** Part of taxableRetirementDistributions subject to the federal 10% early-distribution tax. */
+  earlyRetirementDistributionSubjectToPenalty?: number;
   netLongTermCapitalGain?: number;
 }
 
@@ -107,7 +109,9 @@ export function calculateStateTax(input: StateTaxInput): StateTaxResult | null {
     };
   }
 
-  const excludedIncome = excludedFederalIncome(state, input.taxYear, composition);
+  const requestedStatus = input.filingStatus ?? "single";
+  const joint = requestedStatus === "married" || requestedStatus === "married_filing_jointly";
+  const excludedIncome = excludedFederalIncome(state, input.taxYear, composition, joint);
 
   const requested = input.filingStatus ?? "single";
   const status: "single" | "married" =
@@ -225,20 +229,44 @@ function excludedFederalIncome(
   state: StateCalculationInfo,
   taxYear: number,
   composition: StateIncomeComposition,
+  joint: boolean,
 ): number {
-  const components = [
-    { amount: composition.taxableSocialSecurityBenefits ?? 0, treatment: state.federalIncomeTreatment?.socialSecurity, label: "taxable Social Security benefits" },
-    { amount: composition.taxableRetirementDistributions ?? 0, treatment: state.federalIncomeTreatment?.retirementDistributions, label: "taxable retirement distributions" },
-  ];
+  const treatment = state.federalIncomeTreatment;
+  const unsupported = (detail: string) =>
+    new UnsupportedStateTaxCalculationError(`${state.name} TY${taxYear} ${detail} is not modeled`);
   let excluded = 0;
-  for (const { amount, treatment, label } of components) {
-    if (amount <= 0) continue;
-    if (treatment === undefined) {
-      throw new UnsupportedStateTaxCalculationError(
-        `${state.name} TY${taxYear} treatment of ${label} is not modeled`,
-      );
+
+  const socialSecurity = composition.taxableSocialSecurityBenefits ?? 0;
+  if (socialSecurity > 0) {
+    if (treatment?.socialSecurity === undefined) throw unsupported("treatment of taxable Social Security benefits");
+    if (treatment.socialSecurity === "excluded") excluded += socialSecurity;
+  }
+
+  const retirement = composition.taxableRetirementDistributions ?? 0;
+  if (retirement > 0) {
+    switch (treatment?.retirementDistributions) {
+      case undefined:
+        throw unsupported("treatment of taxable retirement distributions");
+      case "taxed":
+        break;
+      case "excluded":
+        excluded += retirement;
+        break;
+      case "excluded_unless_early":
+        if ((composition.earlyRetirementDistributionSubjectToPenalty ?? 0) > 0) {
+          throw unsupported("treatment of early retirement distributions");
+        }
+        excluded += retirement;
+        break;
+      case "capped_per_person": {
+        const cap = treatment.retirementExclusionCapPerPerson ?? 0;
+        if (joint && retirement > cap) {
+          throw unsupported(`retirement exclusion per spouse above $${cap.toLocaleString("en-US")} without a spouse split`);
+        }
+        excluded += Math.min(retirement, cap);
+        break;
+      }
     }
-    if (treatment === "excluded") excluded += amount;
   }
   return excluded;
 }
@@ -261,7 +289,12 @@ function calculateGraduatedTax(income: number, brackets: StateBracket[]): number
 /** Federal results a state calculation needs. */
 export type FederalResultForState = Pick<
   TaxBreakdown,
-  "adjustedGrossIncome" | "taxableIncome" | "taxableSocialSecurityBenefits" | "taxableRetirementDistributions" | "netLongTermCapitalGain"
+  | "adjustedGrossIncome"
+  | "taxableIncome"
+  | "taxableSocialSecurityBenefits"
+  | "taxableRetirementDistributions"
+  | "earlyRetirementDistributionSubjectToPenalty"
+  | "netLongTermCapitalGain"
 >;
 
 /** State tax on the federal AGI starting point, passing the income components states treat differently. */
@@ -280,6 +313,7 @@ export function calculateStateTaxForFederal(
     incomeComposition: {
       taxableSocialSecurityBenefits: federal.taxableSocialSecurityBenefits,
       taxableRetirementDistributions: federal.taxableRetirementDistributions,
+      earlyRetirementDistributionSubjectToPenalty: federal.earlyRetirementDistributionSubjectToPenalty,
       netLongTermCapitalGain: federal.netLongTermCapitalGain,
     },
   });

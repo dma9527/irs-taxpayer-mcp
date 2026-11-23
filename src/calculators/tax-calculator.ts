@@ -108,6 +108,7 @@ export interface TaxBreakdown {
   longTermCapitalLossCarryforward: number;
   taxableSocialSecurityBenefits: number;
   taxableRetirementDistributions: number;
+  earlyRetirementDistributionSubjectToPenalty: number;
   earlyRetirementDistributionAdditionalTax: number;
   americanOpportunityCredit: number;
   refundableAmericanOpportunityCredit: number;
@@ -1228,6 +1229,7 @@ export function calculateTax(input: TaxInput): TaxBreakdown {
       capitalNetting.longTermCapitalLossCarryforward,
     taxableSocialSecurityBenefits,
     taxableRetirementDistributions: taxableRetirementDistributions ?? 0,
+    earlyRetirementDistributionSubjectToPenalty,
     earlyRetirementDistributionAdditionalTax,
     americanOpportunityCredit: educationCredits.americanOpportunityCredit,
     refundableAmericanOpportunityCredit:

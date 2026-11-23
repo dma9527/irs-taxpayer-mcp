@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 logging.disable(logging.CRITICAL)
 from pypdf import PdfReader
 
-UA = "Mozilla/5.0"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
 
 
 def fetch(url, path):
@@ -81,6 +81,20 @@ SOURCES = {
     "OH-SS": ("https://dam.assets.ohio.gov/image/upload/v1767098956/tax.ohio.gov/forms/ohio_individual/individual/2025/scheduleofadjustments.pdf", ["Taxable Social Security benefits"]),
     "VA-SS": ("https://law.lis.virginia.gov/vacode/title58.1/chapter3/section58.1-322.02/", ["Benefits received under Title II of the Social Security Act"]),
     "NJ-SS": ("https://nj.gov/treasury/taxation/pdf/anchor/anchor-home-income.pdf", ["Social Security"]),
+    "PA-retirement": ("https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf",
+                      ["Commonly recognized pension, old age, or retirement benefits paid after becoming eligible to retire, and retiring"]),
+    "KS-SS": ("https://www.ksrevenue.gov/taxnotices/notice24-08.pdf", ["removes the income limitation"]),
+    "KS-retirement": ("https://ksrevenue.gov/pdf/schs25.pdf", ["Retirement benefits specifically exempt from Kansas income tax"]),
+    "MS-SS-retirement": ("https://dor.ms.gov/sites/default/files/individual/Individual%20Income%20Checklist.pdf",
+                         ["Federal Social Security Act benefits", "Retirement income – normal distributions", "Retirement income – early distributions"]),
+    "NE-SS-retirement": ("https://revenue.nebraska.gov/sites/default/files/doc/tax-forms/2025/f_1040N_Schs.pdf",
+                         ["Social Security included in Federal AGI", "Military retirement benefits"]),
+    "NC-retirement": ("https://www.ncdor.gov/2025-d-401-individual-income-tax-instructions/open", ["Bailey Settlement"]),
+    "OH-retirement": ("https://tax.ohio.gov/help-center/faqs/income-retirement-income",
+                      ["Generally, retirement income included in federal adjusted gross income is subject to Ohio income tax"]),
+    "VA-retirement": ("https://tax.virginia.gov/news/virginia-taxes-and-your-retirement", ["Traditional IRAs", "taxable to Virginia as well"]),
+    "IN-retirement": ("https://www.in.gov/dor/files/ib26.pdf", ["Pensions (taxable portion)"]),
+    "KY-retirement": ("https://revenue.ky.gov/Forms/Schedule%20P%20(2025).pdf", ["Enter the lesser of line 2 or $31,110", "IRA accounts, 401(k)"]),
     "PA-SS": ("https://pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf", ["INCOME NOT TAXABLE FOR PA PIT PURPOSES: • Social Security benefits"]),
 }
 

@@ -4,7 +4,7 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-11-19
+## [1.3.0] - 2026-11-23
 
 ### Fixed
 

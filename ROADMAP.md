@@ -4,7 +4,7 @@ _Last updated: 2026-11-19._
 
 ## Current Baseline
 
-Version 1.2.7 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
+Version 1.3.0 is a privacy-first deterministic TY2024 through TY2026 estimation and planning engine with 45 MCP tools plus direct no-model local onboarding. It is not tax preparation or filing software.
 
 ### P0 accuracy and transport work completed
 
@@ -188,6 +188,7 @@ This phase begins only after the filing-grade verification gates are met.
 | 1.0.0 | 2026-09-04 | Privacy-first structured local planner, filing investment gate, and OIDC release automation. |
 | 1.0.1 | 2026-09-04 | First public 1.x release with npm 12-compatible OIDC automation. |
 | 1.0.2 | 2026-09-07 | Monthly feedback dashboard, AMT guidance correction, and independent TY2026/AMT regressions. |
+| 1.3.0 | 2026-11-19 | Per-spouse Social Security wage base, Schedule C QBI, Uniform Lifetime RMDs, Form 1040 Tax Table, state Social Security and retirement treatment, WA profile, CA exemption credit, typed structured output, lint and coverage in CI. |
 | 1.2.7 | 2026-11-16 | 1,160 TY2026 state golden cases in CI; official-source checker for state constants; @hono/node-server 2.1.8. |
 | 1.2.6 | 2026-11-08 | Head of household and married filing separately state rules for every TY2026 profile; tools pass the real filing status to the state calculator. |
 | 1.2.5 | 2026-11-06 | TY2026 state profiles for KS, MN, MS, ND, NE, RI; North Dakota runs on federal taxable income; landing page and localized READMEs. |

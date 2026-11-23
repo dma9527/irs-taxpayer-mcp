@@ -1,6 +1,6 @@
 {
   "name": "irs-taxpayer-mcp",
-  "version": "1.2.7",
+  "version": "1.3.0",
   "mcpName": "io.github.dma9527/irs-taxpayer",
   "description": "Deterministic local US individual tax engine with direct no-model CLI and MCP adapters for supported TY2024 through TY2026 scenarios",
   "type": "module",

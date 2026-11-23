@@ -4,6 +4,8 @@ All notable changes to irs-taxpayer-mcp.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-19
+
 ### Fixed
 
 - Regular tax used the rate formula at every income. Form 1040 line 16 and QDCG worksheet lines 22 and 24 now use the Tax Table below $100,000 (tax at the row midpoint, rounded to whole dollars), and line 25 takes the smaller of lines 23 and 24. Results below $100,000 change by up to about $6; for example TY2026 single taxable income $83,900 is $13,176, not $13,170. `scripts/sources/check_tax_table.py` compares every row of the official Tax Table with the engine (all 2,062 rows of the 2025 table match). The engine input `taxComputation: "rate_schedule"` keeps the formula for the Tax-Calculator differential test, and results report `taxTableUsed`.

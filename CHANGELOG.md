@@ -6,7 +6,7 @@ All notable changes to irs-taxpayer-mcp.
 
 ### Fixed
 
-- `scripts/sources/check_state_sources.py` now strips uppercase and mixed-case `<SCRIPT>` and `<STYLE>` blocks when reading official state pages. Its results are unchanged for all current sources. This closes a CodeQL `py/bad-tag-filter` alert in a maintenance script that is not part of the npm package.
+- `scripts/sources/check_state_sources.py` now strips `<script>` and `<style>` blocks regardless of letter case and whether the end tag has trailing whitespace, such as `</script >`. Its results are unchanged for all current sources. This closes two CodeQL `py/bad-tag-filter` alerts in a maintenance script that is not part of the npm package.
 
 ## [1.3.0] - 2026-11-23
 

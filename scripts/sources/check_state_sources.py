@@ -27,7 +27,7 @@ def fetch(url, path):
         text = " ".join(page.extract_text() or "" for page in reader.pages)
     else:
         raw = open(path, errors="ignore").read()
-        raw = re.sub(r"<script.*?</script>|<style.*?</style>", " ", raw, flags=re.S | re.I)
+        raw = re.sub(r"<script\b.*?</script\s*[^>]*>|<style\b.*?</style\s*[^>]*>", " ", raw, flags=re.S | re.I)
         text = html.unescape(re.sub(r"<[^>]+>", " ", raw))
     return re.sub(r"\s+", " ", text).replace(" ,", ",")
 
